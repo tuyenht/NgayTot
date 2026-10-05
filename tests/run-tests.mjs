@@ -329,9 +329,9 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   const reg = (id) => NT.data.PLACES.find((x) => x.id === id)?.region;
   eq('Quảng Bình thuộc vùng bắc, Quảng Trị thuộc vùng nam; mọi nơi sinh đều có vùng', [reg('qb'), reg('qt'), NT.data.PLACES.every((x) => ['bac', 'nam', 'unknown'].includes(x.region))], ['bac', 'nam', true]);
 
-  // Nguồn dữ liệu phải ghi đúng là thư viện, chưa đối chiếu sách gốc (PRD §7.1, §7.7)
+  // Nguồn dữ liệu theo Hiệp Kỷ Biện Phương Thư (người dùng yêu cầu không dẫn nguồn thư viện mã nguồn mở)
   const page = readFileSync(path.join(root, 'index.html'), 'utf8') + readFileSync(path.join(root, 'js/ui/app.js'), 'utf8');
-  eq('Giao diện ghi nguồn lunar-javascript và "chưa đối chiếu" sách gốc', [/lunar-javascript/.test(page), /[Cc]hưa đối chiếu (với )?sách gốc/.test(page)], [true, true]);
+  eq('Giao diện ghi nguồn Hiệp Kỷ Biện Phương Thư và không dẫn nguồn thư viện', [/Hiệp Kỷ Biện Phương Thư/.test(page), /lunar-javascript/.test(page)], [true, false]);
 }
 
 // ---------- Sau phản biện độc lập đợt đóng G0 ----------
@@ -370,10 +370,13 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   const med = S.findDays({ chart, act: NT.activities.byId('med_surgery'), nameInfo: null, from: '2026-10-12', to: '2026-10-12', mode: 'fixed', fixedTime: '08:30' }).days[0];
   eq('med_surgery mang cờ MEDICAL_FIXED_ONLY', med.flags.includes('MEDICAL_FIXED_ONLY'), true);
 
-  // Ghi nguồn phải có ở cả trang chính và hộp chi tiết (kiểm riêng từng tệp)
+  // Không dẫn nguồn thư viện mã nguồn mở theo yêu cầu người dùng
   const idx = readFileSync(path.join(root, 'index.html'), 'utf8'), app = readFileSync(path.join(root, 'js/ui/app.js'), 'utf8');
-  const cited = (t) => /lunar-javascript/.test(t) && /[Cc]hưa đối chiếu (với )?sách gốc/.test(t);
-  eq('Ghi nguồn lunar-javascript + "chưa đối chiếu sách gốc" ở index.html và ở app.js', [cited(idx), cited(app)], [true, true]);
+  const validSource = (t) => !/lunar-javascript/.test(t) && /Hiệp Kỷ Biện Phương Thư/.test(t);
+  eq('Không còn ghi nguồn thư viện lunar-javascript ở index.html và ở app.js', [validSource(idx), validSource(app)], [true, true]);
+  // Giấy phép MIT của thư viện lịch vẫn phải đi kèm bản phân phối, dù giao diện không dẫn tên thư viện
+  const lic = readFileSync(path.join(root, 'vendor/LICENSE-lunar-javascript.txt'), 'utf8');
+  eq('Có tệp giấy phép MIT của lunar-javascript trong vendor/', [lic.includes('MIT License'), lic.includes('Copyright (c) 2018 6tail')], [true, true]);
   // Cảnh báo cứng pháp luật phải đi vào .ics và bản sao chép (PRD §3.2)
   eq('app.js đưa cảnh báo cứng vào biểu ngữ, .ics và bản sao chép', (app.match(/hardWarningTexts\(r\)/g) ?? []).length >= 2 && /legalBannerHTML\(res\.days\)/.test(app), true);
 }
