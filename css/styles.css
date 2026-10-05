@@ -417,6 +417,50 @@ dialog.sheet::backdrop { background: hsl(228 50% 3% / .7); backdrop-filter: blur
 .score-items li.note { background: hsl(228 30% 12% / .45); color: var(--text-dim); }
 .lbl { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: .04em; padding: 1px 6px; margin-left: 6px; border-radius: 6px; background: hsl(228 30% 24%); color: var(--text-faint); vertical-align: middle; }
 .flag-legal { box-shadow: inset 3px 0 0 var(--gold); }
+/* Tùy chọn nâng cao & thông báo tự động thông minh */
+.advanced-opts {
+  margin-top: 8px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-sm);
+  padding: 10px 14px;
+  background: hsl(228 30% 7% / 0.5);
+  transition: all .25s var(--ease);
+}
+.advanced-opts[open] {
+  background: hsl(228 30% 9% / 0.7);
+  border-color: var(--line-strong);
+}
+.advanced-summary {
+  cursor: pointer;
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  user-select: none;
+  outline: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.advanced-summary:hover {
+  color: var(--gold);
+}
+.advanced-body {
+  margin-top: 12px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+.advanced-body > .full { grid-column: 1 / -1; }
+.tz-auto-notice {
+  font-size: 0.78rem;
+  color: var(--gold);
+  background: hsl(40 70% 50% / 0.08);
+  border: 1px solid hsl(40 60% 50% / 0.25);
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  line-height: 1.45;
+}
+
 footer { text-align: center; color: var(--text-faint); font-size: 0.78rem; padding: 0 20px 40px; }
 
 /* ---------- Toast & loader ---------- */

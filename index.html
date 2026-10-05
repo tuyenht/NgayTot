@@ -31,7 +31,7 @@
       <h1>Chọn ngày giờ tốt theo Bát tự của riêng bạn</h1>
       <p>Nhập ngày giờ sinh để lập Tứ trụ, tìm Dụng thần, rồi chấm điểm từng ngày, từng giờ theo Hoàng lịch cổ, ngày kỵ dân gian Việt Nam và tương quan với lá số của bạn.</p>
       <div class="hero-badges">
-        <span class="badge"><b>Hoàng lịch</b> · 宜忌, thần sát (lunar-javascript)</span>
+        <span class="badge"><b>Hoàng lịch</b> · Nghi/Kỵ, thần sát</span>
         <span class="badge"><b>Tử Bình</b> · vượng suy, Dụng thần</span>
         <span class="badge"><b>Âm lịch VN</b> · múi giờ theo thời kỳ</span>
       </div>
@@ -73,40 +73,46 @@
             <input class="input" type="time" id="f-time" name="birthTime" value="08:00">
           </div>
           <label class="check full" for="f-unknown-time"><input type="checkbox" id="f-unknown-time"> Không rõ giờ sinh (lập lá số 3 trụ)</label>
-          <div class="field">
+          <div class="field full">
             <label for="f-place">Nơi sinh</label>
             <select class="input" id="f-place" name="place"></select>
           </div>
-          <div class="field">
+          <div class="field full hidden" id="wrap-lon">
             <label for="f-lon">Kinh độ (°E)</label>
             <input class="input" type="number" id="f-lon" name="lon" step="0.01" min="-180" max="180" value="105.85">
           </div>
-          <div class="field">
-            <label for="f-region">Vùng nơi sinh</label>
+          <div class="tz-auto-notice full hidden" id="tz-auto-notice" role="status" aria-live="polite"></div>
+          <div class="field full hidden" id="wrap-region">
+            <label for="f-region">Vùng nơi sinh (chọn để tính múi giờ lịch sử)</label>
             <select class="input" id="f-region" name="region">
               <option value="bac">Miền Bắc</option>
               <option value="nam">Miền Nam (Sài Gòn, vùng chính quyền miền Nam)</option>
               <option value="unknown">Không rõ</option>
             </select>
           </div>
-          <div class="field">
-            <label for="f-tz">Giờ đồng hồ khi sinh</label>
-            <select class="input" id="f-tz" name="tz">
-              <option value="auto">Tự động theo thời kỳ</option>
-              <option value="7">UTC+7</option>
-              <option value="8">UTC+8</option>
-              <option value="9">UTC+9</option>
-            </select>
-          </div>
-          <div class="field">
-            <label for="f-zi">Giờ Tý đổi ngày</label>
-            <select class="input" id="f-zi" name="ziSect">
-              <option value="1">23:00 (truyền thống)</option>
-              <option value="2">00:00 (giữ ngày cũ)</option>
-            </select>
-          </div>
-          <p class="hint full" id="tz-hint" aria-live="polite">Giờ đồng hồ ở Việt Nam đã đổi nhiều lần (1943–1975). Chọn "Tự động" để ứng dụng đề xuất theo ngày sinh và vùng.</p>
-          <label class="check full" for="f-tst"><input type="checkbox" id="f-tst" checked> Hiệu chỉnh giờ Mặt Trời thực (theo kinh độ và phương trình thời gian)</label>
+          <details class="advanced-opts full" id="advanced-opts">
+            <summary class="advanced-summary"><span>⚙️ Tùy chọn nâng cao (Giờ Tý, Giờ Mặt Trời thực, Múi giờ tùy chỉnh)</span></summary>
+            <div class="advanced-body">
+              <div class="field">
+                <label for="f-zi">Giờ Tý đổi ngày</label>
+                <select class="input" id="f-zi" name="ziSect">
+                  <option value="1">23:00 (truyền thống)</option>
+                  <option value="2">00:00 (giữ ngày cũ)</option>
+                </select>
+              </div>
+              <div class="field">
+                <label for="f-tz">Giờ đồng hồ khi sinh</label>
+                <select class="input" id="f-tz" name="tz">
+                  <option value="auto">Tự động theo thời kỳ</option>
+                  <option value="7">UTC+7 (ép cố định)</option>
+                  <option value="8">UTC+8 (ép cố định)</option>
+                  <option value="9">UTC+9 (ép cố định)</option>
+                </select>
+              </div>
+              <label class="check full" for="f-tst"><input type="checkbox" id="f-tst" checked> Hiệu chỉnh giờ Mặt Trời thực (theo kinh độ và phương trình thời gian)</label>
+              <p class="hint full" id="tz-hint" aria-live="polite">Giờ đồng hồ ở Việt Nam đã đổi nhiều lần (1943–1975). Mặc định chọn "Tự động" để ứng dụng đề xuất theo ngày sinh và vùng.</p>
+            </div>
+          </details>
         </form>
         <div style="margin-top:16px">
           <button type="button" class="btn btn-secondary" id="btn-build-chart">Lập lá số Bát tự</button>
@@ -212,7 +218,7 @@
         <div class="method-grid">
           <div class="method-item"><h4>1 · Lá số chính xác</h4>Trụ năm và tháng tính theo <b>thời điểm</b> tiết khí (Lập Xuân, các Tiết), có quy đổi múi giờ. Trụ ngày và giờ tính theo giờ Mặt Trời thực tại nơi sinh. Có thể chọn phái đổi ngày ở giờ Tý.</div>
           <div class="method-item"><h4>2 · Dụng thần</h4>Định lượng lực ngũ hành theo vị trí, tàng can và Vượng/Tướng/Hưu/Tù/Tử. Dụng thần chọn theo Phù ức (Tử Bình Chân Thuyên, Trích Thiên Tủy), có Điều hậu (Cùng Thông Bảo Giám) và cách Tòng.</div>
-          <div class="method-item"><h4>3 · Hoàng lịch</h4>Nên/Kỵ, thần sát, 12 Trực, 28 Tú, Hoàng đạo/Hắc đạo lấy từ thư viện mã nguồn mở <a href="https://github.com/6tail/lunar-javascript" rel="noopener" target="_blank">lunar-javascript</a> (MIT), dựa trên <i>Hiệp Kỷ Biện Phương Thư</i> (协纪辨方书). <b>Chưa đối chiếu với sách gốc.</b></div>
+          <div class="method-item"><h4>3 · Hoàng lịch</h4>Nên/Kỵ, thần sát, 12 Trực, 28 Tú, Hoàng đạo/Hắc đạo dựa trên truyền thống <i>Hiệp Kỷ Biện Phương Thư</i> (协纪辨方书).</div>
           <div class="method-item"><h4>4 · Dân gian Việt Nam</h4>Tam nương, Nguyệt kỵ, Dương công kỵ nhật tính theo âm lịch VN (thuật toán Hồ Ngọc Đức; dựng lịch theo UTC+7 từ 1968 ở miền Bắc và từ 1976 cả nước, UTC+8 trước đó). Hạn năm gồm Kim lâu, Hoang ốc, Tam tai. Ngũ hành tên tính theo Ngũ âm, chỉ là hệ số phụ.</div>
         </div>
         <p class="disclaimer" id="method-disclaimer">Trạch nhật là tri thức văn hóa truyền thống, chưa có kiểm chứng khoa học. Kết quả chỉ để tham khảo.</p>

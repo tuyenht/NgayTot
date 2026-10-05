@@ -75,15 +75,21 @@
   /* ------------------------------ Form hồ sơ ------------------------------ */
   function readProfileForm() {
     const unknown = $('#f-unknown-time').checked;
+    const placeId = $('#f-place').value;
+    const pl = D.PLACES.find((x) => x.id === placeId);
+    let region = REGIONS.includes($('#f-region').value) ? $('#f-region').value : 'bac';
+    if (pl?.region && pl.region !== 'unknown' && $('#wrap-region')?.classList.contains('hidden')) {
+      region = pl.region;
+    }
     return {
       id: $('#profile-select').value || null,
       name: $('#f-name').value.trim().slice(0, 80),
       gender: $('input[name="gender"]:checked').value === 'female' ? 'female' : 'male',
       birthDate: $('#f-date').value,
       birthTime: unknown ? null : ($('#f-time').value || null),
-      placeId: $('#f-place').value,
+      placeId,
       lon: Number.parseFloat($('#f-lon').value),
-      region: REGIONS.includes($('#f-region').value) ? $('#f-region').value : 'bac',
+      region,
       tz: TZ_MANUAL.includes(Number($('#f-tz').value)) ? Number($('#f-tz').value) : null, // null = tự động (PRD §6.3)
       ziSect: Number($('#f-zi').value) === 2 ? 2 : 1,
       useTrueSolar: $('#f-tst').checked,
@@ -106,6 +112,70 @@
     $('#f-tz').value = TZ_MANUAL.includes(tz) ? String(tz) : 'auto';
     $('#f-zi').value = String(p.ziSect === 2 ? 2 : 1);
     $('#f-tst').checked = p.useTrueSolar !== false;
+    syncBirthAndPlace();
+  }
+
+  /**
+   * Tự động hóa ngầm nơi sinh, kinh độ và múi giờ lịch sử theo năm sinh:
+   * - Sau 13/06/1975: toàn quốc dùng UTC+7 → ẩn vùng, ẩn chọn múi giờ, xử lý ngầm.
+   * - Trước 13/06/1975:
+   *   + Nếu nơi sinh đã biết (Hà Nội, TP.HCM...): tự động gán vùng và tính civilTz, hiện badge thông báo tinh tế.
+   *   + Nếu nơi sinh là "Khác" (hoặc chưa xác định được vùng): tự động hiện chọn Vùng để người dùng nhập.
+   * - Kinh độ: ẩn mặc định, chỉ hiện khi chọn nơi sinh "Khác".
+   */
+  function syncBirthAndPlace() {
+    const iso = $('#f-date').value;
+    const placeId = $('#f-place').value;
+    const pl = D.PLACES.find((x) => x.id === placeId);
+    const isCustom = placeId === 'custom';
+
+    // 1. Kinh độ: tự động điền theo nơi sinh, chỉ hiện khi chọn "Khác"
+    if (pl?.lon != null) $('#f-lon').value = pl.lon;
+    const wrapLon = $('#wrap-lon');
+    if (wrapLon) wrapLon.classList.toggle('hidden', !isCustom);
+
+    // 2. Múi giờ lịch sử theo năm/ngày sinh
+    let isHistorical = false;
+    let y = 0, m = 0, d = 0;
+    if (/^\d{4}-\d{2}-\d{2}$/.test(iso)) {
+      [y, m, d] = iso.split('-').map(Number);
+      if (y * 10000 + m * 100 + d < 19750613) isHistorical = true;
+    }
+
+    const wrapRegion = $('#wrap-region');
+    const noticeEl = $('#tz-auto-notice');
+
+    if (!isHistorical) {
+      // Sau 13/06/1975: thống nhất UTC+7 toàn quốc
+      if (pl?.region && pl.region !== 'unknown') $('#f-region').value = pl.region;
+      if (wrapRegion) wrapRegion.classList.add('hidden');
+      if (noticeEl) {
+        noticeEl.classList.add('hidden');
+        noticeEl.textContent = '';
+      }
+    } else {
+      // Trước 13/06/1975:
+      if (pl?.region && pl.region !== 'unknown') {
+        // Tự động nhận diện được vùng từ tỉnh thành đã chọn
+        $('#f-region').value = pl.region;
+        if (wrapRegion) wrapRegion.classList.add('hidden');
+        if (noticeEl) {
+          const C = NT.calendar;
+          const autoTz = C.civilTz(y, m, d, pl.region);
+          const regName = pl.region === 'nam' ? 'Miền Nam' : 'Miền Bắc';
+          noticeEl.classList.remove('hidden');
+          noticeEl.innerHTML = `📍 <b>Tự động nhận diện múi giờ lịch sử:</b> UTC+${C.fmtTz(autoTz)} (${regName} thời kỳ ${y}).`;
+        }
+      } else {
+        // Nơi sinh "Khác" hoặc chưa rõ vùng -> cần người dùng input
+        if (wrapRegion) wrapRegion.classList.remove('hidden');
+        if (noticeEl) {
+          noticeEl.classList.remove('hidden');
+          noticeEl.innerHTML = '⚠️ <i>Sinh trước 13/06/1975 tại nơi sinh tùy chỉnh: Vui lòng chọn Vùng nơi sinh bên dưới để ứng dụng tính đúng múi giờ lịch sử.</i>';
+        }
+      }
+    }
+
     updateTzHint();
   }
 
@@ -142,17 +212,21 @@
     sel.innerHTML = D.PLACES.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join('');
     sel.value = 'hn';
     sel.addEventListener('change', () => {
-      const pl = D.PLACES.find((x) => x.id === sel.value);
-      if (pl?.lon != null) $('#f-lon').value = pl.lon;
-      else $('#f-lon').focus();
+      syncBirthAndPlace();
+      if (sel.value === 'custom') $('#f-lon').focus();
     });
     $('#f-lon').addEventListener('input', () => {
       const pl = D.PLACES.find((x) => x.id === sel.value);
-      if (pl?.lon != null && Number.parseFloat($('#f-lon').value) !== pl.lon) sel.value = 'custom';
+      if (pl?.lon != null && Number.parseFloat($('#f-lon').value) !== pl.lon) {
+        sel.value = 'custom';
+        syncBirthAndPlace();
+      }
     });
     $('#f-unknown-time').addEventListener('change', (e) => { $('#f-time').disabled = e.target.checked; });
-    for (const id of ['#f-date', '#f-region', '#f-tz']) $(id).addEventListener('change', updateTzHint);
-    updateTzHint();
+    $('#f-date').addEventListener('change', syncBirthAndPlace);
+    $('#f-date').addEventListener('input', syncBirthAndPlace);
+    for (const id of ['#f-region', '#f-tz']) $(id).addEventListener('change', updateTzHint);
+    syncBirthAndPlace();
   }
 
   function initActivities() {
@@ -529,7 +603,7 @@
             <dt>Cát thần</dt><dd>${list(dsc.jiShen)}</dd>
             <dt>${fixed ? 'Sao cần lưu ý' : 'Hung sát'}</dt><dd>${list(dsc.xiongSha)}</dd>
           </dl>
-          <p class="hint">Nguồn: lunar-javascript (dựa trên Hiệp Kỷ Biện Phương Thư), chưa đối chiếu sách gốc.</p>
+          <p class="hint">Nghi/Kỵ, thần sát dựa trên truyền thống Hiệp Kỷ Biện Phương Thư (协纪辨方书).</p>
         </div>
       </div>
       <p class="disclaimer">${esc(DISCLAIMER)}</p>
