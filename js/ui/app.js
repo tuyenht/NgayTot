@@ -661,7 +661,7 @@
             <dt>Cát thần</dt><dd>${list(dsc.jiShen)}</dd>
             <dt>${fixed ? 'Sao cần lưu ý' : 'Hung sát'}</dt><dd>${list(dsc.xiongSha)}</dd>
           </dl>
-          <p class="hint">Nghi/Kỵ, thần sát dựa trên truyền thống Hiệp Kỷ Biện Phương Thư (协纪辨方书).</p>
+          <p class="hint">Nghi/Kỵ, thần sát dựa trên truyền thống Hiệp Kỷ Biện Phương Thư (协纪辨方书); dữ liệu chưa đối chiếu với sách gốc.</p>
         </div>
       </div>
       <p class="disclaimer">${esc(DISCLAIMER)}</p>

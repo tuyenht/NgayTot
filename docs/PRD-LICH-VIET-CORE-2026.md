@@ -3,10 +3,10 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.4 — thay thế bản 3.0; G0 đã đóng, đã qua hai lượt phản biện độc lập (tài liệu và mã) |
+| Phiên bản | 4.5 — thay thế bản 3.0; G0 đã đóng, đã qua hai lượt phản biện độc lập và một lượt quét toàn bộ sau khi mọi phiên sửa mã kết thúc |
 | Ngày cập nhật | 2026-10-05 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
-| Trạng thái | Bốn quyết định QĐ-01 đến QĐ-04 đã chốt ngày 2026-10-05. Còn một quyết định mở: QĐ-05 (ghi nguồn trên giao diện). Việc tiếp theo là G1 |
+| Trạng thái | Năm quyết định ở mục 16 đã có phương án (QĐ-05 áp dụng theo khuyến nghị, chờ chủ dự án phản hồi nếu muốn khác). Việc tiếp theo là G1 |
 
 Bản này hợp nhất bốn tài liệu nguồn và đối chiếu với mã nguồn hiện có:
 
@@ -370,7 +370,9 @@ Luật được lưu như dữ liệu có nguồn. Engine là bộ tra bảng th
 3. Phan Kế Bính, *Việt Nam phong tục*: cho biết thực hành của người Việt, không phải nguồn công thức.
 4. 6tail, cnlunar, lichvang.com: chỉ để đối chiếu.
 
-**Hiện trạng:** toàn bộ nghi/kỵ, thần sát, Trực, Tú của ứng dụng đang lấy từ 6tail (mức 4). Cho đến khi từng luật được kiểm với sách gốc, mọi dòng lấy từ 6tail mang nhãn `UNVERIFIED` và ghi nguồn "Hiệp Kỷ Biện Phương Thư (协纪辨方书), chưa đối chiếu sách gốc (không cần dẫn nguồn thư viện)".
+**Hiện trạng:** toàn bộ nghi/kỵ, thần sát, Trực, Tú của ứng dụng đang lấy thẳng từ 6tail (mức 4). Cho đến khi từng luật được kiểm với sách gốc, mọi dòng lấy từ 6tail mang nhãn `UNVERIFIED`.
+
+**Cách ghi nguồn (QĐ-05):** giao diện không nêu tên thư viện, nhưng ở trang chính và hộp chi tiết ngày phải có câu nói rõ dữ liệu "dựa trên truyền thống Hiệp Kỷ Biện Phương Thư; chưa đối chiếu với sách gốc". Tên thư viện, phiên bản và giấy phép MIT ghi ở `README.md` và `vendor/LICENSE-lunar-javascript.txt`.
 
 ### 7.2 Hai sửa đổi thuật ngữ so với v3.0 và PRD-FENGSHUI
 
@@ -739,7 +741,7 @@ Mã bước chuỗi Tết (theo V5.1): `TET_EVE` (giao thừa — là thời đi
 | Hạng mục | Yêu cầu | Hiện trạng đo được |
 | --- | --- | --- |
 | Hiệu năng | Quét 1 năm cho một việc: ≤ 1 giây trên máy tính, ≤ 3 giây trên điện thoại tầm trung | Node.js trên máy phát triển: 0,4–1,2 giây cho mỗi năm chưa có trong bộ nhớ đệm, tùy việc và tải máy (ba lượt đo của hai bên trong cùng buổi). Sát ngưỡng; chưa đo trên điện thoại |
-| Kích thước tải đầu | ≤ 800 KB | Khoảng 1,65 MB: `assets/hero.jpg` 782 KB, `vendor/lunar.js` 436 KB, phông chữ 244 KB (16 tệp, trình duyệt chỉ tải tệp cần dùng), mã và CSS 186 KB. Cần nén ảnh nền xuống ≤ 150 KB |
+| Kích thước tải đầu | ≤ 800 KB | Đo trên trình duyệt: khoảng 1,5 MB cho lần tải đầu (ảnh nền `assets/hero.jpg` 782 KB, `vendor/lunar.js` 436 KB, 15 tệp phông, mã và CSS). Cần nén ảnh nền xuống ≤ 150 KB |
 | Ngoại tuyến | Sau lần tải đầu, mọi tính năng chạy không cần mạng | Chưa có service worker. Phông chữ đã tự lưu trữ |
 | Tái lập | Mỗi kết quả mang `engine_version` và `data_hash` | Chưa có |
 | Tiếp cận | Điều hướng được bằng bàn phím; màu không là kênh thông tin duy nhất của lịch nhiệt | Chưa kiểm |
@@ -809,7 +811,7 @@ Kiểm thử chuẩn đỏ thì không gộp mã. Mỗi năm đối chiếu lạ
 
 ## 14. Hiện trạng mã nguồn so với đặc tả
 
-Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, tại commit `367a8dc`. Bộ kiểm thử của dự án: 77/77 đạt. Cột "Kiểm lại độc lập" ghi kết quả của lượt chạy riêng bằng script không thuộc bộ kiểm thử, lượt mở thử trên trình duyệt, và một lượt phản biện do mô hình khác thực hiện trên chính commit đóng G0 (`e0b4e80`); các lỗi lượt đó tìm ra đã sửa ở `a0979cc`.
+Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, sau khi mọi phiên sửa mã khác đã kết thúc. Bộ kiểm thử của dự án: 78/78 đạt. Cột "Kiểm lại độc lập" ghi kết quả của: lượt chạy riêng bằng script không thuộc bộ kiểm thử; lượt mở thử trên trình duyệt (máy tính và khung 375 px); một lượt phản biện do mô hình khác thực hiện trên commit đóng G0; và một lượt quét cuối chạy cả 20 loại việc cùng hai dạng việc tùy chỉnh với 6 hồ sơ khác nhau (nam, nữ, không rõ giờ sinh, sinh ở Sài Gòn 1970, không rõ vùng 1969, sinh 1920) — 468 lượt tìm ngày, không lượt nào ném lỗi, không dòng nào có giá trị rỗng hay còn chữ Hán chưa dịch.
 
 ### 14.1 Đã đáp ứng
 
@@ -836,10 +838,10 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, tại commit `367a8dc`. Bộ ki
 | 5 | Cao | Kim lâu, Hoang ốc loại cả năm; áp cho nam khi xem cưới; trừ điểm | Đã sửa | Đạt: động thổ có 219 ngày đề xuất trong năm phạm Kim lâu; dòng Kim lâu 0 điểm; có ghi chú "chỉ xét tuổi cô dâu" |
 | 6 | Cao | Việc y tế hiện điểm, xếp loại và dòng tốt xấu | Đã sửa | Đạt: engine trả điểm `null`, 0 dòng luật cho `med_surgery`, `med_birth`; thẻ ngày và hộp chi tiết chỉ còn thông tin lịch và câu y khoa (đã mở thử) |
 | 7 | Cao | 10 từ khóa nghi/kỵ không tồn tại trong `lunar.js` | Đã sửa | Đạt: 0 từ khóa và 0 tên thần sát ngoài từ vựng. `med_birth` không có từ khóa chính — đúng theo 3.1 |
-| 8 | Cao | Trang tải phông chữ từ Google | Đã sửa | Đạt: không còn tên miền ngoài trong `index.html` và CSP |
+| 8 | Cao | Trang tải phông chữ từ Google | Đã sửa | Đạt, đã đo trên trình duyệt: không yêu cầu mạng nào tới tên miền khác; 15 tệp phông tải từ chính trang |
 | 9 | Vừa | Dương công, Thụ tử, Đại hao, Vãng vong loại ngày | Đã sửa | Đạt: Dương công 0 điểm, không còn nhánh loại ngày. Xác nhận thêm: 6tail không có thần sát `受死` nên nhánh Thụ tử cũ là mã chết |
 | 10 | Vừa | Cờ pháp luật khai báo nhưng không được đọc | Đã sửa phần tuổi kết hôn và giờ nhạc | Đạt, đã mở thử: người 18 tuổi xem cưới thấy biểu ngữ không tắt được ở đầu kết quả; cảnh báo có trong `.ics` và bản sao chép. Thời gian quàn chỉ chạy ở mức hàm (dòng 25); cải táng chỉ có số liệu, chưa có nhánh kiểm (dòng 30) |
-| 11 | Vừa | Hồ sơ tự lưu mỗi lần lập lá số | Đã sửa | Đạt theo đọc mã: chỉ ghi khi bấm Lưu, xóa khóa tự lưu cũ, có nút xóa toàn bộ |
+| 11 | Vừa | Hồ sơ tự lưu mỗi lần lập lá số | Đã sửa | Đạt, đã thử tay trên trình duyệt: lập lá số và tìm ngày không tạo khóa nào trong `localStorage`; chỉ sau khi bấm Lưu mới có hai khóa của ứng dụng |
 | 12 | Vừa | Tang lễ hiện chỉ số và chữ "Hung", "Phạm kỵ" | **Đạt một phần** (QĐ-04: cố định đến G4) | Không còn điểm, xếp loại, màu tốt xấu; "kỵ việc này" đổi thành "sách ghi không hợp việc này". Còn các thuật ngữ "Hắc đạo", "Kỵ thần" trong dòng thông tin; rà toàn bộ câu chữ ở G4 |
 | 13 | Vừa | Thiếu thi cử, phỏng vấn, khám tự chọn ngày | Đã sửa | Có `career_fixed`, `med_checkup`. Chưa có `CAREER_POST` (nhậm chức) và khung giờ xuất hành (9.4) |
 | 14 | Vừa | Ngày chứa tiết lấy theo giờ Bắc Kinh | Tồn đọng (G2) | Không đổi |
@@ -857,7 +859,7 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, tại commit `367a8dc`. Bộ ki
 | 26 | Vừa | `lunarToSolar` nhận ngày âm không tồn tại; khi không truyền múi giờ thì trả `null` oan cho tháng 7 nhuận 1938 | Đã sửa | Đạt: đổi ngược 1912–2100 không truyền múi giờ đúng 69.032/69.032 ngày ở cả hai vùng |
 | 27 | Thấp | 1912–1928: xếp sai tháng nhuận năm 1917 và 1922 so với 6tail (58 ngày lệch ngày/tháng) | Tồn đọng (G2) | Đã tìm ra nguyên nhân: trung khí rơi khoảng 3 phút sau nửa đêm theo kinh tuyến Bắc Kinh; xem 13.3. Ngoài vùng cam kết |
 | 28 | Thấp | Danh sách nơi sinh gộp "Quảng Bình / Quảng Trị" thành một mục gán miền Bắc | Đã sửa | Đạt: tách hai mục. Hồ sơ đã lưu từ trước với mục gộp nay hiển thị là Quảng Bình; người sinh ở Quảng Trị trước 13/06/1975 cần chọn lại nơi sinh |
-| 29 | Vừa | Giao diện không còn ghi tên thư viện lunar-javascript và câu "chưa đối chiếu với sách gốc"; thay bằng "dựa trên truyền thống Hiệp Kỷ Biện Phương Thư" | **Mở — QĐ-05** | Một phiên sửa mã khác đã xóa hai lần và sửa cả kiểm thử, ghi lý do "người dùng yêu cầu không dẫn nguồn thư viện". Bỏ tên thư viện là lựa chọn trình bày; nhưng bỏ luôn câu "chưa đối chiếu sách gốc" thì trái 7.1 và 7.7. Giấy phép MIT đã được đáp ứng bằng tệp trong `vendor/` |
+| 29 | Vừa | Giao diện bỏ cả tên thư viện lẫn câu "chưa đối chiếu với sách gốc" | Đã sửa theo QĐ-05 | Đạt: không nêu tên thư viện (theo yêu cầu chủ dự án ở phiên sửa mã khác); trang chính và hộp chi tiết đều có câu "dữ liệu chưa đối chiếu với sách gốc"; có kiểm thử giữ cả hai điều. Giấy phép MIT nằm ở `vendor/` |
 | 30 | Thấp | Giới hạn cải táng 36 tháng có số liệu trong `legal.js` nhưng không có nhánh kiểm và chưa có việc "cải táng" | Tồn đọng (G4) | Tìm `minMonths` trong mã: không nơi nào dùng |
 
 ---
@@ -870,14 +872,14 @@ Cổng kiểm thử giữa các giai đoạn chính là tiêu chí nghiệm thu.
 
 | Giai đoạn | Nội dung | Cổng đạt |
 | --- | --- | --- |
-| **G0 — Vá lỗi đã kiểm chứng** | Mục 14.2 dòng 1–9, 11, 13, 15, 17, 18, 20, 23, 24, 26, 28; dòng 10 và 12 ở phần không cần dữ liệu của G4 | **Đã đóng** tại commit `a0979cc`: bất biến 13.2 không vi phạm trên 1912–2100; âm lịch 1929–1967 khớp từng ngày với 6tail ở UTC+8; lớp 7 phần từ khóa đạt; lớp 8 đạt cho việc y tế và tài nguyên bên thứ ba (phần `localStorage` mới xác nhận bằng đọc mã). 77/77 kiểm thử của dự án đạt |
+| **G0 — Vá lỗi đã kiểm chứng** | Mục 14.2 dòng 1–9, 11, 13, 15, 17, 18, 20, 23, 24, 26, 28, 29; dòng 10 và 12 ở phần không cần dữ liệu của G4 | **Đã đóng**: bất biến 13.2 không vi phạm trên 1912–2100; âm lịch 1929–1967 khớp từng ngày với 6tail ở UTC+8; lớp 7 phần từ khóa đạt; lớp 8 đạt (việc y tế, tài nguyên bên thứ ba, `localStorage` — cả ba đã thử trên trình duyệt). 78/78 kiểm thử của dự án đạt |
 | **G1 — Lõi thiên văn đóng băng** | Công cụ Skyfield sinh `astro_events`; đối chiếu Yuk Tung Liu | Lớp 1 |
 | **G2 — Lịch pháp Việt Nam** | Sinh `day_facts` theo `calendar_tz`; `official_overrides`; trình duyệt đọc bảng thay cho tính tại chỗ; giao diện đổi âm → dương; dòng 14, 19, 27 | Lớp 2, 3, 4, 5 |
 | **G3 — Luật có nhãn và ngày cố định** | Dòng kết quả theo 8.2 (dòng 16); chế độ không chỉ số; use case đi thi đầy đủ (9.4) | Lớp 7, 8 |
 | **G4 — Chuỗi nghi lễ** | Cưới hỏi, làm nhà, tang lễ và giỗ, Tết; `legal_limits` theo tỉnh; nhiều người | Kiểm thử chuỗi và giới hạn pháp luật |
 | **G5 — Luật từ sách gốc (tùy chọn)** | Thay dần dữ liệu `UNVERIFIED` bằng bảng đã kiểm với Hán văn | Lớp 6 |
 
-Việc còn mở sau G0, xếp theo giai đoạn: dòng 14, 19, 27 (G2); dòng 16 và phần đầu dòng 21 (G3); phần còn lại của dòng 10, 12, 21 cùng dòng 25, 30 (G4); dòng 22 chờ chủ dự án cho phép xóa; dòng 29 chờ QĐ-05.
+Việc còn mở sau G0, xếp theo giai đoạn: dòng 14, 19, 27 (G2); dòng 16 và phần đầu dòng 21 (G3); phần còn lại của dòng 10, 12, 21 cùng dòng 25, 30 (G4); dòng 22 chờ chủ dự án cho phép xóa.
 
 ### 15.2 Rủi ro còn lại
 
@@ -895,7 +897,7 @@ Việc còn mở sau G0, xếp theo giai đoạn: dòng 14, 19, 27 (G2); dòng 1
 
 ## 16. Quyết định của chủ dự án
 
-QĐ-01 đến QĐ-04 đã được chủ dự án chốt ngày 2026-10-05, theo phương án khuyến nghị; QĐ-05 còn mở. Muốn đổi thì sửa bảng này trước, rồi mới sửa các mục liên quan.
+QĐ-01 đến QĐ-04 đã được chủ dự án chốt ngày 2026-10-05, theo phương án khuyến nghị. QĐ-05 phát sinh sau đó và đang áp dụng theo khuyến nghị. Muốn đổi thì sửa bảng này trước, rồi mới sửa các mục liên quan.
 
 | Mã | Câu hỏi | Quyết định | Hệ quả trong tài liệu |
 | --- | --- | --- | --- |
@@ -903,7 +905,7 @@ QĐ-01 đến QĐ-04 đã được chủ dự án chốt ngày 2026-10-05, theo 
 | QĐ-02 | Bát tự có thuộc phạm vi không? | **Có**, giới hạn ở việc dùng lá số để cá nhân hóa chọn ngày; không luận đoán vận mệnh | 1.2, 1.3, 8.1 |
 | QĐ-03 | Có đầu tư G1–G2 (Skyfield, bảng đóng băng)? | **Có, làm sau khi G0 đóng.** G0 đã đóng nên G1 là việc tiếp theo | 4.1, 5, 15.1 |
 | QĐ-04 | Trước G4, khâm liệm và di quan (`FUNERAL_MAIN`) ở chế độ nào? | **Cố định cho đến G4**: chỉ xem một ngày giờ đã định. Đến G4 mới mở chọn giờ trong khung quàn, kèm ô nhập thời điểm mất, cách bảo quản, tỉnh | 9.2, 10.3, 14.2 dòng 12 và 25 |
-| QĐ-05 | **Còn mở.** Giao diện ghi nguồn dữ liệu nghi/kỵ thế nào? | Khuyến nghị: không cần nêu tên thư viện, nhưng giữ một câu trung thực, ví dụ "Nghi/kỵ, thần sát theo dữ liệu dựa trên Hiệp Kỷ Biện Phương Thư; chưa đối chiếu với sách gốc". Hiện giao diện chỉ ghi "dựa trên truyền thống Hiệp Kỷ Biện Phương Thư" | 7.1, 7.7, 14.2 dòng 29. Nếu chủ dự án chọn giữ nguyên câu hiện tại thì phải nới 7.7 |
+| QĐ-05 | Giao diện ghi nguồn dữ liệu nghi/kỵ thế nào? | **Áp dụng phương án dung hòa** (chủ dự án chưa trả lời trực tiếp; đổi lại được): không nêu tên thư viện, giữ câu "dựa trên truyền thống Hiệp Kỷ Biện Phương Thư; dữ liệu chưa đối chiếu với sách gốc" | 7.1, 7.7, 14.2 dòng 29. Nếu chủ dự án muốn bỏ cả câu "chưa đối chiếu" thì phải nới 7.7 và bỏ kiểm thử tương ứng |
 
 ---
 

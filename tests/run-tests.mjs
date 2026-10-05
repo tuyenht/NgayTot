@@ -374,6 +374,8 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   const idx = readFileSync(path.join(root, 'index.html'), 'utf8'), app = readFileSync(path.join(root, 'js/ui/app.js'), 'utf8');
   const validSource = (t) => !/lunar-javascript/.test(t) && /Hiệp Kỷ Biện Phương Thư/.test(t);
   eq('Không còn ghi nguồn thư viện lunar-javascript ở index.html và ở app.js', [validSource(idx), validSource(app)], [true, true]);
+  // PRD §7.1, §7.7 (QĐ-05): không nêu tên thư viện nhưng phải nói rõ dữ liệu chưa đối chiếu với sách gốc
+  eq('Trang chính và hộp chi tiết đều ghi "chưa đối chiếu với sách gốc"', [idx.includes('chưa đối chiếu với sách gốc'), app.includes('chưa đối chiếu với sách gốc')], [true, true]);
   // Giấy phép MIT của thư viện lịch vẫn phải đi kèm bản phân phối, dù giao diện không dẫn tên thư viện
   const lic = readFileSync(path.join(root, 'vendor/LICENSE-lunar-javascript.txt'), 'utf8');
   eq('Có tệp giấy phép MIT của lunar-javascript trong vendor/', [lic.includes('MIT License'), lic.includes('Copyright (c) 2018 6tail')], [true, true]);
