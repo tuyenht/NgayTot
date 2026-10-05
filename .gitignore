@@ -3,3 +3,4 @@ scratch/
 .venv/
 *.bsp
 __pycache__/
+temp/
