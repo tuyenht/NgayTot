@@ -25,7 +25,7 @@
     {
       id: 'wed_main', label: 'Cưới hỏi / Đón dâu', icon: '🎎',
       desc: 'Lễ cưới chính, rước dâu',
-      yiPrimary: ['嫁娶'], yi: ['订婚', '纳采', '安床'],
+      yiPrimary: ['嫁娶'], yi: ['纳采', '安床'],
       zhixingGood: ['成', '定', '开', '满'], zhixingBad: ['破', '危', '闭', '建'],
       shenGood: ['天喜', '六合', '三合', '五合', '阴德', '福德', '天后', '益后'],
       shenBad: { '八专': 7, '孤辰': 5, '阴错': 6, '阳错': 6, '天狗': 4, '咸池': 3, '五离': 6, '月厌': 5, '厌对': 5, '阴阳俱错': 6 },
@@ -46,7 +46,7 @@
     {
       id: 'build_earth', label: 'Động thổ', icon: '🏗️',
       desc: 'Khởi công, đào móng xây nhà',
-      yiPrimary: ['动土', '起基动土', '修造'], yi: ['起基', '定磉'],
+      yiPrimary: ['动土', '修造'], yi: ['起基', '定磉'],
       zhixingGood: ['成', '定', '开', '满'], zhixingBad: ['破', '危', '闭', '建', '收'],
       shenGood: ['天仓', '母仓', '月空', '福德', '生气', '要安'],
       shenBad: { '土符': 8, '土府': 8, '地囊': 6, '天火': 5, '地火': 6, '月建': 5, '大煞': 4, '月厌': 4, '大耗': 3 },
@@ -56,7 +56,7 @@
     {
       id: 'build_roof', label: 'Cất nóc', icon: '🏠',
       desc: 'Cất nóc, đổ trần nhà',
-      yiPrimary: ['上梁', '盖屋', '造屋'], yi: ['竖柱', '修造'],
+      yiPrimary: ['上梁', '盖屋'], yi: ['竖柱', '修造'],
       zhixingGood: ['成', '定', '开', '满'], zhixingBad: ['破', '危', '闭', '建', '收'],
       shenGood: ['天仓', '母仓', '福德', '生气'],
       shenBad: { '天火': 6, '地火': 6, '月建': 5 },
@@ -110,7 +110,7 @@
     {
       id: 'biz_open', label: 'Khai trương, mở hàng', icon: '🏮',
       desc: 'Mở cửa hàng, ra mắt sản phẩm, lập công ty',
-      yiPrimary: ['开市'], yi: ['纳财', '求财', '挂匾', '开仓', '立券交易', '交易'],
+      yiPrimary: ['开市'], yi: ['纳财', '挂匾', '开仓', '交易'],
       zhixingGood: ['开', '满', '成'], zhixingBad: ['破', '闭', '危', '收'],
       shenGood: ['五富', '金匮', '益后', '续世', '天仓', '福德', '五合', '三合', '六合'],
       shenBad: { '大耗': 7, '小耗': 5, '四耗': 5, '五虚': 5, '九空': 6, '天贼': 6, '劫煞': 4, '月虚': 3 },
@@ -120,7 +120,7 @@
     {
       id: 'biz_sign', label: 'Ký hợp đồng, giao dịch', icon: '🤝',
       desc: 'Ký kết, đàm phán, mua bán, giao dịch lớn',
-      yiPrimary: ['立券交易', '交易', '立券'], yi: ['纳财', '订盟', '求财', '会亲友'],
+      yiPrimary: ['交易', '立券'], yi: ['纳财', '订盟', '会亲友'],
       zhixingGood: ['定', '成', '满', '执'], zhixingBad: ['破', '危', '闭'],
       shenGood: ['六合', '五合', '三合', '金匮', '福德', '天后'],
       shenBad: { '天贼': 6, '五离': 6, '劫煞': 4, '大耗': 4, '朱雀': 3, '阴错': 3, '阳错': 3 },
@@ -130,7 +130,7 @@
     {
       id: 'buy_asset', label: 'Mua tài sản lớn, mua xe', icon: '🚗',
       desc: 'Mua xe, nhà đất, máy móc, tài sản giá trị',
-      yiPrimary: ['买车', '置产'], yi: ['纳财', '交易', '立券交易', '求财', '安机械'],
+      yiPrimary: ['置产', '交易'], yi: ['纳财', '安机械', '立券'],
       zhixingGood: ['成', '开', '满', '定', '收'], zhixingBad: ['破', '危', '闭'],
       shenGood: ['金匮', '五富', '天仓', '母仓', '福德'],
       shenBad: { '大耗': 6, '小耗': 4, '天贼': 6, '劫煞': 4, '五虚': 4, '九空': 4 },
@@ -138,9 +138,19 @@
       yearChecks: [], pk: 'PK-02'
     },
     {
+      id: 'career_fixed', label: 'Nhậm chức / Bắt đầu công việc (Cố định)', icon: '📜',
+      desc: 'Xem thông tin ngày giờ đã ấn định khi nhận chức, bắt đầu công việc',
+      yiPrimary: ['赴任'], yi: ['会亲友', '祭祀'],
+      zhixingGood: ['成', '定', '开', '建'], zhixingBad: ['破', '危', '闭'],
+      shenGood: ['天德', '月德', '福德', '驿马', '天马'],
+      shenBad: { '大耗': 6, '往亡': 6, '归忌': 5, '天吏': 4 },
+      tenGods: () => [3, 4], boost: { lu: 1.5, quyNhan: 1.5, vanXuong: 1, yiMa: 0.5, taoHua: 0 },
+      yearChecks: [], pk: 'PK-02', fixedOnly: true
+    },
+    {
       id: 'travel_biz', label: 'Xuất hành, đi công tác', icon: '🧭',
       desc: 'Đi công tác, đi xa làm ăn',
-      yiPrimary: ['出行'], yi: ['移徙', '乘船', '渡水', '会亲友'],
+      yiPrimary: ['出行'], yi: ['移徙', '乘船', '会亲友'],
       zhixingGood: ['建', '成', '开', '满', '定'], zhixingBad: ['破', '危', '闭', '收'],
       shenGood: ['驿马', '天马', '要安', '福德'],
       shenBad: { '往亡': 8, '归忌': 6, '天贼': 5, '九坎': 3, '触水龙': 3 },
@@ -152,7 +162,7 @@
     {
       id: 'altar_set', label: 'Lập bàn thờ, bốc bát hương', icon: '🕯️',
       desc: 'Lập bàn thờ gia tiên, thần tài',
-      yiPrimary: ['安香', '祭祀'], yi: ['祈福', '酬神', '焚香'],
+      yiPrimary: ['安香', '祭祀'], yi: ['祈福'],
       zhixingGood: ['成', '定', '满', '开'], zhixingBad: ['破', '危', '闭'],
       shenGood: ['天德', '月德', '福德', '生气'],
       shenBad: { '大耗': 5, '天火': 5 },
@@ -172,9 +182,19 @@
       yearChecks: [], pk: 'PK-04', fixedOnly: true, isMedical: true
     },
     {
-      id: 'med_surgery', label: 'Phẫu thuật (Chỉ định Y khoa)', icon: '🩺',
+      id: 'med_checkup', label: 'Khám sức khỏe, chữa bệnh', icon: '🩺',
+      desc: 'Khám sức khỏe định kỳ, đi khám chữa bệnh (tham khảo tập tục)',
+      yiPrimary: ['求医', '治病'], yi: ['解除'],
+      zhixingGood: ['除', '成', '开'], zhixingBad: ['满', '建', '闭'],
+      shenGood: ['天医', '解神', '除神', '生气'],
+      shenBad: { '死神': 5, '死气': 5, '月害': 3 },
+      tenGods: () => [4, 1], boost: { lu: 0.5, quyNhan: 1.5, vanXuong: 0.2, yiMa: 0, taoHua: 0 },
+      yearChecks: [], pk: 'PK-04', fixedOnly: false, isMedical: true
+    },
+    {
+      id: 'med_surgery', label: 'Phẫu thuật (Chỉ định Y khoa)', icon: '🏥',
       desc: 'Xem chi tiết giờ phẫu thuật (Nhập giờ bác sĩ ấn định)',
-      yiPrimary: ['求医', '治病', '求医疗病'], yi: ['针灸', '解除'],
+      yiPrimary: ['求医', '治病'], yi: ['针灸', '解除'],
       zhixingGood: ['除', '破', '成', '开'], zhixingBad: ['满', '建', '闭'],
       shenGood: ['天医', '解神', '除神', '生气', '天巫'],
       shenBad: { '血支': 8, '血忌': 8, '死神': 5, '死气': 5, '天狗': 3, '月害': 3 },
@@ -182,11 +202,11 @@
       yearChecks: [], pk: 'PK-04', fixedOnly: true, isMedical: true
     },
 
-    // --- PK-05: Sinh hoạt Thường nhật (Bypass Lớp 2, Lớp 3) ---
+    // --- PK-05: Sinh hoạt Thường nhật ---
     {
       id: 'daily_hair', label: 'Cắt tóc', icon: '✂️',
       desc: 'Cắt tóc, sửa sang dung nhan',
-      yiPrimary: ['理发', '剃头'], yi: ['整手足甲', '沐浴'],
+      yiPrimary: ['理发'], yi: ['整手足甲', '沐浴'],
       zhixingGood: ['除', '成', '开'], zhixingBad: ['建', '破', '闭'],
       shenGood: ['解神', '除神'],
       shenBad: { '大耗': 4, '血支': 4 },

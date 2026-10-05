@@ -345,7 +345,11 @@
         state.results = S.findDays({
           chart, act, nameInfo: state.nameInfo, from, to, mode, fixedTime,
           skipWeekend: !fixedOnly && $('#t-skip-weekend').checked,
-          options: { ignoreYearlyBad: $('#t-ignore-year').checked },
+          options: {
+            yearlyAsSevere: $('#t-yearly-severe')?.checked,
+            hideSevere: $('#t-hide-severe')?.checked,
+            useNameElement: $('#t-use-name')?.checked,
+          },
         });
         state.results.fixedTime = fixedTime;
         state.results.mode = mode;
@@ -374,11 +378,13 @@
     const why = fixed
       ? r.day.items.slice(0, 5).map((i) => `<li>${esc(neutral(i.text))}</li>`)
       : [...pos, ...neg].map((i) => `<li><b class="pts ${i.pts > 0 ? 'pos' : 'neg'}">${i.pts > 0 ? '+' : ''}${i.pts}</b> ${esc(i.text)}</li>`);
+    const legalFlags = NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5)) : [];
+    const legalTag = legalFlags.length ? `<span class="flag-legal" title="${esc(legalFlags[0].message)}">⚖️ Lưu ý pháp luật</span>` : '';
     return `<article class="day-card" role="button" tabindex="0" aria-label="Xem chi tiết ngày ${fmtDate(r.ctx)}" data-key="${r.key}" id="day-card-${r.key}" style="animation-delay:${idx * 0.04}s">
       ${fixed ? '' : `<span class="rank">#${idx + 1}</span>`}
       <div class="day-top">
         ${head}
-        <div><div class="day-date">${dsc.weekday}, ${fmtDate(r.ctx)}</div>
+        <div><div class="day-date">${dsc.weekday}, ${fmtDate(r.ctx)} ${legalTag}</div>
           <div class="day-sub">Âm lịch ${esc(dsc.lunarText)}</div>
           <div class="day-sub">Ngày ${esc(dsc.ganZhi)}</div>
           ${fixed ? '' : `<span class="grade ${gradeClass(r.grade)}">${esc(r.grade.label)}</span>`}</div>
@@ -420,7 +426,7 @@
     const top = res.ranked.slice(0, TOP_N);
     $('#top-list').innerHTML = top.length
       ? top.map(dayCardHTML).join('')
-      : '<div class="empty-state"><div class="big-han">擇</div><p>Không có ngày phù hợp trong khoảng này. Hãy mở rộng khoảng thời gian hoặc đổi giờ cố định. Nếu năm đang xét gặp Kim lâu hoặc Hoang ốc và bạn đã mượn tuổi, hãy bật "Bỏ qua hạn năm".</p></div>';
+      : '<div class="empty-state"><div class="big-han">擇</div><p>Không có ngày phù hợp trong danh sách đề xuất. Hãy mở rộng khoảng thời gian, đổi giờ cố định, hoặc tắt bộ lọc "Ẩn ngày có điều kỵ nặng" để xem tất cả các ngày.</p></div>';
 
     const topKeys = new Set(top.map((x) => x.key));
     const months = new Map();
@@ -492,8 +498,15 @@
 
     const list = (arr) => arr.length ? arr.map((x) => `<span class="tag">${esc(x)}</span>`).join(' ') : '<span class="hint">—</span>';
     const note = fixed ? `<p class="disclaimer" style="margin-top:0">${esc(state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE)}</p>` : '';
+    const legalFlags = NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5)) : [];
+    const legalAlert = legalFlags.length
+      ? `<div class="legal-alert" style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);color:#fca5a5">
+          ${legalFlags.map((f) => `<div style="margin-bottom:6px"><b>⚖️ ${esc(f.rule.name)}</b>: ${esc(f.message)}<small style="display:block;opacity:0.8;margin-top:2px">Căn cứ: ${esc(f.rule.doc)} (chưa đối chiếu văn bản gốc)</small></div>`).join('')}
+        </div>`
+      : '';
     $('#dlg-body').innerHTML = `
       ${note}
+      ${legalAlert}
       <div class="sheet-cols">
         <div>
           <h3 style="margin-top:0">${fixed ? 'Thông tin tham khảo' : 'Vì sao có điểm này'}</h3>

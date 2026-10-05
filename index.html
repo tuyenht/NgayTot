@@ -172,7 +172,9 @@
         </div>
         <div style="display:flex;flex-direction:column;gap:10px;margin:16px 0 18px">
           <label class="check" for="t-skip-weekend" id="skip-weekend-wrap"><input type="checkbox" id="t-skip-weekend"> Bỏ qua Thứ bảy và Chủ nhật</label>
-          <label class="check" for="t-ignore-year"><input type="checkbox" id="t-ignore-year"> Bỏ qua hạn năm Kim lâu, Hoang ốc (đã mượn tuổi)</label>
+          <label class="check" for="t-hide-severe"><input type="checkbox" id="t-hide-severe" checked> Ẩn ngày có điều kỵ nặng (xung tuổi, Nguyệt phá, việc bị kỵ...)</label>
+          <label class="check" for="t-yearly-severe"><input type="checkbox" id="t-yearly-severe"> Tôi muốn kiêng hạn năm (xem Kim lâu, Hoang ốc là điều kỵ nặng)</label>
+          <label class="check" for="t-use-name"><input type="checkbox" id="t-use-name"> Tính điểm ngũ hành tên (hệ số phụ tham khảo)</label>
         </div>
         <button type="button" class="btn btn-primary" id="btn-find"><span>Tìm ngày tốt</span></button>
       </section>
@@ -243,6 +245,7 @@
   <script src="js/core/bazi.js"></script>
   <script src="js/core/name-element.js"></script>
   <script src="js/core/activities.js"></script>
+  <script src="js/core/legal.js"></script>
   <script src="js/core/scoring.js"></script>
   <script src="js/ui/app.js"></script>
 </body>

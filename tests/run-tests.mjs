@@ -10,7 +10,7 @@ import path from 'node:path';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 Object.assign(globalThis, require(path.join(root, 'vendor/lunar.js')));
-for (const f of ['data', 'i18n-vi', 'calendar-vn', 'bazi', 'name-element', 'activities', 'scoring']) {
+for (const f of ['data', 'i18n-vi', 'calendar-vn', 'bazi', 'name-element', 'activities', 'legal', 'scoring']) {
   vm.runInThisContext(readFileSync(path.join(root, `js/core/${f}.js`), 'utf8'), { filename: `${f}.js` });
 }
 const { NT } = globalThis;
@@ -96,28 +96,75 @@ eq('Chế độ giờ cố định 09:00 → giờ Tỵ', NT.data.ZHI_VI[fixed.d
 
 const custom = NT.activities.makeCustom({ name: 'Ra mắt sách', element: 1, baseId: 'biz_open' });
 const cr = NT.scoring.findDays({ chart, act: custom, nameInfo: n, from: '2026-10-05', to: '2026-11-05', mode: 'best' });
-eq('Việc tùy chỉnh chạy được', cr.days.length, 32);
+eq('Việc tùy chỉnh: chạy được, can ngày so với hành của việc có pts = 0 (Bảng 8.3 USER_DEFINED)', [cr.days.length, cr.days[0].day.items.find((i) => i.text.includes('việc tùy chỉnh'))?.pts], [32, 0]);
 
-// ---------- 5. Hard gate, hạn năm, việc đã ấn định ----------
+// ---------- 5. Hạn năm, việc đã ấn định, Bảng 8.3 ----------
 const yw = NT.scoring.yearWarnings(chart, 2026);
 eq('Tuổi Canh Ngọ, năm 2026: tuổi mụ 37 phạm Kim Lâu Thân, không Tam tai', [yw.age, !!yw.kimLau, yw.tamTai], [37, true, null]);
 eq('Tuổi Ngọ gặp năm Thân (2028) là Tam tai', !!NT.scoring.yearWarnings(chart, 2028).tamTai, true);
+
+// Bảng 8.3: Kim lâu không triệt tiêu cả năm; chỉ Kỵ nặng khi người dùng chủ động chọn kiêng (yearlyAsSevere)
 const earth = NT.activities.byId('build_earth');
-const gated = NT.scoring.findDays({ chart, act: earth, nameInfo: null, from: '2026-10-05', to: '2026-12-31', mode: 'best' });
-eq('Động thổ năm phạm Kim lâu → không đề xuất ngày nào', gated.ranked.length, 0);
-const borrowed = NT.scoring.findDays({ chart, act: earth, nameInfo: null, from: '2026-10-05', to: '2026-12-31', mode: 'best', options: { ignoreYearlyBad: true } });
-eq('Bỏ qua hạn năm (mượn tuổi) → có ngày đề xuất', borrowed.ranked.length > 0, true);
+const defaultEarth = NT.scoring.findDays({ chart, act: earth, nameInfo: null, from: '2026-10-05', to: '2026-12-31', mode: 'best' });
+eq('Mặc định: Kim lâu là thông tin, không triệt tiêu cả năm (Bảng 8.3)', defaultEarth.ranked.length > 0, true);
+const severeEarth = NT.scoring.findDays({ chart, act: earth, nameInfo: null, from: '2026-10-05', to: '2026-12-31', mode: 'best', options: { yearlyAsSevere: true } });
+eq('Bật kiêng hạn năm (yearlyAsSevere) → ngày phạm Kim lâu bị ẩn khỏi đề xuất', severeEarth.ranked.length, 0);
+
+// Cưới hỏi: Nam xem cưới hỏi không bị phạt Kim lâu
+const wedAct = NT.activities.byId('wed_main');
+const wedDay = NT.scoring.scoreDay(NT.scoring.dayContext(2026, 10, 10), chart, wedAct, null);
+eq('Nam xem cưới hỏi: Kim lâu ghi chú chỉ xét tuổi cô dâu, không phạt nam', wedDay.items.some((i) => i.text.includes('chỉ xét tuổi cô dâu')), true);
+
+// Ngũ hành tên: mặc định không cộng/trừ điểm (HEURISTIC)
+const dayNoName = NT.scoring.scoreDay(NT.scoring.dayContext(2026, 10, 10), chart, NT.activities.byId('biz_open'), n, { useNameElement: false });
+const dayWithName = NT.scoring.scoreDay(NT.scoring.dayContext(2026, 10, 10), chart, NT.activities.byId('biz_open'), n, { useNameElement: true });
+eq('Ngũ hành tên: mặc định không góp điểm (pts = 0), bật thì có điểm', [dayNoName.items.find((i) => i.cat === 'name')?.pts, Math.abs(dayWithName.items.find((i) => i.cat === 'name')?.pts) > 0], [0, true]);
+
+// Việc y tế và ngày ấn định
 const surgery = NT.activities.byId('med_surgery');
 let blocked = false;
 try { NT.scoring.findDays({ chart, act: surgery, nameInfo: null, from: '2026-10-05', to: '2026-10-31', mode: 'best' }); } catch { blocked = true; }
 eq('Phẫu thuật: không cho quét khoảng ngày để chọn ngày', blocked, true);
 const one = NT.scoring.findDays({ chart, act: surgery, nameInfo: null, from: '2026-10-12', to: '2026-10-12', mode: 'fixed', fixedTime: '08:30' });
-// Kỳ vọng cũ "có hướng Hỷ thần/Tài thần" trái PRD §8.6 (chưa qua kiểm nguồn) → thay theo đặc tả.
 eq('Phẫu thuật: xem được đúng ngày giờ đã ấn định, không trả hướng Hỷ thần/Tài thần', [one.days.length, 'posXi' in one.days[0].chosen, 'posCai' in one.days[0].chosen], [1, false, false]);
 let funeralBlocked = false;
 try { NT.scoring.findDays({ chart, act: NT.activities.byId('funeral_main'), nameInfo: null, from: '2026-10-05', to: '2026-10-10', mode: 'best' }); } catch { funeralBlocked = true; }
 eq('Khâm liệm/di quan: không quét khoảng ngày (QĐ-04)', funeralBlocked, true);
 eq('Không còn nhãn xếp loại gây sợ', [NT.scoring.gradeOf(10, false).label, NT.scoring.gradeOf(90, true).label], ['Nên cân nhắc', 'Có điều kỵ nặng']);
+eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activities.byId('career_fixed'), !!NT.activities.byId('med_checkup')], [true, true]);
+
+// ---------- 5b. Giới hạn pháp luật (PRD §3.2, §8.3) & Từ vựng 6tail ----------
+{
+  const L = NT.legal;
+  eq('Mọi luật trong LEGAL_LIMITS đều mang cờ verified: false', Object.values(L.LEGAL_LIMITS).every((x) => x.verified === false), true);
+  const youngMan = NT.bazi.buildChart({ ...base, birthDate: '2008-01-01', gender: 'male' }); // < 20 tuổi vào 2026
+  const flags = L.checkLegal(wedAct, youngMan, '2026-10-05', '09:00');
+  eq('Nam chưa đủ 20 tuổi xem cưới hỏi → có cảnh báo LEGAL_UNDERAGE_MARRIAGE', flags.some((f) => f.rule.id === 'LEGAL_UNDERAGE_MARRIAGE'), true);
+
+  const noiseFlags = L.checkLegal(wedAct, youngMan, '2026-10-05', '23:00');
+  eq('Tổ chức lúc 23:00 → có cảnh báo LEGAL_NOISE_WINDOW', noiseFlags.some((f) => f.rule.id === 'LEGAL_NOISE_WINDOW'), true);
+
+  const funeral = NT.activities.byId('funeral_main');
+  const burialFlags = L.checkLegal(funeral, chart, '2026-10-08', '09:00', { deathTime: '2026-10-05T08:00:00+07:00' });
+  eq('Khâm liệm cách lúc mất > 48h (bình thường) → cảnh báo LEGAL_BURIAL_TIME_EXCEEDED', burialFlags.some((f) => f.rule.id === 'LEGAL_BURIAL_TIME_EXCEEDED'), true);
+
+  // Kiểm tra không có từ khóa chết trong activities
+  const vocab6tail = new Set();
+  for (let m = 1; m <= 12; m++) {
+    for (let d = 1; d <= 28; d++) {
+      const l = Solar.fromYmd(2025, m, d).getLunar();
+      l.getDayYi().forEach((k) => vocab6tail.add(k));
+      l.getDayJi().forEach((k) => vocab6tail.add(k));
+    }
+  }
+  const dead = [];
+  for (const act of NT.activities.ACTIVITIES) {
+    for (const k of [...act.yiPrimary, ...act.yi]) {
+      if (!vocab6tail.has(k)) dead.push(`${act.id}:${k}`);
+    }
+  }
+  eq('Mọi từ khóa việc (yiPrimary, yi) đều có trong từ điển 6tail', dead, []);
+}
 
 // ---------- 6. Lịch VN theo thời kỳ (PRD §6.3, §1.4) ----------
 {

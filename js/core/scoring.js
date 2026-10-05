@@ -73,33 +73,43 @@
   }
 
   /* ------------------------------------------------------------------ */
-  /* Chấm điểm NGÀY                                                     */
+  /* Chấm điểm NGÀY (Bảng quy chiếu 8.3)                                 */
   /* ------------------------------------------------------------------ */
   function scoreDay(ctx, chart, act, nameInfo, options = {}) {
     const items = [];
-    let hardGated = false;
-    const add = (pts, text, cat, severe = false) => { if (pts !== 0) items.push({ pts: Math.round(pts * 10) / 10, text, cat, severe }); };
+    const add = (pts, text, cat, severe = false) => {
+      if (pts !== 0 || severe || cat) {
+        items.push({ pts: Math.round(pts * 10) / 10, text, cat, severe });
+      }
+    };
     const gender = chart.profile.gender;
 
-    // --- LỚP 1: HARD GATE (Theo ngữ cảnh) ---
-    // Kiểm tra Hạn năm
+    // --- HẠN NĂM (Bảng 8.3: nhãn DISPUTED, thông tin; chỉ thành Kỵ nặng khi người dùng chủ động chọn kiêng) ---
     const yw = yearWarnings(chart, ctx.vn.year);
+    const yearlySevere = !!options.yearlyAsSevere;
     if (act.yearChecks.length) {
-      if (act.yearChecks.includes('kimLau') && yw.kimLau) {
-        add(-6, `Năm âm lịch ${ctx.vn.year} phạm ${yw.kimLau} (tuổi mụ ${yw.age})`, 'year', !options.ignoreYearlyBad);
-        if (!options.ignoreYearlyBad) hardGated = true;
+      if (act.yearChecks.includes('kimLau')) {
+        if (gender === 'female' || act.id !== 'wed_main') {
+          if (yw.kimLau) {
+            add(0, `Năm âm lịch ${ctx.vn.year} phạm ${yw.kimLau} (tuổi mụ ${yw.age}) — tập tục`, 'year', yearlySevere);
+          }
+        } else if (act.id === 'wed_main' && gender === 'male') {
+          // Cưới hỏi: Kim lâu chỉ xét tuổi cô dâu (PRD §8.3, §10)
+          add(0, 'Kim lâu: theo tập tục cưới hỏi chỉ xét tuổi cô dâu (không áp dụng cho nam)', 'year', false);
+        }
       }
       if (act.yearChecks.includes('hoangOc') && yw.hoangOc) {
-        add(-6, `Năm âm lịch ${ctx.vn.year} phạm ${yw.hoangOc} (tuổi mụ ${yw.age})`, 'year', !options.ignoreYearlyBad);
-        if (!options.ignoreYearlyBad) hardGated = true;
+        add(0, `Năm âm lịch ${ctx.vn.year} phạm ${yw.hoangOc} (tuổi mụ ${yw.age}) — tập tục`, 'year', yearlySevere);
       }
-      if (act.yearChecks.includes('tamTai') && yw.tamTai) add(-4, yw.tamTai, 'year');
+      if (act.yearChecks.includes('tamTai') && yw.tamTai) {
+        add(0, `${yw.tamTai} — tập tục`, 'year', false);
+      }
     }
 
-    // 1) Hoàng lịch 宜/忌
+    // 1) Hoàng lịch 宜/忌 (UNVERIFIED)
     const keysPrimary = act.yiPrimary;
     const keysAll = [...act.yiPrimary, ...act.yi];
-    if (ctx.yi.includes('诸事不宜')) { add(-25, 'Hoàng lịch: Mọi việc không nên', 'cal', true); hardGated = true; }
+    if (ctx.yi.includes('诸事不宜')) { add(-25, 'Hoàng lịch: Mọi việc không nên', 'cal', true); }
     const yiP = keysPrimary.filter((k) => ctx.yi.includes(k));
     const yiO = act.yi.filter((k) => ctx.yi.includes(k));
     const jiP = keysPrimary.filter((k) => ctx.ji.includes(k));
@@ -107,21 +117,21 @@
     if (yiP.length) add(14, `Hoàng lịch ghi NÊN: ${yiP.map(V.yiji).join(', ')}`, 'cal');
     else if (yiO.length) add(8, `Hoàng lịch ghi nên việc liên quan: ${yiO.slice(0, 3).map(V.yiji).join(', ')}`, 'cal');
     else if (keysAll.length && ctx.yi.includes('馀事勿取')) add(-6, 'Hoàng lịch: việc khác không nên làm', 'cal');
-    if (jiP.length) { add(-22, `Hoàng lịch ghi KỴ: ${jiP.map(V.yiji).join(', ')}`, 'cal', true); hardGated = true; } // Việc chính bị kỵ -> Hardgate
+    if (jiP.length) { add(-22, `Hoàng lịch ghi KỴ việc chính: ${jiP.map(V.yiji).join(', ')}`, 'cal', true); }
     else if (jiO.length) add(-10, `Hoàng lịch ghi kỵ việc liên quan: ${jiO.slice(0, 3).map(V.yiji).join(', ')}`, 'cal');
 
-    // 2) Hoàng đạo / Hắc đạo
+    // 2) Hoàng đạo / Hắc đạo (CONSENSUS)
     if (ctx.tianShenLuck === '吉') add(6, `Ngày Hoàng đạo (${V.tianshen(ctx.tianShen)})`, 'cal');
     else add(-6, `Ngày Hắc đạo (${V.tianshen(ctx.tianShen)})`, 'cal');
 
-    // 3) Thập nhị Trực (Lớp 3)
+    // 3) Thập nhị Trực (SCHOOL_SPLIT)
     const zx = ctx.zhixing;
     if (act.zhixingGood.includes(zx)) add(6, `Trực ${V.zhixing(zx)} — hợp việc này`, 'cal');
     else if (act.zhixingBad.includes(zx)) add(-8, `Trực ${V.zhixing(zx)} — kỵ việc này`, 'cal');
 
-    // 4) Nhị thập bát tú
-    if (ctx.xiuLuck === '吉') add(3, `Sao ${V.xiu(ctx.xiu)} (Nhị thập bát tú) — cát`, 'cal');
-    else add(-3, `Sao ${V.xiu(ctx.xiu)} (Nhị thập bát tú) — hung`, 'cal');
+    // 4) Nhị thập bát tú (UNVERIFIED — Bảng 8.3: thông tin, không góp vào chỉ số cho đến khi có điểm neo)
+    if (ctx.xiuLuck === '吉') add(0, `Sao ${V.xiu(ctx.xiu)} (Nhị thập bát tú) — cát`, 'cal');
+    else add(0, `Sao ${V.xiu(ctx.xiu)} (Nhị thập bát tú) — hung`, 'cal');
 
     // 5) Cát thần (Lớp 4)
     const actGood = ctx.jiShen.filter((s) => act.shenGood.includes(s));
@@ -129,23 +139,24 @@
     if (comGood.length) add(Math.min(9, comGood.length * 3), `Cát thần: ${comGood.map(V.shensha).join(', ')}`, 'cal');
     if (actGood.length) add(Math.min(8, actGood.length * 4), `Cát thần hợp việc: ${actGood.map(V.shensha).join(', ')}`, 'cal');
 
-    // 6) Hung sát (Lớp 4)
+    // 6) Hung sát (UNVERIFIED; riêng Nguyệt phá là CONSENSUS kỵ nặng)
     let badSum = 0;
     const badNames = [];
+    const isNguyetPha = ctx.xiongSha.includes('月破') || (ctx.dayZ === (ctx.monthZ + 6) % 12);
     for (const s of ctx.xiongSha) {
       const wv = act.shenBad[s] ?? A.COMMON_BAD[s];
       if (wv) { badSum += wv; badNames.push(V.shensha(s)); }
     }
-    if (badSum) add(-Math.min(24, badSum), `Hung sát: ${badNames.join(', ')}`, 'cal', ctx.xiongSha.includes('月破'));
-    if (ctx.xiongSha.includes('月破') || ctx.xiongSha.includes('受死') || ctx.xiongSha.includes('大耗') || ctx.xiongSha.includes('往亡')) {
-        if (badNames.length > 0) hardGated = true; // Sát chủ, Nguyệt phá -> Hardgate
-    }
+    if (badSum) add(-Math.min(24, badSum), `Hung sát: ${badNames.join(', ')}`, 'cal', isNguyetPha);
 
-    // 7) Ngày kỵ dân gian VN
+    // 7) Ngày kỵ dân gian VN (VN_FOLK)
     const ld = ctx.vn.day, lm = ctx.vn.month;
     if (D.TAM_NUONG.includes(ld)) add(-8, `Ngày Tam nương (mùng ${ld} âm lịch)`, 'folk');
     if (D.NGUYET_KY.includes(ld)) add(-6, `Ngày Nguyệt kỵ (mùng ${ld} âm lịch)`, 'folk');
-    if (D.DUONG_CONG[lm]?.includes(ld)) { add(-12, `Dương công kỵ nhật (${ld}/${lm} âm lịch)`, 'folk', true); hardGated = true; }
+    if (D.DUONG_CONG[lm]?.includes(ld)) {
+      // Dương công kỵ nhật: Bảng 8.3 ghi nhãn UNVERIFIED, Thông tin, không góp chỉ số, không kỵ nặng
+      add(0, `Dương công kỵ nhật (${ld}/${lm} âm lịch) — dân gian truyền tụng`, 'folk', false);
+    }
 
     // 8) Bát tự: xung/hình/hại/hợp
     const P = chart.pillars;
@@ -153,14 +164,13 @@
     const dz = ctx.dayZ, dg = ctx.dayG;
     const dayName = D.ganZhiVi(dg, dz);
     if (D.isChong(dz, tz)) {
-      add(-16, `Ngày ${dayName} xung tuổi ${D.ZHI_VI[tz]}`, 'bazi', true);
-      hardGated = true; // Lục xung tuổi -> Hardgate
+      add(-16, `Ngày ${dayName} xung tuổi ${D.ZHI_VI[tz]}`, 'bazi', true); // Chi ngày lục xung chi tuổi -> Kỵ nặng (CONSENSUS)
       if (D.isGanChong(dg, tg)) add(-6, `Thiên khắc địa xung với năm sinh ${D.ganZhiVi(tg, tz)}`, 'bazi');
     }
     if (P.year.z !== tz && D.isChong(dz, P.year.z)) add(-8, `Xung trụ năm (Lập Xuân) ${D.ganZhiVi(P.year.g, P.year.z)}`, 'bazi');
     if (D.isChong(dz, P.day.z)) {
       add(-10, `Xung Nhật chi ${D.ZHI_VI[P.day.z]} (cung phu thê/bản thân)`, 'bazi');
-      if (D.isGanChong(dg, P.day.g)) add(-8, `Thiên khắc địa xung Nhật trụ ${D.ganZhiVi(P.day.g, P.day.z)}`, 'bazi', true);
+      if (D.isGanChong(dg, P.day.g)) add(-8, `Thiên khắc địa xung Nhật trụ ${D.ganZhiVi(P.day.g, P.day.z)}`, 'bazi');
     }
     if (D.isChong(dz, P.month.z)) add(-4, `Xung Nguyệt chi ${D.ZHI_VI[P.month.z]}`, 'bazi');
     if (P.hour && D.isChong(dz, P.hour.z)) add(-3, `Xung Thời chi ${D.ZHI_VI[P.hour.z]}`, 'bazi');
@@ -175,26 +185,26 @@
     if (sanWith !== undefined) add(5, `Tam hợp với ${D.ZHI_VI[sanWith]}`, 'bazi');
     if (D.isGanHe(dg, chart.dm)) add(4, `Thiên can ${D.GAN_VI[dg]} hợp Nhật chủ ${D.GAN_VI[chart.dm]}`, 'bazi');
 
-    // 9) LỚP 2: NGŨ HÀNH HỢP NHẤT (Bát tự Dụng Thần + Nạp Âm PRD v3.0)
+    // 9) NGŨ HÀNH (Dụng Thần + Nạp Âm)
     const gEl = D.ganElement(dg), zEl = D.zhiElement(dz);
     const fG = chart.elFav[gEl], fZ = chart.elFav[zEl];
     // A. Bát tự chuyên sâu
     if (Math.abs(fG) >= 0.2) add(fG * 4, `Can ngày ${D.GAN_VI[dg]} (${elName(gEl)}) là ${ROLE_LABEL[roleOf(chart, gEl)]}`, 'bazi');
     if (Math.abs(fZ) >= 0.2) add(fZ * 3, `Chi ngày ${D.ZHI_VI[dz]} (${elName(zEl)}) là ${ROLE_LABEL[roleOf(chart, zEl)]}`, 'bazi');
     
-    // B. Nạp Âm (PRD v3.0)
-    const dayNayinStr = ctx.nayin; // from dayContext
+    // B. Nạp Âm
+    const dayNayinStr = ctx.nayin;
     const yearNayinStr = chart.nayin.year;
     if (dayNayinStr && yearNayinStr) {
-        const nayinMap = { '木': 0, '火': 1, '土': 2, '金': 3, '水': 4 };
-        const dayEl = nayinMap[dayNayinStr.slice(-1)];
-        const yearEl = nayinMap[yearNayinStr.slice(-1)];
-        if (dayEl !== undefined && yearEl !== undefined) {
-            if (D.generates(dayEl, yearEl)) add(5, `Nạp âm ngày (${elName(dayEl)}) tương sinh Mệnh năm (${elName(yearEl)})`, 'nayin');
-            else if (D.generates(yearEl, dayEl)) add(4, `Mệnh năm (${elName(yearEl)}) tương sinh Nạp âm ngày (${elName(dayEl)})`, 'nayin');
-            else if (yearEl === dayEl) add(3, `Nạp âm ngày tương hòa Mệnh năm (${elName(yearEl)})`, 'nayin');
-            else if (D.controls(dayEl, yearEl)) add(-2, `Nạp âm ngày (${elName(dayEl)}) khắc Mệnh năm (${elName(yearEl)})`, 'nayin');
-        }
+      const nayinMap = { '木': 0, '火': 1, '土': 2, '金': 3, '水': 4 };
+      const dayEl = nayinMap[dayNayinStr.slice(-1)];
+      const yearEl = nayinMap[yearNayinStr.slice(-1)];
+      if (dayEl !== undefined && yearEl !== undefined) {
+        if (D.generates(dayEl, yearEl)) add(5, `Nạp âm ngày (${elName(dayEl)}) tương sinh Mệnh năm (${elName(yearEl)})`, 'nayin');
+        else if (D.generates(yearEl, dayEl)) add(4, `Mệnh năm (${elName(yearEl)}) tương sinh Nạp âm ngày (${elName(dayEl)})`, 'nayin');
+        else if (yearEl === dayEl) add(3, `Nạp âm ngày tương hòa Mệnh năm (${elName(yearEl)})`, 'nayin');
+        else if (D.controls(dayEl, yearEl)) add(-2, `Nạp âm ngày (${elName(dayEl)}) khắc Mệnh năm (${elName(yearEl)})`, 'nayin');
+      }
     }
 
     // 10) Thập thần hợp việc
@@ -213,23 +223,31 @@
     if (D.yiMaOf(tz) === dz || D.yiMaOf(P.day.z) === dz) add(2 * b.yiMa, 'Ngày gặp Dịch Mã', 'bazi');
     if (D.taoHuaOf(tz) === dz || D.taoHuaOf(P.day.z) === dz) add(2 * b.taoHua, 'Ngày gặp Đào Hoa', 'bazi');
 
-    // 12) Việc tùy chỉnh: ngũ hành của việc
+    // 12) Việc tùy chỉnh: ngũ hành của việc (Bảng 8.3: USER_DEFINED, thông tin, không góp chỉ số)
     if (act.customElement != null) {
       const ce = act.customElement;
-      if (D.generates(gEl, ce)) add(5, `Can ngày (${elName(gEl)}) sinh hành của việc (${elName(ce)})`, 'bazi');
-      else if (gEl === ce) add(3, `Can ngày cùng hành với việc (${elName(ce)})`, 'bazi');
-      else if (D.controls(gEl, ce)) add(-5, `Can ngày (${elName(gEl)}) khắc hành của việc (${elName(ce)})`, 'bazi');
-      else if (D.controls(ce, gEl)) add(-2, `Hành của việc (${elName(ce)}) khắc can ngày`, 'bazi');
+      let relText = '';
+      if (D.generates(gEl, ce)) relText = `Can ngày (${elName(gEl)}) sinh hành của việc (${elName(ce)})`;
+      else if (gEl === ce) relText = `Can ngày cùng hành với việc (${elName(ce)})`;
+      else if (D.controls(gEl, ce)) relText = `Can ngày (${elName(gEl)}) khắc hành của việc (${elName(ce)})`;
+      else if (D.controls(ce, gEl)) relText = `Hành của việc (${elName(ce)}) khắc can ngày`;
+      if (relText) add(0, `${relText} (thông tin việc tùy chỉnh)`, 'bazi');
     }
 
-    // 13) Ngũ hành tên (hệ số phụ)
+    // 13) Ngũ hành tên (Bảng 8.3: HEURISTIC, thông tin, mặc định tắt không góp điểm)
     if (nameInfo) {
       const adj = NT.nameElement.nameAdjust(gEl, nameInfo.element);
-      add(adj.pts, `Ngũ hành ngày (${elName(gEl)}) ${adj.text} ngũ hành tên (${elName(nameInfo.element)})`, 'name');
+      const useName = !!options.useNameElement;
+      add(useName ? adj.pts : 0, `Ngũ hành ngày (${elName(gEl)}) ${adj.text} ngũ hành tên (${elName(nameInfo.element)})${useName ? '' : ' (hệ số phụ tham khảo)'}`, 'name');
     }
 
     const raw = items.reduce((s, i) => s + i.pts, 0);
-    return { raw, score: hardGated ? 0 : clamp(Math.round(50 + raw * DAY_SCALE), 0, 100), items, severe: items.filter((i) => i.severe), hardGated };
+    return {
+      raw,
+      score: clamp(Math.round(50 + raw * DAY_SCALE), 0, 100),
+      items,
+      severe: items.filter((i) => i.severe),
+    };
   }
 
   /* ------------------------------------------------------------------ */
@@ -239,7 +257,9 @@
     const l = globalThis.Solar.fromYmdHms(ctx.y, ctx.m, ctx.d, hh, mi, 0).getLunar();
     const tg = l.getTimeGanIndex(), tzh = l.getTimeZhiIndex();
     const items = [];
-    const add = (pts, text, severe = false) => { if (pts !== 0) items.push({ pts: Math.round(pts * 10) / 10, text, severe }); };
+    const add = (pts, text, severe = false) => {
+      if (pts !== 0 || severe) items.push({ pts: Math.round(pts * 10) / 10, text, severe });
+    };
     const tianShen = l.getTimeTianShen();
     const luck = l.getTimeTianShenLuck();
     // Hướng Hỷ thần, Tài thần: chưa qua kiểm nguồn (PRD §7.1, §8.6) → không tính, không trả về.
@@ -266,8 +286,10 @@
     if (D.TIAN_YI[chart.dm].includes(tzh)) add(4, 'Giờ Quý Nhân');
     if (act.customElement != null) {
       const ce = act.customElement;
-      if (D.generates(gEl, ce) || gEl === ce) add(2, `Can giờ hỗ trợ hành của việc (${elName(ce)})`);
-      else if (D.controls(gEl, ce)) add(-2, `Can giờ khắc hành của việc (${elName(ce)})`);
+      let relH = '';
+      if (D.generates(gEl, ce) || gEl === ce) relH = `Can giờ hỗ trợ hành của việc (${elName(ce)})`;
+      else if (D.controls(gEl, ce)) relH = `Can giờ khắc hành của việc (${elName(ce)})`;
+      if (relH) add(0, `${relH} (thông tin việc tùy chỉnh)`);
     }
     const raw = items.reduce((s, it) => s + it.pts, 0);
     return {
@@ -299,7 +321,7 @@
    * @param {'best'|'fixed'} o.mode
    * @param {string} [o.fixedTime] 'HH:MM'
    * @param {boolean} [o.skipWeekend]
-   * @param {{ignoreYearlyBad?:boolean}} [o.options]
+   * @param {{yearlyAsSevere?:boolean, hideSevere?:boolean, useNameElement?:boolean}} [o.options]
    */
   function findDays(o) {
     const t0 = performance.now();
@@ -331,7 +353,7 @@
         chosen = ranked[0] ?? hours[0];
       }
       const bestHours = o.mode === 'fixed' ? [chosen] : hours.filter((h) => !h.severe && h.huangDao).sort((a, b) => b.score - a.score).slice(0, 3);
-      const severe = day.hardGated || day.severe.length > 0 || (o.mode === 'fixed' && chosen.severe);
+      const severe = day.severe.length > 0 || (o.mode === 'fixed' && chosen.severe);
       const score = Math.round(day.score * W_DAY + chosen.score * (1 - W_DAY));
       days.push({
         ctx, key: ctx.key, isWeekend, day, hours, chosen, bestHours, severe,
@@ -340,7 +362,8 @@
         score, grade: gradeOf(score, severe),
       });
     }
-    const ranked = days.filter((x) => !x.excluded && !x.severe).sort((a, b) => b.score - a.score || a.key.localeCompare(b.key));
+    const filterSevere = o.options?.hideSevere !== false;
+    const ranked = days.filter((x) => !x.excluded && (!filterSevere || !x.severe)).sort((a, b) => b.score - a.score || a.key.localeCompare(b.key));
     return { days, ranked, ms: Math.round(performance.now() - t0) };
   }
 

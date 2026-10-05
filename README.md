@@ -48,39 +48,47 @@ css/styles.css          Design system
 vendor/lunar.js         lunar-javascript v1.7.7 (MIT), nguồn Hoàng lịch 协纪辨方书
 js/core/data.js         Can Chi, ngũ hành, hợp/xung/hình/hại, thần sát cá nhân, ngày kỵ VN
 js/core/i18n-vi.js      Từ điển Hán → Việt (宜忌, thần sát, Trực, Tú, Nạp âm)
-js/core/calendar-vn.js  Âm lịch VN UTC+7 (Hồ Ngọc Đức / Meeus) + giờ Mặt Trời thực
-js/core/bazi.js         Lập lá số, vượng suy, Dụng thần
+js/core/calendar-vn.js  Âm lịch VN theo thời kỳ (1912–2100) + giờ Mặt Trời thực
+js/core/bazi.js         Lập lá số, vượng suy, Dụng thần, xử lý múi giờ đồng hồ & vùng miền
 js/core/name-element.js Ngũ hành tên (Ngũ âm), hệ số phụ
 js/core/activities.js   Quy tắc theo từng loại việc
-js/core/scoring.js      Chấm điểm ngày/giờ, tìm ngày
+js/core/legal.js        Giới hạn pháp luật Việt Nam (kết hôn, tiếng ồn, quàn/an táng)
+js/core/scoring.js      Chấm điểm ngày/giờ, tìm ngày (Bảng quy chiếu 8.3)
 js/ui/app.js            Điều khiển giao diện
 tests/run-tests.mjs     Kiểm thử engine
 ```
 
-## Quy tắc chấm điểm (tóm tắt)
+## Quy tắc chấm điểm (Bảng quy chiếu 8.3)
 
-| Nhóm | Yếu tố | Điểm |
-|---|---|---|
-| Hoàng lịch | Ghi NÊN việc chính / việc liên quan | +14 / +8 |
-| | Ghi KỴ việc chính (kỵ nặng) / việc liên quan | −22 / −10 |
-| | Hoàng đạo / Hắc đạo | ±6 |
-| | Trực hợp / Trực kỵ theo việc | +6 / −8 |
-| | Sao trong Nhị thập bát tú cát / hung | ±3 |
-| | Cát thần chung (tối đa) / hợp việc (tối đa) | +9 / +8 |
-| | Hung sát (Nguyệt phá là kỵ nặng), tối đa | −24 |
-| Dân gian VN | Tam nương / Nguyệt kỵ / Dương công (kỵ nặng) | −8 / −6 / −12 |
-| Bát tự | Xung tuổi (kỵ nặng) / xung Nhật chi | −16 / −10 |
-| | Thiên khắc địa xung Nhật trụ (kỵ nặng) | −8 |
-| | Hình / Hại / Lục hợp / Tam hợp | −5 / −4 / +6 / +5 |
-| | Can, chi ngày theo Dụng/Kỵ thần | ±8 / ±6 |
-| | Quý nhân, Lộc, Văn Xương, Dịch Mã, Đào Hoa | nhân hệ số theo việc |
-| Hạn năm | Kim lâu / Hoang ốc / Tam tai | −6 / −6 / −4 |
-| Tên | Ngũ hành ngày so với ngũ hành tên | ±3 |
+| Nhóm | Yếu tố | Điểm (HEURISTIC) | Mức mặc định |
+|---|---|---|---|
+| Hoàng lịch | Mọi việc không nên (`诸事不宜`) | −25 | Kỵ nặng |
+| | Ghi KỴ việc chính / việc liên quan | −22 / −10 | Kỵ việc chính: Kỵ nặng |
+| | Ghi NÊN việc chính / việc liên quan | +14 / +8 | Thông tin |
+| | Việc khác không nên làm (`馀事勿取`) | −6 | Thông tin |
+| | Hoàng đạo / Hắc đạo | ±6 | Thông tin |
+| | Trực hợp / Trực kỵ theo việc | +6 / −8 | Thông tin |
+| | Cát thần chung (tối đa) / hợp việc (tối đa) | +9 / +8 | Thông tin |
+| | Hung sát (tối đa −24); Nguyệt phá | theo sao | Nguyệt phá: Kỵ nặng |
+| | Nhị thập bát tú | 0 (chờ điểm neo) | Thông tin |
+| Dân gian VN | Tam nương / Nguyệt kỵ | −8 / −6 | Thông tin |
+| | Dương công kỵ nhật (13 ngày) | 0 (chờ nguồn) | Thông tin |
+| Bát tự | Xung chi tuổi (lục xung) | −16 | Kỵ nặng |
+| | Thiên khắc địa xung năm sinh / Nhật trụ | −6 / −8 | Thông tin |
+| | Xung Nhật chi / Nguyệt chi / Thời chi / Trụ năm | −10 / −4 / −3 / −8 | Thông tin |
+| | Lục hợp / Tam hợp / Thiên can hợp Nhật chủ | +6 / +5 / +4 | Thông tin |
+| | Tương hình / Lục hại | −5 / −4 | Thông tin |
+| | Can, chi ngày theo Dụng/Hỷ/Cừu/Kỵ thần | fG × 4 / fZ × 3 | Thông tin |
+| | Nạp âm ngày sinh/khắc Mệnh năm | +5 / +4 / +3 / −2 | Thông tin |
+| | Thập thần hợp việc | +3 / +1 | Thông tin |
+| | Quý nhân, Lộc, Văn Xương, Dịch Mã, Đào Hoa | theo việc | Thông tin |
+| Hạn năm | Kim lâu, Hoang ốc, Tam tai (DISPUTED) | 0 | Thông tin (bật kiêng → Kỵ nặng) |
+| Tên | Ngũ hành ngày so với ngũ hành tên (Ngũ âm) | 0 (bật: +3/+1.5/−3/−1/−0.5) | Thông tin (mặc định tắt) |
+| Việc tùy chỉnh | Can ngày so với hành của việc (USER_DEFINED) | 0 | Thông tin riêng |
 
-- Điểm ngày = `50 + raw × 0.85`. Điểm giờ = `50 + raw × 2.2`. Tổng = 75% điểm ngày + 25% điểm giờ.
-- Ngày có yếu tố **kỵ nặng** bị loại khỏi danh sách đề xuất, nhưng vẫn hiện trên heatmap.
-- **Loại cứng (điểm ngày = 0):** năm phạm Kim lâu/Hoang ốc (với việc có xét), Hoàng lịch ghi kỵ việc chính hoặc "mọi việc không nên", ngày xung tuổi, Dương công kỵ nhật, ngày có Nguyệt phá/Thụ tử/Đại hao/Vãng vong. Tam nương và Nguyệt kỵ chỉ trừ điểm.
-- Tùy chọn **"Bỏ qua hạn năm"** (đã mượn tuổi): Kim lâu/Hoang ốc chỉ còn trừ điểm, không loại cả năm.
-- Nạp âm ngày so với mệnh năm: sinh +5/+4, hòa +3, ngày khắc mệnh −2.
+- **Điểm số tham khảo 0–100:** Điểm ngày = `clamp(50 + raw × 0.85, 0, 100)`. Điểm giờ = `clamp(50 + raw × 2.2, 0, 100)`. Tổng = 75% ngày + 25% giờ.
+- **Không có loại cứng điểm = 0:** Giới hạn pháp luật là căn cứ duy nhất được phép loại hoặc cảnh báo cứng.
+- **Kỵ nặng:** Ngày xung tuổi, Nguyệt phá, Hoàng lịch kỵ việc chính, hoặc "mọi việc không nên" (hoặc Kim lâu/Hoang ốc khi người dùng bật kiêng) được đánh dấu "Có điều kỵ nặng". Mặc định các ngày này được ẩn khỏi danh sách đề xuất; người dùng có thể tắt bộ lọc để hiển thị lại.
+- **Việc cố định & Tang lễ:** Không hiện điểm và xếp loại, không gợi ý đổi ngày.
 
 > Trạch nhật là tri thức văn hóa truyền thống, chưa có kiểm chứng khoa học. Kết quả chỉ để tham khảo.
