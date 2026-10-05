@@ -11,8 +11,8 @@ Tệp này ghi mã nguồn hiện đáp ứng `PRD-LICH-VIET-CORE-2026.md` tới
 | | |
 | --- | --- |
 | Ngày kiểm gần nhất | 2026-10-05 |
-| Nhánh, commit mã | `audit-g0`, mã ở `d447bb3` (các commit sau chỉ sửa tài liệu) |
-| Bộ kiểm thử của dự án | 78/78 đạt (`node tests/run-tests.mjs`) |
+| Nhánh, commit mã | `audit-g0`, mã ở `77d965f` |
+| Bộ kiểm thử của dự án | 88/88 đạt (`node tests/run-tests.mjs`) |
 | PRD đối chiếu | Bản 4.7 |
 
 ## Giai đoạn
@@ -20,7 +20,7 @@ Tệp này ghi mã nguồn hiện đáp ứng `PRD-LICH-VIET-CORE-2026.md` tới
 | Giai đoạn (PRD 15.1) | Tình trạng | Ghi chú |
 | --- | --- | --- |
 | G0 — Vá lỗi đã kiểm chứng | Đã đóng tại commit `a0979cc` | Dòng 1–9, 11, 13, 15, 17, 18, 20, 23, 24, 26, 28, 29 của 14.2; dòng 10 và 12 ở phần không cần dữ liệu của G4. Phần lịch, việc y tế, tài nguyên bên thứ ba đã kiểm lại độc lập và thử trên trình duyệt |
-| G0b — Luồng nhập theo việc | Chưa bắt đầu | Dòng 31–34. Yêu cầu mới ngày 2026-10-05 (QĐ-06, 07, 08) |
+| G0b — Luồng nhập theo việc | Đã đóng tại commit `77d965f` | Dòng 31–34. Đã mở thử trên trình duyệt cả bốn luồng (cưới hỏi, làm nhà, lịch mổ, việc thường). Phần nhiều người đầy đủ (lá số riêng cho chú rể, tang chủ và người mất) vẫn thuộc G4 |
 | G1 — Lõi thiên văn đóng băng | Chưa bắt đầu | Đầu vào đã làm rõ ở PRD mục 5 và 13.1 |
 | G2 — Lịch pháp Việt Nam | Chưa bắt đầu | Gồm dòng 14, 19, 27 |
 | G3 — Luật có nhãn và ngày cố định | Chưa bắt đầu | Gồm dòng 16 và phần đầu dòng 21 |
@@ -29,7 +29,7 @@ Tệp này ghi mã nguồn hiện đáp ứng `PRD-LICH-VIET-CORE-2026.md` tới
 
 ## 14. Hiện trạng mã nguồn so với đặc tả
 
-Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, sau khi mọi phiên sửa mã khác đã kết thúc. Bộ kiểm thử của dự án: 78/78 đạt. Cột "Kiểm lại độc lập" ghi kết quả của: lượt chạy riêng bằng script không thuộc bộ kiểm thử; lượt mở thử trên trình duyệt (máy tính và khung 375 px); một lượt phản biện do mô hình khác thực hiện trên commit đóng G0; và một lượt quét cuối chạy cả 20 loại việc cùng hai dạng việc tùy chỉnh với 6 hồ sơ khác nhau (nam, nữ, không rõ giờ sinh, sinh ở Sài Gòn 1970, không rõ vùng 1969, sinh 1920) — 468 lượt tìm ngày, không lượt nào ném lỗi, không dòng nào có giá trị rỗng hay còn chữ Hán chưa dịch.
+Kiểm ngày 2026-10-05 trên nhánh `audit-g0`. Bộ kiểm thử của dự án: 88/88 đạt. Cột "Kiểm lại độc lập" ghi kết quả của: lượt chạy riêng bằng script không thuộc bộ kiểm thử; lượt mở thử trên trình duyệt (máy tính và khung 375 px); một lượt phản biện do mô hình khác thực hiện trên commit đóng G0; và một lượt quét cuối chạy cả 20 loại việc cùng hai dạng việc tùy chỉnh với 6 hồ sơ khác nhau (nam, nữ, không rõ giờ sinh, sinh ở Sài Gòn 1970, không rõ vùng 1969, sinh 1920) — 468 lượt tìm ngày, không lượt nào ném lỗi, không dòng nào có giá trị rỗng hay còn chữ Hán chưa dịch.
 
 ### 14.1 Đã đáp ứng
 
@@ -41,7 +41,8 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, sau khi mọi phiên sửa mã 
 - Giới hạn pháp luật dẫn đúng văn bản ở 3.2; giới hạn quàn lấy giá trị chặt nhất giữa quốc gia và tỉnh.
 - Cảnh báo cứng về tuổi kết hôn có biểu ngữ ở đầu kết quả, có trong tệp `.ics` và bản sao chép.
 - Tệp giấy phép MIT của thư viện lịch nằm ở `vendor/LICENSE-lunar-javascript.txt`.
-- Hồ sơ chỉ lưu khi bấm Lưu; có nút xóa toàn bộ dữ liệu. (Yêu cầu nay chặt hơn: không lưu gì — xem 14.2 dòng 32.)
+- Ứng dụng không lưu gì vào bộ nhớ trình duyệt; không có nút Lưu hay danh sách hồ sơ.
+- Chọn việc trước; người được xét và các trường được hỏi do việc quy định; lịch mổ, sinh mổ không hỏi dữ liệu cá nhân.
 - 13 khung giờ, xuất `.ics`, sao chép tóm tắt.
 - Dùng lục xung (không phải "tứ hành xung") cho xung tuổi.
 
@@ -59,7 +60,7 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, sau khi mọi phiên sửa mã 
 | 8 | Cao | Trang tải phông chữ từ Google | Đã sửa | Đạt, đã đo trên trình duyệt: không yêu cầu mạng nào tới tên miền khác; 15 tệp phông tải từ chính trang |
 | 9 | Vừa | Dương công, Thụ tử, Đại hao, Vãng vong loại ngày | Đã sửa | Đạt: Dương công 0 điểm, không còn nhánh loại ngày. Xác nhận thêm: 6tail không có thần sát `受死` nên nhánh Thụ tử cũ là mã chết |
 | 10 | Vừa | Cờ pháp luật khai báo nhưng không được đọc | Đã sửa phần tuổi kết hôn và giờ nhạc | Đạt, đã mở thử: người 18 tuổi xem cưới thấy biểu ngữ không tắt được ở đầu kết quả; cảnh báo có trong `.ics` và bản sao chép. Thời gian quàn chỉ chạy ở mức hàm (dòng 25); cải táng chỉ có số liệu, chưa có nhánh kiểm (dòng 30) |
-| 11 | Vừa | Hồ sơ tự lưu mỗi lần lập lá số | Đã sửa theo yêu cầu cũ; yêu cầu nay là không lưu gì (dòng 32) | Đã thử tay trên trình duyệt: lập lá số và tìm ngày không tạo khóa nào trong `localStorage`; chỉ sau khi bấm Lưu mới có hai khóa của ứng dụng |
+| 11 | Vừa | Hồ sơ tự lưu mỗi lần lập lá số | Đã sửa; sau đó chức năng lưu bị bỏ hẳn ở G0b (dòng 32) | Xem dòng 32 |
 | 12 | Vừa | Tang lễ hiện chỉ số và chữ "Hung", "Phạm kỵ" | **Đạt một phần** (QĐ-04: cố định đến G4) | Không còn điểm, xếp loại, màu tốt xấu; "kỵ việc này" đổi thành "sách ghi không hợp việc này". Còn các thuật ngữ "Hắc đạo", "Kỵ thần" trong dòng thông tin; rà toàn bộ câu chữ ở G4 |
 | 13 | Vừa | Thiếu thi cử, phỏng vấn, khám tự chọn ngày | Đã sửa | Có `career_fixed`, `med_checkup`. Chưa có `CAREER_POST` (nhậm chức) và khung giờ xuất hành (9.4) |
 | 14 | Vừa | Ngày chứa tiết lấy theo giờ Bắc Kinh | Tồn đọng (G2) | Không đổi |
@@ -79,10 +80,10 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, sau khi mọi phiên sửa mã 
 | 28 | Thấp | Danh sách nơi sinh gộp "Quảng Bình / Quảng Trị" thành một mục gán miền Bắc | Đã sửa | Đạt: tách hai mục. Hồ sơ đã lưu từ trước với mục gộp nay hiển thị là Quảng Bình; người sinh ở Quảng Trị trước 13/06/1975 cần chọn lại nơi sinh |
 | 29 | Vừa | Giao diện bỏ cả tên thư viện lẫn câu "chưa đối chiếu với sách gốc" | Đã sửa theo QĐ-05 | Đạt: không nêu tên thư viện (theo yêu cầu chủ dự án ở phiên sửa mã khác); trang chính và hộp chi tiết đều có câu "dữ liệu chưa đối chiếu với sách gốc"; có kiểm thử giữ cả hai điều. Giấy phép MIT nằm ở `vendor/` |
 | 30 | Thấp | Giới hạn cải táng 36 tháng có số liệu trong `legal.js` nhưng không có nhánh kiểm và chưa có việc "cải táng" | Tồn đọng (G4) | Tìm `minMonths` trong mã: không nơi nào dùng |
-| 31 | Cao | Giao diện bắt khai hồ sơ Bát tự (bước 1) trước khi chọn việc (bước 2); mọi việc đều hỏi cùng một bộ trường, kể cả họ tên | Chưa làm (G0b) | `index.html`: thẻ "1 · Hồ sơ Bát tự" đứng trước "2 · Công việc cần làm". Trái 9.5 |
-| 32 | Cao | Ứng dụng còn chức năng lưu hồ sơ: nút Lưu, Xóa, danh sách hồ sơ, hai khóa `ngaytot.*` trong `localStorage` | Chưa làm (G0b) | `js/ui/app.js`. Trái 3.3 (QĐ-07). Dòng 11 bên trên mô tả hành vi theo yêu cầu cũ |
-| 33 | Cao | Chủ thể xét tuổi chưa theo việc: cưới hỏi dùng lá số của người xem, người xem là nam thì chỉ hiện ghi chú "chỉ xét tuổi cô dâu" mà không có chỗ khai cô dâu; làm nhà không hỏi "ai là gia chủ"; ô giới tính luôn chọn tự do | Chưa làm (G0b) | `js/core/scoring.js` phần hạn năm; `index.html`. Trái 9.6 (QĐ-08) |
-| 34 | Vừa | Lịch mổ, sinh mổ vẫn đòi lập lá số (ngày sinh) dù kết quả không dùng tới | Chưa làm (G0b) | `runFind` trong `app.js` gọi `buildChartFromForm` cho mọi việc. Trái 9.5 và 3.3 |
+| 31 | Cao | Giao diện bắt khai hồ sơ trước khi chọn việc; mọi việc hỏi cùng một bộ trường, kể cả họ tên | Đã sửa (G0b) | Đạt, đã mở thử: thứ tự thẻ là 1 Công việc → 2 Người được xét → 3 Thời gian; tiêu đề và trường của thẻ 2 đổi theo việc; ô họ tên chỉ hiện khi bật "ngũ hành tên" |
+| 32 | Cao | Ứng dụng còn chức năng lưu hồ sơ | Đã sửa (G0b) | Đạt, đã mở thử: không còn nút Lưu, danh sách hồ sơ; sau khi dùng cả bốn luồng, `localStorage`, `sessionStorage` và cookie đều rỗng; khóa `ngaytot.*` đặt sẵn từ trước bị xóa khi tải lại trang |
+| 33 | Cao | Chủ thể xét tuổi chưa theo việc | Đã sửa (G0b) | Đạt, đã mở thử: cưới hỏi khóa giới nữ, tiêu đề "Cô dâu", kết quả ghi "xét tuổi cô dâu (Mậu Dần)"; khai chú rể 18 tuổi thì có biểu ngữ tuổi kết hôn, ngày xung tuổi chú rể thành kỵ nặng. Làm nhà có ô "Ai là gia chủ?" bốn phương án; chọn nữ gia chủ thì kết quả ghi "xét tuổi nữ gia chủ"; chỉ phương án mượn tuổi mới hiện ô giới tính. Giới hạn: chú rể mới dùng cho xung tuổi và tuổi kết hôn, chưa có lá số riêng (G4) |
+| 34 | Vừa | Lịch mổ, sinh mổ vẫn đòi lập lá số | Đã sửa (G0b) | Đạt, đã mở thử: chọn phẫu thuật thì thẻ "Người được xét" ẩn hẳn; để trống ngày sinh vẫn xem được thông tin lịch |
 
 ## Số đo phi chức năng
 
