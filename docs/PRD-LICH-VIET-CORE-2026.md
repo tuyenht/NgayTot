@@ -3,19 +3,27 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.6 — thay thế bản 3.0; G0 đã đóng; đã rà lại toàn văn để gỡ các câu lỗi thời sau đợt sửa mã |
+| Phiên bản | 4.7 — tách hiện trạng và quyết định ra tệp riêng; thêm luồng "chọn việc trước", chủ thể xét tuổi theo việc, không lưu hồ sơ |
 | Ngày cập nhật | 2026-10-05 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
-| Trạng thái | Năm quyết định ở mục 16 đã có phương án (QĐ-05 áp dụng theo khuyến nghị, chờ chủ dự án phản hồi nếu muốn khác). Việc tiếp theo là G1 |
+| Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
 
-Bản này hợp nhất bốn tài liệu nguồn và đối chiếu với mã nguồn hiện có:
+Bộ tài liệu gồm ba tệp trong `docs/`:
+
+| Tệp | Chứa gì | Sửa khi nào |
+| --- | --- | --- |
+| `PRD-LICH-VIET-CORE-2026.md` (tệp này) | Yêu cầu: sản phẩm phải làm gì và làm thế nào là đạt | Chỉ khi chủ dự án đổi yêu cầu |
+| `HIEN-TRANG.md` | Mã hiện tại đáp ứng tới đâu: mục 14, số đo, kết quả từng ca kiểm thử, giai đoạn đã đóng | Sau mỗi đợt sửa mã |
+| `QUYET-DINH.md` | Các quyết định QĐ-01… và bảng "đã bỏ gì, vì sao" so với tài liệu nguồn (mục 16, 17) | Chỉ thêm dòng mới |
+
+Tệp này hợp nhất bốn tài liệu nguồn và đã được đối chiếu với mã nguồn:
 
 1. *PRD v3.0 "Master Production Edition"* (bản trước của chính tệp này), gọi tắt **v3.0**.
 2. *Đặc tả hệ thống Lịch Việt chuẩn xác* (05/10/2026), gọi tắt **Đặc tả**.
 3. *PRD Hệ thống xem ngày giờ đẹp & lộ trình phong thủy thông minh* (PRD-FENGSHUI-2026-FINAL), gọi tắt **PRD-FENGSHUI**.
-4. *Master PRD 5.1 "Final Ultimate Master Edition"* (bản nháp do công cụ AI soạn), gọi tắt **V5.1**. Bản này không phải bản kế nhiệm: nó giữ nguyên các phần lỗi của v3.0 đã nêu ở mục 17.1 (bảng múi giờ, công thức 5 lớp, Hard Gate, API máy chủ), đồng thời bổ sung một số nội dung lấy từ Đặc tả (ca ranh giới, quản trị nguồn, bất biến kiểm thử, căn cứ pháp luật). Mục 17.3 ghi rõ đã nhận gì và không nhận gì từ nó.
+4. *Master PRD 5.1 "Final Ultimate Master Edition"* (bản nháp do công cụ AI soạn), gọi tắt **V5.1**. Bản này không phải bản kế nhiệm: nó giữ nguyên các phần lỗi của v3.0 đã nêu ở mục 17.1 (bảng múi giờ, công thức 5 lớp, Hard Gate, API máy chủ), đồng thời bổ sung một số nội dung lấy từ Đặc tả (ca ranh giới, quản trị nguồn, bất biến kiểm thử, căn cứ pháp luật). Mục 17.3 (trong `QUYET-DINH.md`) ghi rõ đã nhận gì và không nhận gì từ nó.
 
-Khi các tài liệu mâu thuẫn, bản này chọn theo thứ tự: an toàn và pháp luật → kiểm chứng được → giữ được ưu thế của ứng dụng hiện có (chạy hoàn toàn trên trình duyệt, dữ liệu không rời máy). Mục 17 ghi rõ đã bỏ gì, lệch khỏi tài liệu nguồn ở đâu và vì sao.
+Khi các tài liệu mâu thuẫn, bản này chọn theo thứ tự: an toàn và pháp luật → kiểm chứng được → giữ được ưu thế của ứng dụng hiện có (chạy hoàn toàn trên trình duyệt, dữ liệu không rời máy). Mục 17 (trong `QUYET-DINH.md`) ghi rõ đã bỏ gì, lệch khỏi tài liệu nguồn ở đâu và vì sao. Bốn tài liệu nguồn do chủ dự án giữ, không nằm trong kho mã.
 
 **Ký hiệu độ chắc chắn:** **[KC]** đã kiểm chứng (qua nguồn hoặc bằng chạy mã; chỗ nào tự kiểm lại trong lần hợp nhất này thì ghi rõ), **[SL]** suy luận thiết kế, **[CK]** chưa kiểm — không được coi là đúng cho đến khi kiểm.
 
@@ -123,7 +131,8 @@ Giới hạn pháp luật là loại ràng buộc duy nhất được phép **lo
 
 - Mọi phép tính chạy trên thiết bị người dùng. Ứng dụng không gửi họ tên, ngày giờ sinh hay bất kỳ dữ liệu hồ sơ nào ra mạng.
 - Không tải tài nguyên từ máy chủ bên thứ ba (phông chữ, script, phân tích truy cập): mỗi yêu cầu như vậy để lộ địa chỉ IP và thời điểm dùng. Phông chữ phải tự lưu trữ cùng trang. Chính sách CSP chỉ cho phép nguồn `'self'`.
-- Chỉ lưu hồ sơ vào bộ nhớ trình duyệt (`localStorage`) khi người dùng chủ động bấm **Lưu**. Không tự lưu hồ sơ vừa nhập. Có nút **Xóa toàn bộ dữ liệu trên máy này**.
+- **Không lưu hồ sơ (QĐ-07).** Ứng dụng không ghi họ tên, ngày giờ sinh hay bất kỳ dữ liệu nhập nào vào bộ nhớ trình duyệt (`localStorage`, `sessionStorage`, IndexedDB, cookie); không có nút Lưu hay danh sách hồ sơ. Đóng hoặc tải lại trang là mất dữ liệu đã nhập. Khi khởi động, ứng dụng xóa các khóa `ngaytot.*` mà phiên bản cũ có thể đã để lại.
+- Việc nào không cần dữ liệu cá nhân thì không hỏi (9.5). Lịch mổ, sinh mổ chỉ cần ngày giờ đã định.
 - Căn cứ pháp lý: Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 và Nghị định 356/2025/NĐ-CP, cùng có hiệu lực 01/01/2026; Nghị định 356 thay Nghị định 13/2023/NĐ-CP mà v3.0 dẫn **[KC — đã tra lại]**.
 
 Bỏ khỏi v3.0: yêu cầu "xử lý dạng chuỗi băm trong RAM cache". Không thể tính lá số từ một chuỗi băm, và băm ngày sinh không phải là ẩn danh hóa (không gian giá trị quá nhỏ). Cách bảo vệ đúng là không để dữ liệu rời máy.
@@ -619,7 +628,7 @@ v3.0 ghi nhóm này "bỏ qua lớp 2 và 3 để tối ưu hiệu năng". Khôn
 
 ### 9.3 Nhiều người trong một việc
 
-Hồ sơ việc khai báo vai trò (cô dâu, chú rể, chủ nhà, tang chủ). Mỗi người được xét riêng và hiển thị theo tên vai trò (`person_role` trong 8.2). Không tự gộp: ngày xung tuổi một người được hiện rõ, người dùng tự quyết. Luật cần giới tính chỉ chạy khi có trường này.
+Hồ sơ việc khai báo vai trò (cô dâu, chú rể, gia chủ, tang chủ); việc nào xét tuổi ai theo 9.6. Mỗi người được xét riêng và hiển thị theo tên vai trò (`person_role` trong 8.2). Không tự gộp: ngày xung tuổi một người được hiện rõ, người dùng tự quyết. Luật cần giới tính chỉ chạy khi có trường này.
 
 ### 9.4 Use case ngày cố định: đi thi
 
@@ -639,6 +648,60 @@ Hồ sơ việc khai báo vai trò (cô dâu, chú rể, chủ nhà, tang chủ)
 6. Khung xuất hành cắt qua canh Tý thì hiển thị theo cả hai cách chia giờ Tý.
 7. Hướng xuất hành chỉ hiện khi luật phương vị đã qua kiểm nguồn (bảng 8.3).
 8. Mỗi dòng có nút xem nguồn và cách tự đếm lại.
+
+### 9.5 Thứ tự nhập: chọn việc trước (QĐ-06)
+
+Bước đầu tiên trên giao diện là chọn việc. Sau khi biết việc, ứng dụng chỉ hiện những trường mà việc đó cần; trường không cần thì không hiện và không hỏi. Người dùng không phải khai hồ sơ trước khi biết mình cần khai gì.
+
+1. **Chọn việc** (theo nhóm PK-01 đến PK-05, hoặc việc tùy chỉnh).
+2. **Khai người được xét** theo đúng vai trò mà việc quy định (9.6). Với mỗi người: ngày sinh dương lịch là bắt buộc; giờ sinh là tùy chọn (không có thì lập lá số ba trụ); nơi sinh chỉ hỏi khi cần cho giờ Mặt Trời thực hoặc khi sinh trước 13/06/1975 (6.3).
+3. **Khai thời gian:** khoảng ngày và chế độ giờ cho việc linh hoạt; một ngày giờ đã định cho việc cố định.
+4. **Tùy chọn** (mặc định đóng): bộ lọc kỵ nặng, nhóm tập tục, cách chia giờ Tý, múi giờ chọn tay.
+
+| Nhóm việc | Người được hỏi | Thời gian được hỏi | Trường riêng |
+| --- | --- | --- | --- |
+| Cưới hỏi (`WED_*`) | Cô dâu (bắt buộc); chú rể (tùy chọn) | Khoảng ngày; giờ | Ngày sinh đầy đủ của cả hai nếu muốn kiểm tuổi kết hôn (3.2) |
+| Làm nhà (`BUILD_*`) | Gia chủ theo 9.6 | Khoảng ngày; giờ | Lựa chọn "ai là gia chủ" |
+| Tang lễ (`FUNERAL_*`) | Từ G4: người mất, tang chủ | Trước G4: một ngày giờ đã định | Từ G4: thời điểm mất, cách bảo quản, tỉnh (3.2) |
+| Kinh doanh, sự nghiệp, thờ cúng, thường nhật | Một người: người đứng tên hoặc người thực hiện | Khoảng ngày hoặc ngày cố định tùy việc | — |
+| Khám định kỳ (`MED_CHECKUP`) | Người đi khám | Khoảng ngày | Dòng nhắc đây là tập tục |
+| Lịch mổ, sinh mổ (`MED_SURGERY`, `MED_BIRTH`) | **Không hỏi ai** | Một ngày giờ đã định | Chỉ hiện thông tin lịch (3.1) |
+| Việc tùy chỉnh | Một người | Người dùng chọn chế độ | Tên việc, từ khóa nghi/kỵ |
+
+Họ tên không được hỏi ở bất kỳ việc nào: luật "ngũ hành tên" mặc định tắt (bảng 8.3), và ứng dụng không lưu hồ sơ nên không cần tên để phân biệt. Nếu người dùng bật luật đó trong phần tùy chọn thì ô tên mới hiện.
+
+Lá số Tứ trụ được lập và hiển thị sau khi người dùng khai xong bước 2, cho từng người đã khai.
+
+### 9.6 Chủ thể xét tuổi do việc quy định (QĐ-08)
+
+Với một số việc, tập tục quy định sẵn xét tuổi của ai; người dùng không tự chọn giới tính cho các việc đó. Căn cứ là câu tục ngữ "lấy vợ xem tuổi đàn bà, làm nhà xem tuổi đàn ông" — tập tục dân gian, nhãn `VN_FOLK`, không phải công thức trong sách chọn ngày **[CK]**.
+
+| Việc | Chủ thể xét hạn năm (Kim lâu, Hoang ốc, Tam tai) | Người được xét xung, hợp với ngày | Người dùng chọn được gì |
+| --- | --- | --- | --- |
+| Cưới hỏi | **Nữ — cô dâu.** Cố định | Cô dâu; thêm chú rể nếu có khai | Không chọn giới. Chỉ chọn có khai chú rể hay không |
+| Làm nhà: động thổ, đổ móng, cất nóc, sửa nhà | **Gia chủ**, xác định theo bảng dưới | Chính người đó | Chọn một trong các phương án "ai là gia chủ"; không có ô giới tính tự do |
+| Nhập trạch, khánh thành | Gia chủ như trên | Chính người đó | Như trên |
+| Các việc khác | Người đứng tên hoặc người thực hiện | Chính người đó | Chọn giới tính bình thường (lá số cần giới tính để tính chiều Đại vận) |
+
+Hạn năm là luật `DISPUTED`: theo bảng 8.3 chúng chỉ là thông tin, không loại ngày. Mục này chỉ quy định *xét tuổi của ai*, không đổi mức xử lý.
+
+**Làm nhà khi không có nam gia chủ.** Câu "làm nhà xem tuổi đàn ông" giả định nhà có người đàn ông làm chủ. Với phụ nữ độc thân, góa chồng, ly hôn, hoặc là người thực sự đứng tên và quyết định việc xây, các bài hướng dẫn phổ thông **không thống nhất** (đã mở đọc hai bài, bài thứ ba chỉ đọc qua tóm tắt tìm kiếm; đều không phải nguồn sách):
+
+- Có bài viết: "khi trong gia đình không có người đàn ông, tuổi của người phụ nữ có thể được sử dụng để xây nhà và đóng vai trò trụ cột" (OneHousing) **[KC]**.
+- Có bài viết: nếu không có chồng hoặc chồng đã mất thì "có thể lấy tuổi con trai trưởng nếu như đã trưởng thành và có vợ con", hoặc nhờ "những người đàn ông trong họ hàng hoặc người cha" (Wedo) **[KC]**.
+
+Không có căn cứ để coi cách nào là chuẩn. Theo nguyên tắc 3 ở mục 2, ứng dụng không chọn ngầm: nó hỏi "ai là gia chủ" bằng các phương án cố định dưới đây. Khi người dùng cho biết nhà không có nam gia chủ thì phương án được chọn sẵn là "Nữ gia chủ", vì đó là người thực sự làm việc này và cách này không buộc ai phải đi mượn tuổi:
+
+| Phương án | Xét tuổi | Khi nào |
+| --- | --- | --- |
+| Nam gia chủ (mặc định) | Người nam đó | Nhà có người đàn ông làm chủ |
+| Nữ gia chủ | Người nữ đó | Nhà không có nam gia chủ: độc thân, chồng mất, ly hôn; hoặc người nữ là chủ thực tế, đứng tên tài sản |
+| Con trai trưởng đã thành gia thất | Người con đó | Dị bản ở một số nơi khi cha đã mất; hiện kèm ghi chú là dị bản |
+| Người được mượn tuổi (cha, người nam trong họ, hoặc người khác) | Người được mượn | Gia chủ muốn kiêng hạn năm của mình, hoặc gia đình theo lệ phải có tuổi nam; mọi bước của chuỗi làm nhà xét tuổi người này và ghi rõ đang xét tuổi ai (10.4) |
+
+Ứng dụng không phán phương án nào "đúng"; nó ghi rõ đang xét tuổi ai và theo phương án nào trên mọi màn hình kết quả.
+
+**Cưới hỏi khi người xem là nam.** Người xem vẫn phải khai năm sinh cô dâu, vì hạn năm xét theo tuổi cô dâu; lá số của chú rể chỉ dùng cho các dòng xung, hợp với ngày.
 
 ---
 
@@ -721,7 +784,7 @@ Mã bước chuỗi Tết (theo V5.1): `TET_EVE` (giao thừa — là thời đi
 1. **Thẻ ngày:** ngày dương, ngày âm, can chi; các dòng luật nổi bật kèm nhãn; chỉ số tham khảo nếu được phép hiện.
 2. **Lịch nhiệt theo khoảng ngày** và **bảng 13 khung giờ** của từng ngày.
 3. **Chi tiết ngày:** toàn bộ dòng luật; mỗi dòng có nhãn tin cậy, nguồn và cách tự đếm lại.
-4. **Lá số Tứ trụ:** bốn trụ, tàng can, Thập thần, nạp âm, Đại vận, lý do chọn Dụng thần, múi giờ và độ lệch giờ Mặt Trời thực đã dùng.
+4. **Lá số Tứ trụ** của từng người đã khai (hiện sau bước 2 của 9.5): bốn trụ, tàng can, Thập thần, nạp âm, Đại vận, lý do chọn Dụng thần, múi giờ và độ lệch giờ Mặt Trời thực đã dùng.
 5. **Đổi lịch âm ↔ dương.**
 6. **Xuất `.ics`** và **sao chép tóm tắt**. Không làm PDF, infographic, đồng bộ trực tiếp vào tài khoản Google hay Apple (cần đăng nhập, trái 3.3).
 7. **Cờ kết quả** thay cho bảng mã lỗi HTTP của v3.0:
@@ -740,15 +803,17 @@ Mã bước chuỗi Tết (theo V5.1): `TET_EVE` (giao thừa — là thời đi
 
 ## 12. Yêu cầu phi chức năng
 
-| Hạng mục | Yêu cầu | Hiện trạng đo được |
-| --- | --- | --- |
-| Hiệu năng | Quét 1 năm cho một việc: ≤ 1 giây trên máy tính, ≤ 3 giây trên điện thoại tầm trung | Node.js trên máy phát triển: 0,4–1,2 giây cho mỗi năm chưa có trong bộ nhớ đệm, tùy việc và tải máy (ba lượt đo của hai bên trong cùng buổi). Sát ngưỡng; chưa đo trên điện thoại |
-| Kích thước tải đầu | ≤ 800 KB | Đo trên trình duyệt: khoảng 1,5 MB cho lần tải đầu (ảnh nền `assets/hero.jpg` 782 KB, `vendor/lunar.js` 436 KB, 15 tệp phông, mã và CSS). Cần nén ảnh nền xuống ≤ 150 KB |
-| Ngoại tuyến | Sau lần tải đầu, mọi tính năng chạy không cần mạng | Chưa có service worker. Phông chữ đã tự lưu trữ |
-| Tái lập | Mỗi kết quả mang `engine_version` và `data_hash` | Chưa có |
-| Tiếp cận | Điều hướng được bằng bàn phím; màu không là kênh thông tin duy nhất của lịch nhiệt | Chưa kiểm |
-| Bảo mật | CSP chỉ cho nguồn `'self'`; mọi chuỗi người dùng nhập đều được thoát ký tự trước khi chèn vào trang | Đạt phần CSP: `default-src 'self'`, `font-src 'self'`, `connect-src 'none'`; còn `style-src 'unsafe-inline'` |
-| Tương thích | Hai phiên bản mới nhất của Chrome, Edge, Safari, Firefox | Chưa kiểm |
+Số đo hiện tại của từng hạng mục nằm ở `HIEN-TRANG.md`, mục "Số đo phi chức năng".
+
+| Hạng mục | Yêu cầu |
+| --- | --- |
+| Hiệu năng | Quét 1 năm cho một việc: ≤ 1 giây trên máy tính, ≤ 3 giây trên điện thoại tầm trung |
+| Kích thước tải đầu | ≤ 800 KB |
+| Ngoại tuyến | Sau lần tải đầu, mọi tính năng chạy không cần mạng |
+| Tái lập | Mỗi kết quả mang `engine_version` và `data_hash` |
+| Tiếp cận | Điều hướng được bằng bàn phím; màu không là kênh thông tin duy nhất của lịch nhiệt |
+| Bảo mật | CSP chỉ cho nguồn `'self'`; mọi chuỗi người dùng nhập đều được thoát ký tự trước khi chèn vào trang |
+| Tương thích | Hai phiên bản mới nhất của Chrome, Edge, Safari, Firefox |
 
 ---
 
@@ -765,7 +830,7 @@ Mã bước chuỗi Tết (theo V5.1): `TET_EVE` (giao thừa — là thời đi
 | 5 | Khác biệt độc lập | 6tail ở UTC+8; lichvang và Hồ Ngọc Đức ở UTC+7 | Mỗi chỗ lệch có nhãn nguyên nhân |
 | 6 | Luật | Các ví dụ in trong sách gốc của từng luật | 100% |
 | 7 | Hồ sơ việc | Mục 9 | Mọi từ khóa của mọi hồ sơ có trong từ vựng nguồn; mỗi việc có ít nhất một luật có nguồn; không việc nào chỉ dựa vào luật `HEURISTIC` hoặc `USER_DEFINED` |
-| 8 | An toàn | Mục 3 | Việc y tế cố định (lịch mổ, sinh mổ) không trả dòng đánh giá nào; không yêu cầu mạng nào tới tên miền khác; hồ sơ không xuất hiện trong `localStorage` khi chưa bấm Lưu |
+| 8 | An toàn | Mục 3 | Việc y tế cố định (lịch mổ, sinh mổ) không trả dòng đánh giá nào; không yêu cầu mạng nào tới tên miền khác; ứng dụng không ghi khóa nào vào bộ nhớ trình duyệt (3.3); việc y tế cố định không hỏi dữ liệu cá nhân (9.5) |
 
 ### 13.2 Bất biến bắt buộc
 
@@ -777,30 +842,32 @@ Mã bước chuỗi Tết (theo V5.1): `TET_EVE` (giao thừa — là thời đi
 
 ### 13.3 Ca kiểm thử bắt buộc
 
-| Ca | Kỳ vọng | Hiện trạng (kiểm lại độc lập sau G0) |
-| --- | --- | --- |
-| Tết 1985 | Việt Nam 21/01, Trung Quốc 20/02 **[KC]** | Đạt |
-| Tết 2007 | Hai lịch khác nhau **[KC]** | Đạt |
-| Tháng nhuận 1984–1985 | Việt Nam và Trung Quốc khác nhau (theo Hồ Ngọc Đức **[CK]**) | Mã cho: Việt Nam không nhuận năm 1984, nhuận tháng 2 năm 1985. Chưa có đáp án tham chiếu độc lập |
-| Năm 2033–2034 | Chọn tháng nhuận đúng ở cả UTC+7 và UTC+8; Yuk Tung Liu xếp 2033 là năm ngoại lệ **[KC]** | Mã cho nhuận tháng 11 năm 2033 ở cả hai múi. Chưa có đáp án tham chiếu độc lập **[CK]** |
-| Tháng chứa hai trung khí; năm có hơn một tháng không chứa trung khí | Theo quy tắc 6.2 | Chưa có ca riêng (đã có kiểm thử "Đông chí ở tháng 11, tháng nhuận không có trung khí") |
-| Bất biến 13.2 trên 1912–2100, cả hai `region` | 0 vi phạm | Đạt: 69.032 ngày mỗi vùng, 0 ngày ngoài 1–30, 0 bước nhảy sai, đổi ngược đúng 100% |
-| 07/05/2054 và 09/04/2062 | Không ra "mùng 0" | Đạt: ra 30/3 và 30/2, trùng 6tail |
-| Âm lịch 1929–1967 | Từng ngày khớp lịch tính ở UTC+8 | Đạt: 0 trên 14.244 ngày lệch so với 6tail; Tết 1935 = 04/02, Tết 1965 = 02/02 |
-| 1968–1975 với cả hai `region` | Tết Mậu Thân: Bắc 29/01/1968, Nam 30/01/1968 | Đạt; phương án Nam khớp 6tail 2.922/2.922 ngày, phương án Bắc lệch 120 ngày như kỳ vọng |
-| 1912–1928 (ngoài vùng cam kết) | Khớp lịch tính ở kinh tuyến Bắc Kinh, có danh sách ngoại lệ | Lệch 58 trên 6.210 ngày so với 6tail (118 ngày nếu tính cả cờ nhuận), gồm hai đợt: từ 23/03/1917 và từ 25/06/1922. Nguyên nhân: mã xếp nhuận tháng 3 năm 1917 và nhuận tháng 6 năm 1922, 6tail xếp nhuận tháng 2 và nhuận tháng 5. Trung khí Cốc vũ 1917 rơi 00:17 giờ UTC+8, tức chỉ khoảng 3 phút sau nửa đêm theo kinh tuyến Bắc Kinh — đúng loại ca `BOUNDARY_RISK` mà thuật toán xấp xỉ không phân giải được. Chạy ở UTC+8 cũng không khớp (lệch 120 ngày, từ 17/11/1914). Cần `official_overrides` ở G2 **[CK — chưa có nguồn thứ ba xác nhận 6tail đúng]** |
-| Ngày âm không tồn tại | `lunarToSolar` trả `null` | Đạt: 30/2/2026, ngày 0, ngày 31, tháng nhuận không có đều trả `null`. Đổi ngược 69.032 ngày của 1912–2100 đúng hết ở cả hai vùng, kể cả khi không truyền múi giờ (lượt phản biện đã bắt lỗi 15/7 nhuận 1938 trả `null` oan; đã sửa) |
-| Đại hàn 1979 | Theo `official_overrides` | Chưa có ca |
-| Toàn bộ ngày trong cửa sổ `BOUNDARY_RISK` | Sinh tự động từ `astro_events` | Chưa có |
-| Tiết rơi 00:00–01:00 giờ Bắc Kinh | Nguyệt kiến và Trực của ngày theo giờ Việt Nam. Trong 2024–2040 có 5 tiết như vậy: Lập hạ 06/05/2031 00:35, Lập thu 08/08/2031 00:42, Hàn lộ 08/10/2036 00:49, Thanh minh 05/04/2038 00:29, Hàn lộ 08/10/2040 00:05 (giờ Bắc Kinh) | Chưa có ca; mã đang theo giờ Bắc Kinh |
-| Lá số theo `civil_tz` | Sinh ở Sài Gòn năm 1950 và 1970 dùng UTC+8; sinh ở Hà Nội năm 1970 dùng UTC+7 | Đạt; hàm `civilTz` khớp bảng 6.3 ở 14 điểm thử |
-| Từ khóa hồ sơ việc | Mọi từ khóa có trong từ vựng nguồn | Đạt: 0 từ khóa nghi/kỵ và 0 tên thần sát nằm ngoài từ vựng 6tail |
-| Việc y tế | Không trả dòng đánh giá nào (3.1) | Đạt: `med_surgery`, `med_birth` trả điểm `null`, xếp loại `null`, 0 dòng luật, không có trường hoàng đạo/hắc đạo; giao diện chỉ hiện ngày âm, can chi, tiết khí, giờ đã định và câu y khoa (đã mở thử trên trình duyệt) |
-| Giới hạn quàn | Theo 3.2, gồm cả quy định tỉnh là giới hạn chặt nhất | Đạt ở mức hàm: 48 / 168 / 24 giờ, ≤ −10°C không giới hạn; Huế không nới 48 giờ, có siết 7 ngày xuống 72 giờ. Chưa nối giao diện (mục 14.2 dòng 25) |
+Kết quả hiện tại của từng ca nằm ở `HIEN-TRANG.md`, mục "Ca kiểm thử bắt buộc".
+
+| Ca | Kỳ vọng |
+| --- | --- |
+| Tết 1985 | Việt Nam 21/01, Trung Quốc 20/02 **[KC]** |
+| Tết 2007 | Hai lịch khác nhau **[KC]** |
+| Tháng nhuận 1984–1985 | Việt Nam và Trung Quốc khác nhau (theo Hồ Ngọc Đức **[CK]**) |
+| Năm 2033–2034 | Chọn tháng nhuận đúng ở cả UTC+7 và UTC+8; Yuk Tung Liu xếp 2033 là năm ngoại lệ **[KC]** |
+| Tháng chứa hai trung khí; năm có hơn một tháng không chứa trung khí | Theo quy tắc 6.2 |
+| Bất biến 13.2 trên 1912–2100, cả hai `region` | 0 vi phạm |
+| 07/05/2054 và 09/04/2062 | Không ra "mùng 0" |
+| Âm lịch 1929–1967 | Từng ngày khớp lịch tính ở UTC+8 |
+| 1968–1975 với cả hai `region` | Tết Mậu Thân: Bắc 29/01/1968, Nam 30/01/1968 |
+| 1912–1928 (ngoài vùng cam kết) | Khớp lịch tính ở kinh tuyến Bắc Kinh, có danh sách ngoại lệ |
+| Ngày âm không tồn tại | `lunarToSolar` trả `null` |
+| Đại hàn 1979 | Theo `official_overrides` |
+| Toàn bộ ngày trong cửa sổ `BOUNDARY_RISK` | Sinh tự động từ `astro_events` |
+| Tiết rơi 00:00–01:00 giờ Bắc Kinh | Nguyệt kiến và Trực của ngày theo giờ Việt Nam. Trong 2024–2040 có 5 tiết như vậy: Lập hạ 06/05/2031 00:35, Lập thu 08/08/2031 00:42, Hàn lộ 08/10/2036 00:49, Thanh minh 05/04/2038 00:29, Hàn lộ 08/10/2040 00:05 (giờ Bắc Kinh) |
+| Lá số theo `civil_tz` | Sinh ở Sài Gòn năm 1950 và 1970 dùng UTC+8; sinh ở Hà Nội năm 1970 dùng UTC+7 |
+| Từ khóa hồ sơ việc | Mọi từ khóa có trong từ vựng nguồn |
+| Việc y tế | Không trả dòng đánh giá nào (3.1) |
+| Giới hạn quàn | Theo 3.2, gồm cả quy định tỉnh là giới hạn chặt nhất |
 
 ### 13.4 Kỳ vọng kiểm thử phải đổi có chủ ý
 
-Hai kỳ vọng trong `tests/run-tests.mjs` mã hóa hành vi mà tài liệu này bãi bỏ. Đổi chúng không vi phạm nguyên tắc 6 ở mục 2. Đợt G0 đã đổi cả hai và đã thêm kiểm thử "không điểm, không xếp loại, không dòng luật" cho việc y tế:
+Hai kỳ vọng trong `tests/run-tests.mjs` mã hóa hành vi mà tài liệu này bãi bỏ. Đổi chúng không vi phạm nguyên tắc 6 ở mục 2. Cả hai đã được đổi ở G0:
 
 - "Động thổ năm phạm Kim lâu → không đề xuất ngày nào": bỏ, thay bằng kỳ vọng Kim lâu chỉ là dòng thông tin (bảng 8.3).
 - "Phẫu thuật … có hướng Hỷ thần/Tài thần": bỏ, thay bằng kỳ vọng việc y tế không trả dòng đánh giá nào (3.1).
@@ -813,56 +880,9 @@ Kiểm thử chuẩn đỏ thì không gộp mã. Mỗi năm đối chiếu lạ
 
 ## 14. Hiện trạng mã nguồn so với đặc tả
 
-Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, sau khi mọi phiên sửa mã khác đã kết thúc. Bộ kiểm thử của dự án: 78/78 đạt. Cột "Kiểm lại độc lập" ghi kết quả của: lượt chạy riêng bằng script không thuộc bộ kiểm thử; lượt mở thử trên trình duyệt (máy tính và khung 375 px); một lượt phản biện do mô hình khác thực hiện trên commit đóng G0; và một lượt quét cuối chạy cả 20 loại việc cùng hai dạng việc tùy chỉnh với 6 hồ sơ khác nhau (nam, nữ, không rõ giờ sinh, sinh ở Sài Gòn 1970, không rõ vùng 1969, sinh 1920) — 468 lượt tìm ngày, không lượt nào ném lỗi, không dòng nào có giá trị rỗng hay còn chữ Hán chưa dịch.
+Nội dung mục này đã chuyển sang `HIEN-TRANG.md` và giữ nguyên số mục: **14.1** (đã đáp ứng) và **14.2** (bảng lỗi và khoảng cách, đánh số dòng). Mọi chỗ trong tài liệu này và trong chú thích mã ghi "14.2 dòng N" đều trỏ tới bảng đó.
 
-### 14.1 Đã đáp ứng
-
-- Chạy hoàn toàn trên trình duyệt; dữ liệu hồ sơ không được gửi đi đâu; CSP `default-src 'self'`, `connect-src 'none'`; phông chữ tự lưu trữ.
-- Lá số theo thời điểm tiết khí và giờ Mặt Trời thực; chọn được cách chia giờ Tý; múi giờ đồng hồ tự đề xuất theo thời kỳ và vùng.
-- Âm lịch 1912–2100 dựng theo `calendar_tz`; không còn "mùng 0"; cờ `OUT_OF_VERIFIED_RANGE`.
-- Mỗi cộng trừ điểm đều hiện lý do. Kim lâu, Hoang ốc, Tam tai, Nhị thập bát tú, Dương công, ngũ hành tên không còn góp điểm.
-- Việc có ngày cố định (y tế, tang lễ, thi cử) bị chặn quét khoảng ngày; không hiện điểm, xếp loại, lịch nhiệt. Riêng lịch mổ và sinh mổ chỉ còn thông tin lịch thuần.
-- Giới hạn pháp luật dẫn đúng văn bản ở 3.2; giới hạn quàn lấy giá trị chặt nhất giữa quốc gia và tỉnh.
-- Cảnh báo cứng về tuổi kết hôn có biểu ngữ ở đầu kết quả, có trong tệp `.ics` và bản sao chép.
-- Tệp giấy phép MIT của thư viện lịch nằm ở `vendor/LICENSE-lunar-javascript.txt`.
-- Hồ sơ chỉ lưu khi bấm Lưu; có nút xóa toàn bộ dữ liệu.
-- 13 khung giờ, xuất `.ics`, sao chép tóm tắt.
-- Dùng lục xung (không phải "tứ hành xung") cho xung tuổi.
-
-### 14.2 Lỗi và khoảng cách
-
-| # | Mức | Vấn đề | Tình trạng | Kiểm lại độc lập |
-| --- | --- | --- | --- | --- |
-| 1 | Cao | Âm lịch ra "mùng 0" ở 07/05/2054 và 09/04/2062 | Đã sửa | Đạt: 30/3 và 30/2, trùng 6tail; bất biến 1912–2100 không vi phạm |
-| 2 | Cao | Âm lịch dùng cố định UTC+7 cho mọi năm | Đã sửa | Đạt: 1929–1967 lệch 0/14.244 ngày; miền Nam 1968–1975 lệch 0/2.922 |
-| 3 | Cao | Hàm múi giờ lịch sử chép bảng sai của v3.0 | Đã sửa | Đạt: `civilTz` khớp bảng 6.3 ở 14 điểm thử |
-| 4 | Cao | Giao diện luôn gửi múi giờ 7 hoặc 8; không có `region` | Đã sửa | Đạt, đã mở thử: nơi sinh tự suy ra vùng; Quảng Trị 1970 ra UTC+8; Hà Nội 1950 ra UTC+7 kèm cảnh báo vùng Pháp kiểm soát dùng UTC+8 và tự mở phần chọn tay |
-| 5 | Cao | Kim lâu, Hoang ốc loại cả năm; áp cho nam khi xem cưới; trừ điểm | Đã sửa | Đạt: động thổ có 219 ngày đề xuất trong năm phạm Kim lâu; dòng Kim lâu 0 điểm; có ghi chú "chỉ xét tuổi cô dâu" |
-| 6 | Cao | Việc y tế hiện điểm, xếp loại và dòng tốt xấu | Đã sửa | Đạt: engine trả điểm `null`, 0 dòng luật cho `med_surgery`, `med_birth`; thẻ ngày và hộp chi tiết chỉ còn thông tin lịch và câu y khoa (đã mở thử) |
-| 7 | Cao | 10 từ khóa nghi/kỵ không tồn tại trong `lunar.js` | Đã sửa | Đạt: 0 từ khóa và 0 tên thần sát ngoài từ vựng. `med_birth` không có từ khóa chính — đúng theo 3.1 |
-| 8 | Cao | Trang tải phông chữ từ Google | Đã sửa | Đạt, đã đo trên trình duyệt: không yêu cầu mạng nào tới tên miền khác; 15 tệp phông tải từ chính trang |
-| 9 | Vừa | Dương công, Thụ tử, Đại hao, Vãng vong loại ngày | Đã sửa | Đạt: Dương công 0 điểm, không còn nhánh loại ngày. Xác nhận thêm: 6tail không có thần sát `受死` nên nhánh Thụ tử cũ là mã chết |
-| 10 | Vừa | Cờ pháp luật khai báo nhưng không được đọc | Đã sửa phần tuổi kết hôn và giờ nhạc | Đạt, đã mở thử: người 18 tuổi xem cưới thấy biểu ngữ không tắt được ở đầu kết quả; cảnh báo có trong `.ics` và bản sao chép. Thời gian quàn chỉ chạy ở mức hàm (dòng 25); cải táng chỉ có số liệu, chưa có nhánh kiểm (dòng 30) |
-| 11 | Vừa | Hồ sơ tự lưu mỗi lần lập lá số | Đã sửa | Đạt, đã thử tay trên trình duyệt: lập lá số và tìm ngày không tạo khóa nào trong `localStorage`; chỉ sau khi bấm Lưu mới có hai khóa của ứng dụng |
-| 12 | Vừa | Tang lễ hiện chỉ số và chữ "Hung", "Phạm kỵ" | **Đạt một phần** (QĐ-04: cố định đến G4) | Không còn điểm, xếp loại, màu tốt xấu; "kỵ việc này" đổi thành "sách ghi không hợp việc này". Còn các thuật ngữ "Hắc đạo", "Kỵ thần" trong dòng thông tin; rà toàn bộ câu chữ ở G4 |
-| 13 | Vừa | Thiếu thi cử, phỏng vấn, khám tự chọn ngày | Đã sửa | Có `career_fixed`, `med_checkup`. Chưa có `CAREER_POST` (nhậm chức) và khung giờ xuất hành (9.4) |
-| 14 | Vừa | Ngày chứa tiết lấy theo giờ Bắc Kinh | Tồn đọng (G2) | Không đổi |
-| 15 | Vừa | Hướng Hỷ thần, Tài thần tính mà không dùng | Đã sửa | Đạt: kết quả giờ không còn `posXi`, `posCai` |
-| 16 | Vừa | Dòng kết quả chưa có `rule_id`, nhãn, nguồn | Tồn đọng (G3) | Không đổi |
-| 17 | Vừa | Góp điểm trái bảng 8.3 | Đã sửa | Đạt: Tam tai, Tú, ngũ hành tên, ngũ hành việc tùy chỉnh đều 0 điểm |
-| 18 | Vừa | Nhận năm sinh trước 1912; thiếu cờ ngoài vùng kiểm chứng | Đã sửa | Đạt: ô ngày sinh giới hạn 1912–2100; lá số có cờ |
-| 19 | Vừa | Chưa chạy ngoại tuyến; ảnh nền 782 KB; quét 1 năm chậm | Tồn đọng | Chưa có service worker; ảnh nền vẫn 782 KB; quét 1 năm khoảng 1,2 giây |
-| 20 | Thấp | README và chú thích mã lệch với mã | Đã sửa | Đã đọc README: bảng điểm khớp bảng 8.3 |
-| 21 | Thấp | Chưa có chuỗi nhiều bước, nhiều người, chế độ không chỉ số, `engine_version` | Tồn đọng (G3–G4) | Đổi âm → dương đã có hàm và đã báo đúng ngày không tồn tại; chưa có trên giao diện |
-| 22 | Thấp | Script tạm trong `scratch/` có thể ghi đè `activities.js`, `scoring.js` | Đã xử lý | Chủ dự án cho phép; đã xóa `update_activities.mjs` và `update_scoring.mjs` ngày 2026-10-05. Thư mục `scratch/` vẫn nằm ngoài git |
-| 23 | Cao | `legal.js` dẫn sai văn bản (Thông tư 02/2009, Nghị định 144/2021) và hiện câu chữ sai đó cho người dùng | Đã sửa | Đạt: quàn và cải táng dẫn Thông tư 21/2021/TT-BYT (Điều 4, 9, 13); khung giờ nhạc dẫn Thông tư 04/2011; thông báo không còn chữ "cấm", "vi phạm". Cờ `verified` vẫn là `false` cho mọi dòng |
-| 24 | Cao | Quy định Huế 72 giờ bị dùng như giới hạn nới lỏng; thiếu trường hợp ≤ −10°C | Đã sửa | Đạt: hàm `burialLimitHours` lấy giá trị nhỏ nhất; 50 giờ không bảo quản lạnh ở Huế bị cảnh báo; bảo quản lạnh ở Huế bị chặn ở 72 giờ |
-| 25 | Vừa | Kiểm tra thời gian quàn và tuổi của người phối ngẫu không kích hoạt được từ giao diện: chưa có ô nhập thời điểm mất, cách bảo quản, tỉnh, ngày sinh người kia. Mức "Loại" của giới hạn quàn (3.2) vì thế chưa có hiệu lực trên giao diện | Tồn đọng (G4) | Không đổi; thuộc phần nhiều người và chuỗi tang lễ |
-| 26 | Vừa | `lunarToSolar` nhận ngày âm không tồn tại; khi không truyền múi giờ thì trả `null` oan cho tháng 7 nhuận 1938 | Đã sửa | Đạt: đổi ngược 1912–2100 không truyền múi giờ đúng 69.032/69.032 ngày ở cả hai vùng |
-| 27 | Thấp | 1912–1928: xếp sai tháng nhuận năm 1917 và 1922 so với 6tail (58 ngày lệch ngày/tháng) | Tồn đọng (G2) | Đã tìm ra nguyên nhân: trung khí rơi khoảng 3 phút sau nửa đêm theo kinh tuyến Bắc Kinh; xem 13.3. Ngoài vùng cam kết |
-| 28 | Thấp | Danh sách nơi sinh gộp "Quảng Bình / Quảng Trị" thành một mục gán miền Bắc | Đã sửa | Đạt: tách hai mục. Hồ sơ đã lưu từ trước với mục gộp nay hiển thị là Quảng Bình; người sinh ở Quảng Trị trước 13/06/1975 cần chọn lại nơi sinh |
-| 29 | Vừa | Giao diện bỏ cả tên thư viện lẫn câu "chưa đối chiếu với sách gốc" | Đã sửa theo QĐ-05 | Đạt: không nêu tên thư viện (theo yêu cầu chủ dự án ở phiên sửa mã khác); trang chính và hộp chi tiết đều có câu "dữ liệu chưa đối chiếu với sách gốc"; có kiểm thử giữ cả hai điều. Giấy phép MIT nằm ở `vendor/` |
-| 30 | Thấp | Giới hạn cải táng 36 tháng có số liệu trong `legal.js` nhưng không có nhánh kiểm và chưa có việc "cải táng" | Tồn đọng (G4) | Tìm `minMonths` trong mã: không nơi nào dùng |
+Tệp này (PRD) chỉ chứa yêu cầu. Người hoặc công cụ sửa mã cập nhật tình trạng ở `HIEN-TRANG.md`, không sửa PRD.
 
 ---
 
@@ -870,18 +890,19 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, sau khi mọi phiên sửa mã 
 
 ### 15.1 Giai đoạn
 
-Cổng kiểm thử giữa các giai đoạn chính là tiêu chí nghiệm thu.
+Cổng kiểm thử giữa các giai đoạn chính là tiêu chí nghiệm thu. Bảng này chỉ ghi nội dung và tiêu chí; tình trạng không ghi ở đây.
 
 | Giai đoạn | Nội dung | Cổng đạt |
 | --- | --- | --- |
-| **G0 — Vá lỗi đã kiểm chứng** | Mục 14.2 dòng 1–9, 11, 13, 15, 17, 18, 20, 23, 24, 26, 28, 29; dòng 10 và 12 ở phần không cần dữ liệu của G4 | **Đã đóng**: bất biến 13.2 không vi phạm trên 1912–2100; âm lịch 1929–1967 khớp từng ngày với 6tail ở UTC+8; lớp 7 phần từ khóa đạt; lớp 8 đạt (việc y tế, tài nguyên bên thứ ba, `localStorage` — cả ba đã thử trên trình duyệt). 78/78 kiểm thử của dự án đạt |
+| **G0 — Vá lỗi đã kiểm chứng** | Các lỗi lịch, an toàn, riêng tư và pháp luật ở 14.2 không cần dữ liệu của G4 | Bất biến 13.2 không vi phạm trên 1912–2100; âm lịch 1929–1967 khớp từng ngày với 6tail ở UTC+8; lớp 7 phần từ khóa; lớp 8 |
+| **G0b — Luồng nhập theo việc** | Chọn việc trước (9.5); chủ thể xét tuổi theo việc (9.6); bỏ lưu hồ sơ (3.3); việc y tế cố định không hỏi dữ liệu cá nhân | Kiểm thử cho từng nhóm việc: đúng tập trường được hỏi; không khóa nào được ghi vào `localStorage`; lớp 8 |
 | **G1 — Lõi thiên văn đóng băng** | Công cụ Skyfield (Python, chạy trên máy phát triển, đặt trong `tools/astro/`) sinh `data/astro_events.json` cho 1799–2200 kèm tệp mã băm SHA-256; script đối chiếu với `TDBtimes.txt` | Lớp 1: lệch ≤ 60 giây ở mọi sự kiện; đủ 24 tiết khí mỗi năm; hai sóc liên tiếp cách nhau 29,2–29,9 ngày |
 | **G2 — Lịch pháp Việt Nam** | Sinh `day_facts` theo `calendar_tz`; `official_overrides`; trình duyệt đọc bảng thay cho tính tại chỗ; giao diện đổi âm → dương; dòng 14, 19, 27 | Lớp 2, 3, 4, 5 |
 | **G3 — Luật có nhãn và ngày cố định** | Dòng kết quả theo 8.2 (dòng 16); chế độ không chỉ số; use case đi thi đầy đủ (9.4) | Lớp 7, 8 |
 | **G4 — Chuỗi nghi lễ** | Cưới hỏi, làm nhà, tang lễ và giỗ, Tết; `legal_limits` theo tỉnh; nhiều người | Kiểm thử chuỗi và giới hạn pháp luật |
 | **G5 — Luật từ sách gốc (tùy chọn)** | Thay dần dữ liệu `UNVERIFIED` bằng bảng đã kiểm với Hán văn | Lớp 6 |
 
-Việc còn mở sau G0, xếp theo giai đoạn: dòng 14, 19, 27 (G2); dòng 16 và phần đầu dòng 21 (G3); phần còn lại của dòng 10, 12, 21 cùng dòng 25, 30 (G4).
+Giai đoạn nào đã đóng, tại commit nào, và việc nào còn mở: xem `HIEN-TRANG.md`, mục "Giai đoạn". G0b độc lập với G1–G2 nên có thể làm trước hoặc song song.
 
 ### 15.2 Rủi ro còn lại
 
@@ -899,101 +920,24 @@ Việc còn mở sau G0, xếp theo giai đoạn: dòng 14, 19, 27 (G2); dòng 1
 
 ## 16. Quyết định của chủ dự án
 
-QĐ-01 đến QĐ-04 đã được chủ dự án chốt ngày 2026-10-05, theo phương án khuyến nghị. QĐ-05 phát sinh sau đó và đang áp dụng theo khuyến nghị. Muốn đổi thì sửa bảng này trước, rồi mới sửa các mục liên quan.
+Bảng quyết định QĐ-01 đến QĐ-08, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
 
-| Mã | Câu hỏi | Quyết định | Hệ quả trong tài liệu |
-| --- | --- | --- | --- |
-| QĐ-01 | Có giữ chỉ số 0–100 không? | **Giữ (phương án B)**, với 5 điều kiện ở 8.4. Không chọn A (bỏ hẳn như Đặc tả) và C (chỉ tính từ luật `CONSENSUS` như V5.1 gợi ý) | 8.4, 8.5; chế độ "không chỉ số" vẫn phải có ở G3 |
-| QĐ-02 | Bát tự có thuộc phạm vi không? | **Có**, giới hạn ở việc dùng lá số để cá nhân hóa chọn ngày; không luận đoán vận mệnh | 1.2, 1.3, 8.1 |
-| QĐ-03 | Có đầu tư G1–G2 (Skyfield, bảng đóng băng)? | **Có, làm sau khi G0 đóng.** G0 đã đóng nên G1 là việc tiếp theo | 4.1, 5, 15.1 |
-| QĐ-04 | Trước G4, khâm liệm và di quan (`FUNERAL_MAIN`) ở chế độ nào? | **Cố định cho đến G4**: chỉ xem một ngày giờ đã định. Đến G4 mới mở chọn giờ trong khung quàn, kèm ô nhập thời điểm mất, cách bảo quản, tỉnh | 9.2, 10.3, 14.2 dòng 12 và 25 |
-| QĐ-05 | Giao diện ghi nguồn dữ liệu nghi/kỵ thế nào? | **Áp dụng phương án dung hòa** (chủ dự án chưa trả lời trực tiếp; đổi lại được): không nêu tên thư viện, giữ câu "dựa trên truyền thống Hiệp Kỷ Biện Phương Thư; dữ liệu chưa đối chiếu với sách gốc" | 7.1, 7.7, 14.2 dòng 29. Nếu chủ dự án muốn bỏ cả câu "chưa đối chiếu" thì phải nới 7.7 và bỏ kiểm thử tương ứng |
+| Mã | Quyết định |
+| --- | --- |
+| QĐ-01 | Giữ chỉ số tham khảo 0–100 với 5 điều kiện ở 8.4 |
+| QĐ-02 | Bát tự thuộc phạm vi, chỉ để cá nhân hóa chọn ngày |
+| QĐ-03 | Có làm lõi thiên văn đóng băng (G1–G2) |
+| QĐ-04 | Tang lễ ở chế độ ngày cố định cho đến G4 |
+| QĐ-05 | Giao diện không nêu tên thư viện, nhưng ghi rõ dữ liệu chưa đối chiếu với sách gốc |
+| QĐ-06 | Chọn việc trước, rồi mới hỏi các trường mà việc đó cần (9.5) |
+| QĐ-07 | Ứng dụng không lưu hồ sơ (3.3) |
+| QĐ-08 | Chủ thể xét tuổi do việc quy định: cưới hỏi xét tuổi nữ; làm nhà xét tuổi gia chủ theo 9.6 |
 
 ---
 
 ## 17. Thay đổi so với các tài liệu nguồn
 
-### 17.1 Bỏ hoặc thay khỏi v3.0 và PRD-FENGSHUI
-
-| Nội dung | Xử lý | Lý do |
-| --- | --- | --- |
-| API REST, khóa API, giới hạn tần suất, SLA, Redis | Bỏ | Không có máy chủ |
-| Skyfield chạy lúc phục vụ yêu cầu | Đổi thành công cụ ngoại tuyến sinh bảng | Giữ độ chính xác mà không cần máy chủ |
-| Bảng múi giờ 7 mốc | Thay bằng `calendar_tz` và hai bảng `civil_tz` | Bảng cũ gộp hai khái niệm và sai nhiều mốc (6.3) |
-| Công thức điểm 5 lớp có trọng số phần trăm | Bỏ; thay bằng dòng luật + chỉ số có điều kiện | Công thức không tính được (8.4) |
-| Hard Gate Kim lâu, Hoang ốc, Tứ hành xung, Sát chủ | Bỏ; thay bằng bảng 8.3 | Luật tranh cãi hoặc không có nguồn; làm mất hết ngày của cả năm |
-| Lớp ngũ hành thuần nạp âm | Hạ xuống thành một dòng bổ sung | Thô hơn engine Tứ trụ đang có |
-| Xếp loại 3 mức | Thay bằng 6 mức, tên trung tính | Thiếu mức bình thường |
-| "Băm dữ liệu trong RAM", Nghị định 13/2023 | Thay bằng nguyên tắc dữ liệu không rời máy; cập nhật căn cứ luật | 3.3 |
-| Mã lỗi HTTP | Thay bằng cờ kết quả | Mục 11 |
-| Quàn "48 giờ hoặc 72 giờ" | Thay bằng quy định đầy đủ theo cách bảo quản | 3.2 |
-| "Gợi ý giờ mang tính thông tin" cho lịch mổ đã ấn định | Bỏ; việc y tế chỉ có thông tin lịch | 3.1, theo Đặc tả |
-| "Bỏ qua lớp 2, 3 cho việc thường nhật để tối ưu hiệu năng" | Bỏ | Không có căn cứ |
-| Trùng tang bật sẵn, bảng "Trùng/Cát" (PRD-FENGSHUI WF-03) | Ẩn mặc định, nhãn `DISPUTED` | 3.4 |
-| HE-01 "Chọn giờ sinh mổ: top 3 khung giờ, Tứ trụ bổ khuyết"; HE-03 "top 2–3 ngày phẫu thuật" | Bỏ hẳn | Trái 3.1 |
-| Văn khấn, đồ cúng, màu xe, tuổi mở hàng, hướng ngồi, khai quang, long mạch, "cắt tóc giải xui", "hóa giải" | Bỏ | Không có nguồn kiểm chứng; rủi ro mê tín trục lợi |
-| "Phủ kín 100% nhu cầu", "chính thống", "Master Production", "Final" | Bỏ | Tuyên bố không kiểm chứng được |
-| PDF, infographic, đồng bộ 1 chạm Google/Apple | Bỏ; giữ `.ics` | Cần tài khoản, trái 3.3 |
-| Lỗi đánh máy: "Hỷ Shen", "Tài Shen", mã "IZ-01", "Thọ Tử" | Sửa: Hỷ thần, Tài thần, `BIZ_*`, Thụ tử | — |
-
-Giữ lại từ v3.0 và PRD-FENGSHUI: ba tầng, nhãn tin cậy, phân nhóm việc PK-01 đến PK-05, ba tính chất bước `CHOSEN`/`FIXED`/`COMPUTED`, ràng buộc y tế, ý tưởng lộ trình nhiều bước, lịch nhiệt giờ, xuất `.ics`.
-
-### 17.2 Chỗ bản này lệch khỏi Đặc tả
-
-| Đặc tả | Bản này | Lý do |
-| --- | --- | --- |
-| Cấm mọi điểm tổng hợp | Giữ chỉ số có 5 điều kiện | QĐ-01 (đã chốt); ứng dụng hiện có xoay quanh việc sắp xếp ngày |
-| Ngoài phạm vi: luận giải bát tự | Dùng lá số để cá nhân hóa chọn ngày | QĐ-02 (đã chốt) |
-| Ngày dính luật kỵ `CONSENSUS`: chỉ đánh dấu, người dùng bật bộ lọc để ẩn | Mặc định ẩn khỏi danh sách đề xuất (vẫn hiện trên lịch), người dùng tắt được | Giữ hành vi quen thuộc của ứng dụng; vẫn không ẩn ngầm vì luôn hiện lý do |
-| API HTTP ba endpoint; ứng dụng di động | Ba hàm nội bộ (4.5); chỉ web | Không có máy chủ |
-| Đào giếng, nhập học thuộc việc tùy chỉnh | Thêm `DAILY_WELL`, `DAILY_SCHOOL` | Từ khóa 掘井, 入学 có sẵn trong nguồn; v3.0 cũng yêu cầu đào giếng |
-| 8 nhãn tin cậy | Thêm `HEURISTIC`, `UNVERIFIED` | Gọi đúng tên phần ứng dụng tự đặt và phần lấy từ 6tail |
-| Use case làm trước: đi thi | G0 vá lỗi trước, đi thi ở G3 | Lỗi lịch làm sai mọi thứ phía trên |
-| Ước lượng thời lượng 5 giai đoạn | Chưa ước lượng | Sẽ ước lượng khi lập kế hoạch G1 |
-
-### 17.3 Đối chiếu với bản nháp V5.1
-
-V5.1 tự ghi "Hoàn tất kiểm định toàn diện — Developer Ready", nhưng khi đối chiếu thì nó giữ nguyên các phần lỗi của v3.0 và tự mâu thuẫn ở nhiều chỗ; phần mới của nó chủ yếu là nội dung lấy từ Đặc tả (mục V, VI, VII) cùng khung yêu cầu ở VIII.3. Bản này nhận phần có giá trị và từ chối phần còn lại. Bảng dưới đã được rà lại theo từng mục I–IX của V5.1.
-
-**Đã nhận vào bản này**
-
-| Nội dung của V5.1 | Đưa vào |
-| --- | --- |
-| Ma trận nguồn → mục đích → tiêu chuẩn chấp nhận → nhãn (VI.2) | 7.6, đã sửa và thêm hai nhóm |
-| Nhãn `LEGAL_LIMIT` | 2.1, 8.3 |
-| Quy tắc với thuyết mang danh Khổng Minh; cấm dịch vụ mê tín; cấm bộ điểm tự gán (VI.4) | 7.7, 8.3 |
-| Gom các ca ranh giới về một mục (V) | 6.6 |
-| Mã bước cho chuỗi tang lễ và chuỗi Tết (IV.1) | 10.3, 10.4 |
-| Khung đầu vào của yêu cầu đánh giá (VIII.3) | 4.5, đã sửa cho nhiều người và tách hai loại vùng |
-| Mã băm SHA-256 cho bảng đóng băng | 5.3 |
-| Căn cứ Thông tư 61/2006/TT-BVHTT cho số liệu Ban Lịch Nhà nước (II.2) | 6.1, ghi rõ chưa mở văn bản gốc |
-| Bước "gắn nhãn tin cậy và rào chắn pháp lý trước khi phát hành" trong quy trình kiểm duyệt (VI.3, bước 5) | 7.4, bước 6 |
-| Các nội dung V5.1 chép từ Đặc tả mà bản này đã có sẵn từ trước: bất biến (VII.1), ca kiểm thử lịch sử (VII.2), nguồn chuẩn (VI.1), use case đi thi (IV.6), tham số đầy tháng theo vùng (IV.4), xét tuổi riêng cô dâu và chú rể, mượn tuổi (IV.1) | 13.2, 13.3, 7.1, 9.4, 9.2, 9.3, 10.4 — không cần nhận thêm |
-| Tách "engine xuất dòng luật" khỏi "chỉ số là lớp trình bày" (III.1) | Đã có ở 8.2–8.4; công thức của V5.1 giữ làm phương án C của QĐ-01 |
-
-**Không nhận**
-
-| Nội dung của V5.1 | Lý do |
-| --- | --- |
-| Bảng múi giờ lịch sử (II.2) | Vẫn là bảng sai của v3.0 (6.3); ngoài ra tự mâu thuẫn trong một dòng: ghi miền Nam dùng UTC+8 đến 30/04/1975 rồi lại ghi Sài Gòn đổi ngày 13/06/1975 |
-| Công thức 5 lớp có trọng số (III.2) | Không tính được (8.4). Tự mâu thuẫn: III.1 cấm "cộng gộp điểm", VI.4 cấm "gán điểm sao không có thư tịch", nhưng III.2 gán +10 đến +20 và −15 đến −30 điểm mỗi sao |
-| Hard Gate gồm Kim lâu, Hoang ốc, Tứ hành xung, Sát chủ, "Thọ Tử" (III.2) | Trái bảng 8.3. Tự mâu thuẫn: VI.2 xếp Kim lâu, Hoang ốc là `DISPUTED` "hiển thị trung tính" |
-| API REST, khóa API, SLA 99,9%, Redis, giới hạn tần suất (VIII, IX) | Không có máy chủ (4.1) |
-| "Chuỗi băm ẩn danh trong RAM", Nghị định 13/2023 (I.3) | 3.3; Nghị định 13 đã bị thay từ 01/01/2026 |
-| Mã lỗi HTTP; `ERR_UNDERAGE_MARRIAGE` là "lỗi chặn" | Mục 11; tuổi kết hôn là cảnh báo cứng vì ngày xem có thể không phải ngày đăng ký |
-| Dẫn cả Thông tư 04/2011 và Nghị định 282/2025 làm căn cứ cho khung giờ nhạc 06:00–22:00 (I.2) | Chỉ Thông tư 04/2011 quy định khung này; Nghị định 282 ngược lại bỏ khung giờ và phạt tiếng ồn ở mọi thời điểm (3.2) |
-| Quàn "không quá 48 giờ; tối đa 7 ngày nếu ≤ 4°C" (I.2) | Thiếu trường hợp ≤ −10°C và điều kiện "không bảo quản lạnh" (3.2) |
-| Y tế "ưu tiên sao Thiên Y"; "thông tin đối chiếu tập tục" cho lịch mổ (I.1, IV.4) | Trái 3.1: việc y tế không có dòng đánh giá nào |
-| Xếp loại 3 mức `DAI_CAT`/`CAT`/`HUNG`; lịch nhiệt kèm hướng Hỷ thần, Tài thần (VIII.1) | 8.5; luật phương vị chưa kiểm nguồn (8.3) |
-| "Bỏ qua lớp 2, 3 cho việc thường nhật để tăng tốc"; độ trễ < 50 ms | Không có căn cứ hiệu năng |
-| `VOTIVE_CEREMONY` = khai quang vật phẩm; `ALTAR_SET` "tránh Không vong" | Ngoài phạm vi (1.3); không dẫn nguồn |
-| "Tuyệt đối không gộp Động thổ và Cất nóc"; "tuyệt đối không nhóm" các mốc tang | Không dẫn nguồn; thứ tự và khoảng cách là tham số của chuỗi (10.1) |
-| Trường `region` ba giá trị dùng chung | Gộp hai khái niệm (4.5) |
-| Ngưỡng thiên văn "lệch ≤ 60 giây so với DE441" (VI.2) | Nguồn đối chiếu thực tế (tệp `TDBtimes.txt` của Yuk Tung Liu) tính bằng DE431 (13.1) |
-| Các nấc trùng tang "Nhị Bộc, Tam Bộc, Nhị Nhật, Tam Nhật" (III.3) | Không dẫn nguồn; trùng tang là `DISPUTED`, ẩn mặc định, bảng tra chỉ đưa vào khi có sách (8.3) |
-| Lược đồ phản hồi `summary` / `audit_layers` / `trust_metadata` (VIII.4) | Giống hệt v3.0: gắn điểm theo từng "lớp" và xếp loại 3 mức; đã thay bằng dòng kết quả luật ở 8.2 |
-| "Core Rationale 3 câu tóm tắt" trên thẻ kết quả (VIII.1) | Thẻ ngày hiện các dòng luật nổi bật kèm nhãn (mục 11); không sinh câu tóm tắt tự do |
-| Không có: engine lá số Tứ trụ (chỉ nhắc Bát tự một lần ở V.2), hiện trạng mã, lộ trình, quyết định mở, ký hiệu độ chắc chắn | V5.1 mô tả một hệ thống khác với ứng dụng đang có |
+Ba bảng "đã bỏ gì, lệch ở đâu, vì sao" nằm ở `QUYET-DINH.md` và giữ nguyên số mục: **17.1** (so với v3.0 và PRD-FENGSHUI), **17.2** (chỗ lệch khỏi Đặc tả), **17.3** (đối chiếu bản nháp V5.1).
 
 ---
 
@@ -1028,6 +972,7 @@ V5.1 tự ghi "Hoàn tất kiểm định toàn diện — Developer Ready", nh�
 - [Lịch Vàng — nguồn gốc và cách tính](https://lichvang.com/nguon-goc-cach-tinh)
 - [Giác Ngộ — mất vào tháng nhuận cúng giỗ tháng nào](https://giacngo.vn/mat-vao-thang-nhuan-cung-gio-thang-nao-post67771.html)
 - [Tạp chí Nghiên cứu Phật học — trùng tang](https://tapchinghiencuuphathoc.vn/trung-tang-giai-trung-tang-trong-doi-song-van-hoa-ton-giao-cua-nguoi-viet.html)
+- Làm nhà khi không có nam gia chủ (bài hướng dẫn phổ thông, không phải nguồn sách): [Happynest — xây nhà xem tuổi vợ được không](https://happynest.vn/thao-luan/100071894/xay-nha-xem-tuoi-vo-duoc-khong-can-luu-y-nhung-gi) · [OneHousing — khi xây nhà xem tuổi vợ hay chồng](https://onehousing.vn/blog/giai-dap-khi-xay-nha-xem-tuoi-vo-hay-chong-n17t) · [Wedo — khi làm nhà xem tuổi vợ hay chồng](https://wedo.vn/tu-van-khi-lam-nha-xem-tuoi-vo-hay-chong/)
 - [VnExpress — Bộ Văn hóa đề nghị chấn chỉnh dâng sao giải hạn](https://vnexpress.net/bo-van-hoa-de-nghi-chan-chinh-viec-dang-sao-giai-han-3883419.html)
 
-Danh sách nguồn đầy đủ nằm trong Đặc tả, mục 12.
+Danh sách nguồn đầy đủ nằm trong Đặc tả, mục 12 (tài liệu nguồn do chủ dự án giữ, không nằm trong kho mã).
