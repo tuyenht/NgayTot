@@ -197,7 +197,7 @@
    * Âm lịch → Dương lịch (Hồ Ngọc Đức). tz mặc định theo calendarTz của ngày kết quả (phương án Bắc).
    * @returns {[number, number, number]|null} [dd, mm, yy]; null nếu tháng nhuận không tồn tại.
    */
-  function lunarToSolar(lDay, lMonth, lYear, lLeap = false, tz) {
+  function lunarToSolar(lDay, lMonth, lYear, lLeap = false, tz, region = 'bac') {
     const run = (z) => {
       let a11, b11;
       if (lMonth < 11) { a11 = lunarMonth11(lYear - 1, z); b11 = lunarMonth11(lYear, z); }
@@ -221,10 +221,12 @@
       return back.day === lDay && back.month === lMonth && back.year === lYear && back.leap === !!lLeap ? res : null;
     };
     if (tz != null) return check(run(tz), tz);
-    const guess = run(TZ_VN);
-    if (!guess) return null;
-    const z = calendarTz(guess[2], guess[1], guess[0]);
-    return check(run(z), z);
+    // Không truyền tz: thử từng múi dựng lịch, nhận kết quả mà múi đó đúng là múi của thời kỳ (và vùng) chứa ngày tìm được.
+    for (const z of [TZ_VN, 8, BEIJING_LMT]) {
+      const res = check(run(z), z);
+      if (res && calendarTz(res[2], res[1], res[0], region) === z) return res;
+    }
+    return null;
   }
 
   /** Chi của năm âm lịch (tuổi theo Tết — cách tính tuổi dân gian VN). */

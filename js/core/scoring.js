@@ -354,7 +354,7 @@
           ctx, key: ctx.key, isWeekend, calendarOnly: true,
           day: { raw: 0, score: null, items: [], severe: [] },
           hours: [chosen], chosen, bestHours: [chosen], severe: false, excluded: false,
-          flags: NT.calendar.inVerifiedRange(ctx.y) ? [] : ['OUT_OF_VERIFIED_RANGE'],
+          flags: ['MEDICAL_FIXED_ONLY', ...(NT.calendar.inVerifiedRange(ctx.y) ? [] : ['OUT_OF_VERIFIED_RANGE'])],
           score: null, grade: null,
         });
         continue;

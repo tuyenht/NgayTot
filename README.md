@@ -19,17 +19,17 @@ Kiểm thử engine: `node tests/run-tests.mjs`
 ## Tính năng
 
 - **Lá số Tứ trụ chính xác**
-  - Trụ năm/tháng theo **thời điểm** tiết khí (có quy đổi múi giờ UTC+7 hoặc UTC+8).
+  - Trụ năm/tháng theo **thời điểm** tiết khí (múi giờ đồng hồ tự đề xuất theo thời kỳ và vùng: UTC+7, +8 hoặc +9; chọn tay được).
   - Trụ ngày/giờ theo **giờ Mặt Trời thực** (kinh độ + phương trình thời gian).
   - Chọn phái đổi ngày ở giờ Tý (23:00 hoặc 00:00).
   - Hiển thị Thập thần, tàng can, Nạp âm, Đại vận.
 - **Vượng suy và Dụng thần**
   - Định lượng lực ngũ hành, Phù ức, Điều hậu, cách Tòng.
   - Xếp vai trò Dụng / Hỷ / Nhàn / Cừu / Kỵ thần.
-- **18 loại việc theo 5 nhóm + việc tùy chỉnh** (theo `docs/PRD-LICH-VIET-CORE-2026.md`)
+- **20 loại việc theo 5 nhóm + việc tùy chỉnh** (theo `docs/PRD-LICH-VIET-CORE-2026.md`)
   - Đại sự: dạm ngõ/ăn hỏi, cưới, an sàng, động thổ, cất nóc, nhập trạch, khánh thành, khâm liệm/di quan, an táng.
-  - Kinh doanh: khai trương, ký hợp đồng, mua tài sản/xe, xuất hành.
-  - Tâm linh: lập bàn thờ. Thường nhật: cắt tóc, gieo trồng.
+  - Kinh doanh, sự nghiệp: khai trương, ký hợp đồng, mua tài sản/xe, xuất hành, nhậm chức/bắt đầu công việc (ngày cố định).
+  - Tâm linh: lập bàn thờ. Sức khỏe: khám, chữa bệnh tự chọn ngày. Thường nhật: cắt tóc, gieo trồng.
   - Y tế (sinh mổ, phẫu thuật) và an táng: **chỉ xem thông tin cho đúng ngày giờ đã được ấn định**, không quét khoảng ngày, không gợi ý đổi ngày. Chỉ định của bác sĩ là quyết định duy nhất.
   - Việc tùy chỉnh: tự đặt tên, chọn ngũ hành của việc, mượn quy tắc 宜/忌 của một việc mẫu.
 - **2 chế độ giờ**
@@ -45,7 +45,7 @@ Kiểm thử engine: `node tests/run-tests.mjs`
 ```
 index.html              Giao diện (CSP: script-src 'self')
 css/styles.css          Design system
-vendor/lunar.js         lunar-javascript v1.7.7 (MIT), nguồn Hoàng lịch 协纪辨方书
+vendor/lunar.js         lunar-javascript v1.7.7 (MIT), dựa trên 协纪辨方书; chưa đối chiếu sách gốc
 js/core/data.js         Can Chi, ngũ hành, hợp/xung/hình/hại, thần sát cá nhân, ngày kỵ VN
 js/core/i18n-vi.js      Từ điển Hán → Việt (宜忌, thần sát, Trực, Tú, Nạp âm)
 js/core/calendar-vn.js  Âm lịch VN theo thời kỳ (1912–2100) + giờ Mặt Trời thực

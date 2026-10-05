@@ -34,6 +34,7 @@
   /** Chế độ ngày cố định: diễn đạt trung tính, không dùng từ gây sợ (PRD §3.4). */
   const neutral = (t) => (noIndex()
     ? String(t).replace(/Hung sát/g, 'Sao cần lưu ý').replace(/ — hung$/, ' — không thuận').replace(/phạm /gi, 'gặp ')
+      .replace(/ — kỵ việc này/, ' — sách ghi không hợp việc này')
     : String(t));
 
   /* ------------------------------ Tiện ích ------------------------------ */
@@ -481,9 +482,9 @@
           ${fixed ? '' : `<span class="grade ${gradeClass(r.grade)}">${esc(r.grade.label)}</span>`}</div>
       </div>
       <div class="tags">
-        <span class="tag ${dsc.huangDao ? 'good' : 'bad'}">${dsc.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} · ${esc(dsc.tianShen)}</span>
+        <span class="tag ${fixed ? '' : (dsc.huangDao ? 'good' : 'bad')}">${dsc.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} · ${esc(dsc.tianShen)}</span>
         <span class="tag">Trực ${esc(dsc.zhixing)}</span>
-        <span class="tag ${dsc.xiuGood ? 'good' : 'bad'}">Sao ${esc(dsc.xiu)}</span>
+        <span class="tag ${fixed ? '' : (dsc.xiuGood ? 'good' : 'bad')}">Sao ${esc(dsc.xiu)}</span>
         ${dsc.jieqi ? `<span class="tag">${esc(dsc.jieqi)}</span>` : ''}
       </div>
       <div class="hours-row">${state.results.mode === 'fixed' ? 'Giờ cố định:' : 'Giờ tốt:'} ${hours}</div>
@@ -501,7 +502,7 @@
     if (fixedOnly) {
       // Không chỉ số, không xếp loại, không thống kê tốt/xấu, không lịch nhiệt (PRD §3.1, §8.4 điều 4).
       $('#summary-stats').innerHTML = `<div class="stat"><b>${res.days.length}</b>ngày đã định · giờ ${esc(res.fixedTime)}</div>`;
-      $('#top-list').innerHTML = `<p class="disclaimer">${esc(state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE)}</p>` + res.days.map(dayCardHTML).join('');
+      $('#top-list').innerHTML = `<p class="disclaimer">${esc(state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE)}</p>` + legalBannerHTML(res.days) + res.days.map(dayCardHTML).join('');
       $('#heatmap').innerHTML = '';
       $('#legend').innerHTML = '';
       return;
@@ -515,9 +516,9 @@
       <div class="stat"><b>${severeCount}</b>ngày có điều kỵ nặng</div>`;
 
     const top = res.ranked.slice(0, TOP_N);
-    $('#top-list').innerHTML = top.length
+    $('#top-list').innerHTML = legalBannerHTML(res.days) + (top.length
       ? top.map(dayCardHTML).join('')
-      : '<div class="empty-state"><div class="big-han">擇</div><p>Không có ngày phù hợp trong danh sách đề xuất. Hãy mở rộng khoảng thời gian, đổi giờ cố định, hoặc tắt bộ lọc "Ẩn ngày có điều kỵ nặng" để xem tất cả các ngày.</p></div>';
+      : '<div class="empty-state"><div class="big-han">擇</div><p>Không có ngày phù hợp trong danh sách đề xuất. Hãy mở rộng khoảng thời gian, đổi giờ cố định, hoặc tắt bộ lọc "Ẩn ngày có điều kỵ nặng" để xem tất cả các ngày.</p></div>');
 
     const topKeys = new Set(top.map((x) => x.key));
     const months = new Map();
@@ -541,6 +542,21 @@
 
     $('#legend').innerHTML = [['g5', 'Đại cát ≥80'], ['g4', 'Cát 68–79'], ['g3', 'Khá 55–67'], ['g2', 'Bình thường 40–54'], ['g1', 'Nên cân nhắc <40'], ['bad', 'Có điều kỵ nặng']]
       .map(([k, t]) => `<span class="c-${k}"><i></i>${t}</span>`).join('') + '<span><i style="--c:transparent;box-shadow:0 0 0 2px var(--gold)"></i>Top đề xuất</span>';
+  }
+
+  /** Giới hạn pháp luật của một ngày kết quả (PRD §3.2). */
+  const legalFlagsOf = (r) => (NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5)) : []);
+  /** Câu chữ của các cảnh báo cứng — phải có cả trong bản sao chép và tệp .ics. */
+  const hardWarningTexts = (r) => legalFlagsOf(r).filter((f) => f.severity === 'hard_warning').map((f) => `${f.message} (Căn cứ: ${f.rule.doc}; chưa đối chiếu văn bản gốc.)`);
+  /** Biểu ngữ cảnh báo cứng ở đầu kết quả, không tắt được. */
+  function legalBannerHTML(days) {
+    const hit = days.filter((r) => legalFlagsOf(r).some((f) => f.severity === 'hard_warning'));
+    if (!hit.length) return '';
+    const f = legalFlagsOf(hit[0]).find((x) => x.severity === 'hard_warning');
+    const scope = hit.length === days.length ? 'mọi ngày trong kết quả' : `${hit.length}/${days.length} ngày trong kết quả`;
+    return `<div class="legal-alert" role="alert" style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);color:#fca5a5">
+      <b>⚖️ ${esc(f.rule.name)}</b> — áp dụng cho ${scope}. ${esc(f.message)}
+      <small style="display:block;opacity:0.8;margin-top:2px">Căn cứ: ${esc(f.rule.doc)} (chưa đối chiếu văn bản gốc)</small></div>`;
   }
 
   /* ------------------------------ Chi tiết ngày ------------------------------ */
@@ -607,7 +623,7 @@
       <tr class="${h.label === bestKey ? 'best' : ''}">
         <td><b>${esc(h.label)}</b>${h.tag ? `<br><span class="hint">${esc(h.tag)}</span>` : ''}</td>
         <td>${esc(h.ganZhi)}</td>
-        <td><span class="tag ${h.huangDao ? 'good' : 'bad'}">${esc(h.tianShen)}</span></td>
+        <td><span class="tag ${fixed ? '' : (h.huangDao ? 'good' : 'bad')}">${esc(h.tianShen)}</span></td>
         ${fixed ? '' : `<td class="${gradeClass(S.gradeOf(h.score, h.severe))}"><div class="mini-bar"><i style="width:${h.score}%"></i></div> ${h.score}</td>`}
         <td class="hint">${h.items.filter((i) => !/^Giờ (Hoàng|Hắc) đạo/.test(i.text) && (i.severe || Math.abs(i.pts) >= 3)).slice(0, 2).map((i) => esc(neutral(i.text))).join('; ')}</td>
       </tr>`).join('');
@@ -645,7 +661,7 @@
             <dt>Cát thần</dt><dd>${list(dsc.jiShen)}</dd>
             <dt>${fixed ? 'Sao cần lưu ý' : 'Hung sát'}</dt><dd>${list(dsc.xiongSha)}</dd>
           </dl>
-          <p class="hint">Nguồn: lunar-javascript (dựa trên Hiệp Kỷ Biện Phương Thư), chưa đối chiếu sách gốc.</p>
+          <p class="hint">Nghi/Kỵ, thần sát dựa trên truyền thống Hiệp Kỷ Biện Phương Thư (协纪辨方书).</p>
         </div>
       </div>
       <p class="disclaimer">${esc(DISCLAIMER)}</p>
@@ -685,6 +701,7 @@
         ? `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}).`
         : `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}, ${r.chosen.tianShen}).`,
       fixed ? (state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE) : '',
+      ...hardWarningTexts(r),
       DISCLAIMER, 'Lập bởi Ngày Tốt.',
     ].filter(Boolean).join(' ');
     const body = [
@@ -718,7 +735,7 @@
         `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ ${r.chosen.label} (${r.chosen.ganZhi})`,
         ...r.day.items.map((i) => `${i.pts > 0 ? '+' : ''}${i.pts}  ${i.text}`),
       ];
-    lines.push('', DISCLAIMER);
+    lines.push(...hardWarningTexts(r), '', DISCLAIMER);
     const text = lines.join('\n');
     try {
       await navigator.clipboard.writeText(text);

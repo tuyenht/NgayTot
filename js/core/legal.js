@@ -64,7 +64,8 @@
    * Giới hạn quàn hiệu lực, tính bằng giờ (Infinity = không giới hạn thời gian).
    * @param {{storageType?: 'none'|'cold'|'frozen', isInfectious?: boolean, province?: string}} p
    */
-  function burialLimitHours(p = {}) {
+  function burialLimitHours(p) {
+    p = p ?? {};
     const B = LEGAL_LIMITS.BURIAL_TIME_EXCEEDED;
     let national;
     if (p.storageType === 'frozen') national = Infinity; // ≤ −10°C
@@ -141,7 +142,9 @@
 
     // 3. Kiểm tra thời gian quàn / lưu giữ thi hài
     if (act.checkBurialTime && contextParams.deathTime) {
-      const deathMs = Date.parse(contextParams.deathTime);
+      // Chuỗi không ghi múi giờ được hiểu là giờ Việt Nam (UTC+7), không theo múi giờ của máy.
+      const dt = String(contextParams.deathTime);
+      const deathMs = Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/.test(dt) ? dt : `${dt}+07:00`);
       const [y, m, d] = targetDate.split('-').map(Number);
       const [hh, mi] = (timeStr || '12:00').split(':').map(Number);
       const targetMs = Date.UTC(y, m - 1, d, hh - 7, mi); // UTC ms quy từ UTC+7

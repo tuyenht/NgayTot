@@ -334,5 +334,49 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   eq('Giao diện ghi nguồn lunar-javascript và "chưa đối chiếu" sách gốc', [/lunar-javascript/.test(page), /[Cc]hưa đối chiếu (với )?sách gốc/.test(page)], [true, true]);
 }
 
+// ---------- Sau phản biện độc lập đợt đóng G0 ----------
+{
+  const S = NT.scoring, L = NT.legal, C = NT.calendar;
+  // lunarToSolar không truyền tz: đổi ngược mọi ngày 1912–2100 (cả tháng 7 nhuận 1938 thuộc thời kỳ UTC+8)
+  eq('lunarToSolar không truyền tz: 15/7 nhuận 1938 = 08/09/1938', C.lunarToSolar(15, 7, 1938, true), [8, 9, 1938]);
+  for (const region of ['bac', 'nam']) {
+    let bad = 0, n = 0;
+    for (let t = Date.UTC(1912, 0, 1); t <= Date.UTC(2100, 11, 31); t += 864e5) {
+      const d = new Date(t), dd = d.getUTCDate(), mm = d.getUTCMonth() + 1, yy = d.getUTCFullYear();
+      const l = C.solarToLunar(dd, mm, yy, C.calendarTz(yy, mm, dd, region));
+      const b = C.lunarToSolar(l.day, l.month, l.year, l.leap, undefined, region);
+      n++;
+      if (!b || b[0] !== dd || b[1] !== mm || b[2] !== yy) bad++;
+    }
+    eq(`Đổi âm → dương không truyền tz, vùng ${region}: 0 ngày sai trên 1912–2100`, [n, bad], [69032, 0]);
+  }
+  eq('lunarToSolar: tháng nhuận không có trong năm → null (nhuận 5/2025, nhuận 3/2026)', [C.lunarToSolar(15, 5, 2025, true), C.lunarToSolar(1, 3, 2026, true)], [null, null]);
+
+  // Quy định tỉnh phải thực sự đổi kết quả: Huế, bảo quản lạnh, 98 giờ
+  const fAct = NT.activities.byId('funeral_main');
+  const death = '2026-10-05T08:00:00+07:00';
+  const noProv = L.checkLegal(fAct, chart, '2026-10-09', '10:00', { deathTime: death, storageType: 'cold' });
+  const hue = L.checkLegal(fAct, chart, '2026-10-09', '10:00', { deathTime: death, storageType: 'cold', province: 'hue' });
+  eq('Bảo quản lạnh, 98 giờ: không có cờ nếu không có quy định tỉnh; ở Huế có cờ và ghi "địa phương"',
+    [noProv.length, hue.length, /địa phương/.test(hue[0]?.message ?? ''), /72 giờ/.test(hue[0]?.message ?? '')], [0, 1, true, true]);
+  // Thời điểm mất không ghi múi giờ = giờ Việt Nam, không phụ thuộc múi giờ của máy
+  const withTz = L.checkLegal(fAct, chart, '2026-10-07', '09:00', { deathTime: '2026-10-05T08:30:00+07:00' }).length;
+  const noTz = L.checkLegal(fAct, chart, '2026-10-07', '09:00', { deathTime: '2026-10-05T08:30:00' }).length;
+  const within = L.checkLegal(fAct, chart, '2026-10-07', '08:00', { deathTime: '2026-10-05T08:30:00' }).length;
+  eq('Thời điểm mất không ghi múi giờ hiểu là UTC+7: 48,5 giờ có cờ, 47,5 giờ không', [withTz, noTz, within], [1, 1, 0]);
+  eq('burialLimitHours(null) không ném lỗi', L.burialLimitHours(null), 48);
+
+  // Việc y tế cố định mang cờ MEDICAL_FIXED_ONLY (PRD §11)
+  const med = S.findDays({ chart, act: NT.activities.byId('med_surgery'), nameInfo: null, from: '2026-10-12', to: '2026-10-12', mode: 'fixed', fixedTime: '08:30' }).days[0];
+  eq('med_surgery mang cờ MEDICAL_FIXED_ONLY', med.flags.includes('MEDICAL_FIXED_ONLY'), true);
+
+  // Ghi nguồn phải có ở cả trang chính và hộp chi tiết (kiểm riêng từng tệp)
+  const idx = readFileSync(path.join(root, 'index.html'), 'utf8'), app = readFileSync(path.join(root, 'js/ui/app.js'), 'utf8');
+  const cited = (t) => /lunar-javascript/.test(t) && /[Cc]hưa đối chiếu (với )?sách gốc/.test(t);
+  eq('Ghi nguồn lunar-javascript + "chưa đối chiếu sách gốc" ở index.html và ở app.js', [cited(idx), cited(app)], [true, true]);
+  // Cảnh báo cứng pháp luật phải đi vào .ics và bản sao chép (PRD §3.2)
+  eq('app.js đưa cảnh báo cứng vào biểu ngữ, .ics và bản sao chép', (app.match(/hardWarningTexts\(r\)/g) ?? []).length >= 2 && /legalBannerHTML\(res\.days\)/.test(app), true);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);
