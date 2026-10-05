@@ -13,7 +13,7 @@ Bản này hợp nhất bốn tài liệu nguồn và đối chiếu với mã n
 1. *PRD v3.0 "Master Production Edition"* (bản trước của chính tệp này), gọi tắt **v3.0**.
 2. *Đặc tả hệ thống Lịch Việt chuẩn xác* (05/10/2026), gọi tắt **Đặc tả**.
 3. *PRD Hệ thống xem ngày giờ đẹp & lộ trình phong thủy thông minh* (PRD-FENGSHUI-2026-FINAL), gọi tắt **PRD-FENGSHUI**.
-4. *Master PRD 5.1 "Final Ultimate Master Edition"* (bản nháp do công cụ AI soạn), gọi tắt **V5.1**. Bản này không phải bản kế nhiệm: phần lớn nội dung của nó lặp lại v3.0, kể cả các lỗi đã nêu ở mục 17.1. Mục 17.3 ghi rõ đã nhận gì và không nhận gì từ nó.
+4. *Master PRD 5.1 "Final Ultimate Master Edition"* (bản nháp do công cụ AI soạn), gọi tắt **V5.1**. Bản này không phải bản kế nhiệm: nó giữ nguyên các phần lỗi của v3.0 đã nêu ở mục 17.1 (bảng múi giờ, công thức 5 lớp, Hard Gate, API máy chủ), đồng thời bổ sung một số nội dung lấy từ Đặc tả (ca ranh giới, quản trị nguồn, bất biến kiểm thử, căn cứ pháp luật). Mục 17.3 ghi rõ đã nhận gì và không nhận gì từ nó.
 
 Khi các tài liệu mâu thuẫn, bản này chọn theo thứ tự: an toàn và pháp luật → kiểm chứng được → giữ được ưu thế của ứng dụng hiện có (chạy hoàn toàn trên trình duyệt, dữ liệu không rời máy). Mục 17 ghi rõ đã bỏ gì, lệch khỏi tài liệu nguồn ở đâu và vì sao.
 
@@ -408,6 +408,7 @@ vi_du_trong_sach:               # thành kiểm thử bắt buộc
 3. Người thứ hai kiểm độc lập bảng so với nguyên văn.
 4. Mọi ví dụ trong sách thành kiểm thử bắt buộc.
 5. Đối chiếu với 6tail và lichvang; mỗi chỗ lệch phải giải thích được bằng trường phái hoặc quy ước.
+6. Gắn nhãn tin cậy (2.1) và mức xử lý (bảng 8.3) cho luật trước khi phát hành; luật chưa có nhãn thì không được bật.
 
 ### 7.5 Cơ chế nghi/kỵ
 
@@ -952,7 +953,7 @@ Giữ lại từ v3.0 và PRD-FENGSHUI: ba tầng, nhãn tin cậy, phân nhóm 
 
 ### 17.3 Đối chiếu với bản nháp V5.1
 
-V5.1 tự ghi "Hoàn tất kiểm định toàn diện — Developer Ready", nhưng khi đối chiếu thì nó lặp lại gần như nguyên vẹn v3.0 và tự mâu thuẫn ở nhiều chỗ. Bản này nhận phần có giá trị và từ chối phần còn lại.
+V5.1 tự ghi "Hoàn tất kiểm định toàn diện — Developer Ready", nhưng khi đối chiếu thì nó giữ nguyên các phần lỗi của v3.0 và tự mâu thuẫn ở nhiều chỗ; phần mới của nó chủ yếu là nội dung lấy từ Đặc tả (mục V, VI, VII) cùng khung yêu cầu ở VIII.3. Bản này nhận phần có giá trị và từ chối phần còn lại. Bảng dưới đã được rà lại theo từng mục I–IX của V5.1.
 
 **Đã nhận vào bản này**
 
@@ -965,6 +966,9 @@ V5.1 tự ghi "Hoàn tất kiểm định toàn diện — Developer Ready", nh�
 | Mã bước cho chuỗi tang lễ và chuỗi Tết (IV.1) | 10.3, 10.4 |
 | Khung đầu vào của yêu cầu đánh giá (VIII.3) | 4.5, đã sửa cho nhiều người và tách hai loại vùng |
 | Mã băm SHA-256 cho bảng đóng băng | 5.3 |
+| Căn cứ Thông tư 61/2006/TT-BVHTT cho số liệu Ban Lịch Nhà nước (II.2) | 6.1, ghi rõ chưa mở văn bản gốc |
+| Bước "gắn nhãn tin cậy và rào chắn pháp lý trước khi phát hành" trong quy trình kiểm duyệt (VI.3, bước 5) | 7.4, bước 6 |
+| Các nội dung V5.1 chép từ Đặc tả mà bản này đã có sẵn từ trước: bất biến (VII.1), ca kiểm thử lịch sử (VII.2), nguồn chuẩn (VI.1), use case đi thi (IV.6), tham số đầy tháng theo vùng (IV.4), xét tuổi riêng cô dâu và chú rể, mượn tuổi (IV.1) | 13.2, 13.3, 7.1, 9.4, 9.2, 9.3, 10.4 — không cần nhận thêm |
 | Tách "engine xuất dòng luật" khỏi "chỉ số là lớp trình bày" (III.1) | Đã có ở 8.2–8.4; công thức của V5.1 giữ làm phương án C của QĐ-01 |
 
 **Không nhận**
@@ -977,7 +981,7 @@ V5.1 tự ghi "Hoàn tất kiểm định toàn diện — Developer Ready", nh�
 | API REST, khóa API, SLA 99,9%, Redis, giới hạn tần suất (VIII, IX) | Không có máy chủ (4.1) |
 | "Chuỗi băm ẩn danh trong RAM", Nghị định 13/2023 (I.3) | 3.3; Nghị định 13 đã bị thay từ 01/01/2026 |
 | Mã lỗi HTTP; `ERR_UNDERAGE_MARRIAGE` là "lỗi chặn" | Mục 11; tuổi kết hôn là cảnh báo cứng vì ngày xem có thể không phải ngày đăng ký |
-| "Căn cứ Nghị định 282/2025, chỉ gợi ý giờ nhạc 06:00–22:00" (I.2) | Dẫn sai: khung 06:00–22:00 là của Thông tư 04/2011; Nghị định 282 bỏ khung giờ (3.2) |
+| Dẫn cả Thông tư 04/2011 và Nghị định 282/2025 làm căn cứ cho khung giờ nhạc 06:00–22:00 (I.2) | Chỉ Thông tư 04/2011 quy định khung này; Nghị định 282 ngược lại bỏ khung giờ và phạt tiếng ồn ở mọi thời điểm (3.2) |
 | Quàn "không quá 48 giờ; tối đa 7 ngày nếu ≤ 4°C" (I.2) | Thiếu trường hợp ≤ −10°C và điều kiện "không bảo quản lạnh" (3.2) |
 | Y tế "ưu tiên sao Thiên Y"; "thông tin đối chiếu tập tục" cho lịch mổ (I.1, IV.4) | Trái 3.1: việc y tế không có dòng đánh giá nào |
 | Xếp loại 3 mức `DAI_CAT`/`CAT`/`HUNG`; lịch nhiệt kèm hướng Hỷ thần, Tài thần (VIII.1) | 8.5; luật phương vị chưa kiểm nguồn (8.3) |
@@ -985,7 +989,11 @@ V5.1 tự ghi "Hoàn tất kiểm định toàn diện — Developer Ready", nh�
 | `VOTIVE_CEREMONY` = khai quang vật phẩm; `ALTAR_SET` "tránh Không vong" | Ngoài phạm vi (1.3); không dẫn nguồn |
 | "Tuyệt đối không gộp Động thổ và Cất nóc"; "tuyệt đối không nhóm" các mốc tang | Không dẫn nguồn; thứ tự và khoảng cách là tham số của chuỗi (10.1) |
 | Trường `region` ba giá trị dùng chung | Gộp hai khái niệm (4.5) |
-| Thiếu hoàn toàn: lá số Tứ trụ, hiện trạng mã, lộ trình, quyết định mở, ký hiệu độ chắc chắn | V5.1 mô tả một hệ thống khác với ứng dụng đang có |
+| Ngưỡng thiên văn "lệch ≤ 60 giây so với DE441" (VI.2) | Nguồn đối chiếu thực tế (tệp `TDBtimes.txt` của Yuk Tung Liu) tính bằng DE431 (13.1) |
+| Các nấc trùng tang "Nhị Bộc, Tam Bộc, Nhị Nhật, Tam Nhật" (III.3) | Không dẫn nguồn; trùng tang là `DISPUTED`, ẩn mặc định, bảng tra chỉ đưa vào khi có sách (8.3) |
+| Lược đồ phản hồi `summary` / `audit_layers` / `trust_metadata` (VIII.4) | Giống hệt v3.0: gắn điểm theo từng "lớp" và xếp loại 3 mức; đã thay bằng dòng kết quả luật ở 8.2 |
+| "Core Rationale 3 câu tóm tắt" trên thẻ kết quả (VIII.1) | Thẻ ngày hiện các dòng luật nổi bật kèm nhãn (mục 11); không sinh câu tóm tắt tự do |
+| Không có: engine lá số Tứ trụ (chỉ nhắc Bát tự một lần ở V.2), hiện trạng mã, lộ trình, quyết định mở, ký hiệu độ chắc chắn | V5.1 mô tả một hệ thống khác với ứng dụng đang có |
 
 ---
 
