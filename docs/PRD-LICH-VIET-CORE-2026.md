@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.8 — thêm lịch trình giờ trong ngày cưới (10.5) và khung giờ đề xuất cho việc có tiệc, nhạc (8.6) |
+| Phiên bản | 4.9 — "giờ tốt" là giờ để làm gì theo từng việc (8.6); bấm một canh giờ để nhận giờ đề xuất cụ thể (10.5); sửa 9.5 cho khớp mã sau lượt phản biện độc lập |
 | Ngày cập nhật | 2026-10-05 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
@@ -545,7 +545,28 @@ Sáu mức: Đại cát (≥ 80), Cát (≥ 68), Khá (≥ 55), Bình thường 
 
 13 khung: 12 canh, riêng canh Tý tách Tý sớm (00:00–00:59) và Tý muộn (23:00–23:59). Mỗi khung có: can chi giờ, thần trực giờ, hoàng đạo hay hắc đạo, quan hệ với lá số.
 
-Với việc có tiệc và nhạc (cưới, khánh thành), giờ được **đề xuất** trên thẻ ngày chỉ lấy trong khung sinh hoạt 07:00–20:59; bảng 13 khung trong hộp chi tiết vẫn hiện đủ **[SL]**. Lý do: giờ tốt lúc nửa đêm hay rạng sáng không dùng được cho đám cưới và nằm ngoài khung giờ nhạc ở 3.2.
+Với việc có tiệc và nhạc (cưới, khánh thành), giờ được **đề xuất** trên thẻ ngày chỉ lấy trong khung sinh hoạt 07:00–20:59; bảng 13 khung trong hộp chi tiết vẫn hiện đủ **[SL]**. Lý do: giờ tốt lúc nửa đêm hay rạng sáng không dùng được cho đám cưới và nằm ngoài khung giờ nhạc ở 3.2. Thẻ ngày làm việc theo canh 2 tiếng nên lấy mốc 07:00 (canh 05:00–06:59 cắt ngang mốc 06:00); lịch trình ngày cưới ở 10.5 làm việc theo phút nên dùng mốc chính xác hơn: xuất phát từ 05:00, lễ ở nhà gái từ 06:00.
+
+**"Giờ tốt" là giờ để làm gì (QĐ-10).** Giờ tốt được hiểu là giờ khởi sự: lúc bắt đầu hành động chính của việc; không cần làm xong trong canh giờ đó **[SL — cách hiểu phổ biến, chưa có nguồn sách]**. Giao diện không được ghi "Giờ tốt" trống không; phải ghi giờ đó để làm gì:
+
+| Việc | Giờ tốt là giờ để… |
+| --- | --- |
+| Dạm ngõ, ăn hỏi | nhà trai sang nhà gái làm lễ |
+| An sàng | kê giường |
+| Động thổ | làm lễ và bổ nhát cuốc đầu tiên |
+| Cất nóc | cất nóc, bắt đầu đổ mái |
+| Nhập trạch | vào nhà mới |
+| Khánh thành | làm lễ khánh thành |
+| Khai trương | mở cửa, khai trương |
+| Ký hợp đồng | đặt bút ký |
+| Mua tài sản, mua xe | giao dịch, nhận tài sản |
+| Xuất hành | ra khỏi nhà |
+| Lập bàn thờ | an vị bàn thờ, bốc bát hương |
+| Khám định kỳ, cắt tóc, gieo trồng | đi khám; cắt tóc; gieo trồng |
+| Việc tùy chỉnh | bắt đầu việc |
+| **Lễ cưới, đón dâu** | **Không gắn với một giờ.** Lễ cưới có nhiều mốc (xuất phát, vào nhà gái, về tới nhà trai); thẻ ngày chỉ liệt kê các canh hoàng đạo trong khung sinh hoạt theo thứ tự trong ngày, và dẫn sang lịch trình ở 10.5 |
+
+Với việc một mốc, hộp chi tiết đề xuất một giờ bắt đầu cụ thể trong canh đã chọn: đầu canh cộng 15 phút, kèm khoảng nên bắt đầu (cách hai đầu canh 15 phút) `HEURISTIC`. Với lễ cưới chưa xếp lịch trình, tệp `.ics` là sự kiện cả ngày và bản sao chép liệt kê các canh hoàng đạo, không ghi một giờ cụ thể.
 
 ---
 
@@ -657,9 +678,9 @@ Hồ sơ việc khai báo vai trò (cô dâu, chú rể, gia chủ, tang chủ);
 Bước đầu tiên trên giao diện là chọn việc. Sau khi biết việc, ứng dụng chỉ hiện những trường mà việc đó cần; trường không cần thì không hiện và không hỏi. Người dùng không phải khai hồ sơ trước khi biết mình cần khai gì.
 
 1. **Chọn việc** (theo nhóm PK-01 đến PK-05, hoặc việc tùy chỉnh).
-2. **Khai người được xét** theo đúng vai trò mà việc quy định (9.6). Với mỗi người: ngày sinh dương lịch là bắt buộc; giờ sinh là tùy chọn (không có thì lập lá số ba trụ); nơi sinh chỉ hỏi khi cần cho giờ Mặt Trời thực hoặc khi sinh trước 13/06/1975 (6.3).
+2. **Khai người được xét** theo đúng vai trò mà việc quy định (9.6). Với chủ thể: ngày sinh dương lịch là bắt buộc; giờ sinh là tùy chọn (không có thì lập lá số ba trụ); nơi sinh luôn được hỏi vì dùng cho giờ Mặt Trời thực và để suy ra vùng; kinh độ chỉ hiện khi chọn nơi sinh "Khác"; ô vùng chỉ hiện khi sinh trước 13/06/1975 mà nơi sinh không cho biết vùng (6.3). Người thứ hai (chú rể) trước G4 chỉ khai ngày sinh.
 3. **Khai thời gian:** khoảng ngày và chế độ giờ cho việc linh hoạt; một ngày giờ đã định cho việc cố định.
-4. **Tùy chọn** (mặc định đóng): bộ lọc kỵ nặng, nhóm tập tục, cách chia giờ Tý, múi giờ chọn tay.
+4. **Tùy chọn:** các lựa chọn về lá số (cách chia giờ Tý, giờ Mặt Trời thực, múi giờ chọn tay) nằm trong phần nâng cao, mặc định đóng; các bộ lọc kết quả (ẩn ngày kỵ nặng, kiêng hạn năm, ngũ hành tên, bỏ cuối tuần) nằm cùng bước 3. Công tắc tắt cả nhóm tập tục dân gian (bảng 8.3) làm ở G3.
 
 | Nhóm việc | Người được hỏi | Thời gian được hỏi | Trường riêng |
 | --- | --- | --- | --- |
@@ -669,11 +690,13 @@ Bước đầu tiên trên giao diện là chọn việc. Sau khi biết việc,
 | Kinh doanh, sự nghiệp, thờ cúng, thường nhật | Một người: người đứng tên hoặc người thực hiện | Khoảng ngày hoặc ngày cố định tùy việc | — |
 | Khám định kỳ (`MED_CHECKUP`) | Người đi khám | Khoảng ngày | Dòng nhắc đây là tập tục |
 | Lịch mổ, sinh mổ (`MED_SURGERY`, `MED_BIRTH`) | **Không hỏi ai** | Một ngày giờ đã định | Chỉ hiện thông tin lịch (3.1) |
-| Việc tùy chỉnh | Một người | Người dùng chọn chế độ | Tên việc, từ khóa nghi/kỵ |
+| Việc tùy chỉnh | Một người | Người dùng chọn chế độ | Tên việc; mượn quy tắc nghi/kỵ của một việc có sẵn. Chọn trực tiếp từ khóa nghi/kỵ làm ở G3 |
 
 Họ tên không được hỏi ở bất kỳ việc nào: luật "ngũ hành tên" mặc định tắt (bảng 8.3), và ứng dụng không lưu hồ sơ nên không cần tên để phân biệt. Nếu người dùng bật luật đó trong phần tùy chọn thì ô tên mới hiện.
 
-Lá số Tứ trụ được lập và hiển thị sau khi người dùng khai xong bước 2, cho từng người đã khai.
+Lá số Tứ trụ của chủ thể được lập và hiển thị sau khi người dùng khai xong bước 2. Lá số riêng cho người thứ hai làm ở G4.
+
+Kết quả đang hiện luôn phải khớp với việc và người đang khai: đổi việc, đổi người được xét, đổi ngày giờ sinh, hoặc một lượt tìm thất bại đều xóa kết quả cũ khỏi màn hình.
 
 ### 9.6 Chủ thể xét tuổi do việc quy định (QĐ-08)
 
@@ -702,7 +725,7 @@ Không có căn cứ để coi cách nào là chuẩn. Theo nguyên tắc 3 ở 
 | Con trai trưởng đã thành gia thất | Người con đó | Dị bản ở một số nơi khi cha đã mất; hiện kèm ghi chú là dị bản |
 | Người được mượn tuổi (cha, người nam trong họ, hoặc người khác) | Người được mượn | Gia chủ muốn kiêng hạn năm của mình, hoặc gia đình theo lệ phải có tuổi nam; mọi bước của chuỗi làm nhà xét tuổi người này và ghi rõ đang xét tuổi ai (10.4) |
 
-Ứng dụng không phán phương án nào "đúng"; nó ghi rõ đang xét tuổi ai và theo phương án nào trên mọi màn hình kết quả.
+Ứng dụng không phán phương án nào "đúng"; nó ghi rõ đang xét tuổi ai ở tiêu đề kết quả, hộp chi tiết ngày, bản sao chép và tệp `.ics`; phương án con trai trưởng luôn kèm ghi chú là dị bản.
 
 **Cưới hỏi khi người xem là nam.** Người xem vẫn phải khai năm sinh cô dâu, vì hạn năm xét theo tuổi cô dâu; lá số của chú rể chỉ dùng cho các dòng xung, hợp với ngày.
 
@@ -784,7 +807,9 @@ Mã bước chuỗi Tết (theo V5.1): `TET_EVE` (giao thừa — là thời đi
 
 Sau khi có danh sách ngày cho việc `WED_MAIN`, người dùng chọn một ngày làm ngày cưới rồi xếp các mốc giờ trong ngày đó. Tính năng này dùng được trước khi có chuỗi nhiều bước đầy đủ của G4.
 
-**Đầu vào:** thời gian đi từ nhà trai (hoặc điểm xuất phát) tới nhà gái; thời gian từ nhà gái về nhà trai (mặc định bằng lượt đi); thời lượng lễ ở nhà gái (mặc định 45 phút) và ở nhà trai (mặc định 30 phút); giờ tiệc nếu đã định; hai mốc ưu tiên. Tuổi cô dâu và chú rể lấy từ bước 2 của 9.5.
+**Đầu vào:** thời gian đi từ nhà trai (hoặc điểm xuất phát) tới nhà gái — bắt buộc; thời gian từ nhà gái về nhà trai (mặc định bằng lượt đi); thời lượng lễ ở nhà gái (mặc định 45 phút) và ở nhà trai (mặc định 30 phút); giờ tiệc nếu đã định; hai mốc ưu tiên; tùy chọn gắn một mốc vào một canh giờ. Mọi số được làm tròn về phút nguyên; ô để trống dùng mặc định. Tuổi cô dâu và chú rể lấy từ bước 2 của 9.5.
+
+**Bấm một canh giờ để nhận giờ cụ thể.** Trên thẻ ngày cưới, mỗi canh hoàng đạo là một nút. Bấm vào thì ứng dụng gắn mốc "vào nhà gái" vào canh đó và đề xuất ngay một lịch trình với số liệu mặc định; người dùng sửa thời gian đi, đổi mốc được gắn (vào nhà gái, về tới nhà trai, hoặc xuất phát) hay đổi canh rồi xếp lại. Trong canh đã gắn, giờ đề xuất là giờ cho nhiều mốc ưu tiên vững nhất, rồi mới đến cách ranh giới canh xa nhất. Gắn mốc mà không xếp được thì nói rõ vì sao và đề nghị chọn canh khác.
 
 **Bốn mốc, tính dây chuyền từ mốc neo A:**
 
@@ -802,10 +827,11 @@ Ba mốc D, A, H theo các bài hướng dẫn cưới hỏi phổ thông: hai n
 
 **Quy tắc bắt buộc:**
 
-1. Chỉ xếp lịch trình trong khung 05:00–21:00: không xuất phát trước 05:00, lễ ở nhà trai xong trước 21:00. Không bao giờ gợi ý chạy xe đêm. Không có phương án nào thì nói rõ, không nới khung.
+1. Chỉ xếp lịch trình trong khung 05:00–21:00: không xuất phát trước 05:00, lễ ở nhà gái không bắt đầu trước 06:00 (khung giờ nhạc ở 3.2), lễ ở nhà trai xong trước 21:00. Không bao giờ gợi ý chạy xe đêm. Không có phương án nào thì nói rõ, không nới khung.
 2. Không gộp thành điểm số. Hiện tối đa ba phương án, mỗi tổ hợp canh giờ một phương án, sắp theo: số mốc ưu tiên vững → số mốc ưu tiên rơi vào giờ tốt → các mốc còn lại → khoảng cách tới ranh giới canh giờ → giờ sớm hơn. Thứ tự này mang nhãn `HEURISTIC` và được ghi trên màn hình.
 3. Mỗi phương án ghi rõ mốc nào không rơi vào giờ hoàng đạo, mốc nào xung tuổi ai, mốc nào sát ranh giới canh giờ; giờ tiệc sớm hơn lúc xong lễ nhà trai hoặc ngoài 06:00–22:00 thì có lưu ý.
-4. Xuất được cả lịch trình ra `.ics` (mỗi mốc một sự kiện) và sao chép.
+4. Xuất được cả lịch trình ra `.ics` (mỗi mốc một sự kiện; mốc về nhà trai kết thúc khi xong lễ) và sao chép.
+5. Giờ tiệc từ 23:00 thuộc canh Tý của ngày hôm sau; mốc đó phải ghi rõ nhãn hoàng đạo, hắc đạo được tính theo ngày kế.
 
 **Gần và xa.** Canh giờ dài 2 tiếng, nên quãng đường quyết định bao nhiêu mốc cùng rơi vào giờ tốt:
 
@@ -956,7 +982,7 @@ Giai đoạn nào đã đóng, tại commit nào, và việc nào còn mở: xem
 
 ## 16. Quyết định của chủ dự án
 
-Bảng quyết định QĐ-01 đến QĐ-09, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
+Bảng quyết định QĐ-01 đến QĐ-10, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
 
 | Mã | Quyết định |
 | --- | --- |
@@ -969,6 +995,7 @@ Bảng quyết định QĐ-01 đến QĐ-09, kèm phương án đã cân nhắc 
 | QĐ-07 | Ứng dụng không lưu hồ sơ (3.3) |
 | QĐ-08 | Chủ thể xét tuổi do việc quy định: cưới hỏi xét tuổi nữ; làm nhà xét tuổi gia chủ theo 9.6 |
 | QĐ-09 | Có lịch trình giờ trong ngày cưới: chọn ngày chính, xếp giờ xuất phát, vào nhà gái, về nhà trai (10.5) |
+| QĐ-10 | "Giờ tốt" phải ghi rõ là giờ để làm gì (8.6); bấm một canh giờ thì nhận giờ đề xuất cụ thể theo thời gian đã khai (10.5) |
 
 ---
 

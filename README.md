@@ -26,6 +26,9 @@ Kiểm thử engine: `node tests/run-tests.mjs`
 - **Lịch trình ngày cưới**
   - Chọn một ngày làm ngày cưới, khai thời gian đi lại; ứng dụng xếp giờ xuất phát, giờ vào nhà gái, giờ về tới nhà trai theo giờ hoàng đạo, tránh giờ xung tuổi.
   - Chỉ xếp trong khung 05:00–21:00; đường xa có gợi ý cách làm; xuất cả lịch trình ra `.ics`.
+  - Bấm một canh giờ hoàng đạo trên thẻ ngày cưới để nhận ngay giờ đề xuất cụ thể cho từng mốc.
+- **Giờ tốt ghi rõ để làm gì**
+  - Mỗi việc ghi giờ tốt là giờ khởi sự của hành động nào (mở cửa, đặt bút ký, vào nhà mới…), kèm một giờ bắt đầu đề xuất trong canh.
 
 - **Lá số Tứ trụ chính xác**
   - Trụ năm/tháng theo **thời điểm** tiết khí (múi giờ đồng hồ tự đề xuất theo thời kỳ và vùng: UTC+7, +8 hoặc +9; chọn tay được).
