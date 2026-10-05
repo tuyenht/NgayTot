@@ -371,10 +371,13 @@
         hours = [chosen];
       } else {
         hours = D.HOUR_SLOTS.map((s) => ({ ...scoreHour(ctx, o.chart, o.act, s.rep[0], s.rep[1]), label: s.label, tag: s.tag }));
-        const ranked = hours.filter((h) => !h.severe).sort((a, b) => b.score - a.score);
-        chosen = ranked[0] ?? hours[0];
+        // Việc có tiệc, nhạc (cưới, khánh thành…): chỉ đề xuất giờ trong khung sinh hoạt 07:00–20:59 (PRD §8.6);
+        // bảng giờ trong hộp chi tiết vẫn hiện đủ 13 khung.
+        hours.forEach((h, i) => { h.practical = !o.act.checkNoise || (D.HOUR_SLOTS[i].rep[0] >= 7 && D.HOUR_SLOTS[i].rep[0] < 21); });
+        const ranked = hours.filter((h) => !h.severe && h.practical).sort((a, b) => b.score - a.score);
+        chosen = ranked[0] ?? hours.find((h) => h.practical) ?? hours[0];
       }
-      const bestHours = o.mode === 'fixed' ? [chosen] : hours.filter((h) => !h.severe && h.huangDao).sort((a, b) => b.score - a.score).slice(0, 3);
+      const bestHours = o.mode === 'fixed' ? [chosen] : hours.filter((h) => !h.severe && h.huangDao && h.practical).sort((a, b) => b.score - a.score).slice(0, 3);
       const severe = day.severe.length > 0 || (o.mode === 'fixed' && chosen.severe);
       const score = Math.round(day.score * W_DAY + chosen.score * (1 - W_DAY));
       days.push({

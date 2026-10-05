@@ -10,7 +10,7 @@ import path from 'node:path';
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 Object.assign(globalThis, require(path.join(root, 'vendor/lunar.js')));
-for (const f of ['data', 'i18n-vi', 'calendar-vn', 'bazi', 'name-element', 'activities', 'legal', 'scoring']) {
+for (const f of ['data', 'i18n-vi', 'calendar-vn', 'bazi', 'name-element', 'activities', 'legal', 'scoring', 'wedding-plan']) {
   vm.runInThisContext(readFileSync(path.join(root, `js/core/${f}.js`), 'utf8'), { filename: `${f}.js` });
 }
 const { NT } = globalThis;
@@ -422,6 +422,62 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   eq('index.html: "Ai là gia chủ?" có đủ 4 phương án cố định', [...html2.matchAll(/<select class="input" id="f-owner">([\s\S]*?)<\/select>/g)].flatMap((m) => [...m[1].matchAll(/value="(\w+)"/g)].map((x) => x[1])), ['male', 'female', 'son', 'borrowed']);
   eq('app.js không ghi gì vào bộ nhớ trình duyệt', /localStorage\.setItem|sessionStorage|indexedDB|document\.cookie/.test(app2), false);
   eq('Ô họ tên và ô chú rể ẩn mặc định', [/class="field full hidden" id="wrap-name"/.test(html2), /class="field full hidden" id="wrap-groom"/.test(html2)], [true, true]);
+}
+
+// ---------- Lịch trình giờ trong ngày cưới (PRD §10.5) ----------
+{
+  const W = NT.weddingPlan, S = NT.scoring, A = NT.activities;
+  const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+  eq('Canh giờ: 07:00 thuộc 07:00–09:00; 00:30 thuộc canh Tý 23:00–01:00', [W.canhOf(420), W.canhOf(30)], [[420, 540], [-60, 60]]);
+
+  // Giờ hoàng đạo của từng mốc khớp bảng truyền thống theo chi ngày
+  const HD = { 0: [0, 1, 3, 6, 8, 9], 1: [2, 3, 5, 8, 10, 11], 2: [0, 1, 4, 5, 7, 10], 3: [0, 2, 3, 6, 7, 9], 4: [2, 4, 5, 8, 9, 11], 5: [1, 4, 6, 7, 10, 11] };
+  let hdBad = 0, hdN = 0;
+  for (let day = 1; day <= 28; day++) {
+    const ctx = S.dayContext(2026, 11, day);
+    for (let min = 300; min <= 1260; min += 35) { const h = W.hourInfo(2026, 11, day, min, []); hdN++; if (HD[ctx.dayZ % 6].includes(h.zhi) !== h.huangDao) hdBad++; }
+  }
+  eq('Giờ hoàng đạo của mốc giờ khớp bảng theo chi ngày (28 ngày × 28 mốc)', [hdN, hdBad], [784, 0]);
+
+  const near = W.plan({ y: 2026, m: 11, d: 15, travelTo: 20, brideZhi: 2, groomZhi: 4 });
+  const p0 = near.plans[0], t = Object.fromEntries(p0.steps.map((s) => [s.key, toMin(s.time)]));
+  eq('Nhà gần 20 phút: có phương án; các mốc cách nhau đúng theo thời gian đi, lễ và đệm',
+    [near.plans.length >= 1, t.A - t.D, t.L - t.A, t.H - t.L, toMin(p0.endGroom) - t.H], [true, 35, 45, 20, 30]);
+  eq('Mọi phương án nằm trong khung 05:00–21:00', near.plans.every((p) => toMin(p.steps[0].time) >= 300 && toMin(p.endGroom) <= 1260), true);
+  // Phương án đầu đạt số mốc ưu tiên cao nhất có thể (đối chiếu bằng vét cạn)
+  let best = 0;
+  for (let a = 300; a <= 1260; a += 5) {
+    const dm = a - 35, h = a + 65;
+    if (dm < 300 || h + 30 > 1260) continue;
+    const zs = [{ role: 'cô dâu', zhi: 2 }, { role: 'chú rể', zhi: 4 }];
+    best = Math.max(best, [a, h].filter((x) => { const i = W.hourInfo(2026, 11, 15, x, zs); return i.good && i.margin >= 15; }).length);
+  }
+  eq('Phương án đầu có số mốc ưu tiên "vững" (giờ tốt, cách ranh giới canh ≥ 15 phút) bằng mức tối đa (vét cạn)', p0.prioRobust, best);
+  eq('Phương án đầu không kém phương án sau về số mốc ưu tiên vững', near.plans.every((p) => p.prioRobust <= p0.prioRobust), true);
+  eq('Mốc xung tuổi không được tính là mốc tốt', near.plans.every((p) => p.steps.every((s) => !(s.clash.length && s.good))), true);
+  const clashAll = W.hourInfo(2026, 11, 15, 8 * 60, [{ role: 'cô dâu', zhi: 10 }]); // 08:00 giờ Thìn xung tuổi Tuất
+  eq('08:00 là giờ Thìn, xung tuổi Tuất', [clashAll.zhiVi, clashAll.clash, clashAll.good], ['Thìn', ['cô dâu'], false]);
+
+  const far = W.plan({ y: 2026, m: 11, d: 15, travelTo: 240 });
+  eq('Nhà xa 4 giờ: vẫn xếp được, xuất phát không trước 05:00, có gợi ý ba cách làm khi đường xa',
+    [far.plans.length >= 1, far.plans.every((p) => toMin(p.steps[0].time) >= 300), far.advice.some((x) => /Đường xa/.test(x))], [true, true, true]);
+  const tooFar = W.plan({ y: 2026, m: 11, d: 15, travelTo: 540 });
+  eq('Nhà xa 9 giờ mỗi lượt: không gợi ý chạy xe đêm — không có phương án, có lời giải thích', [tooFar.plans.length, tooFar.advice.length >= 2], [0, true]);
+  const withParty = W.plan({ y: 2026, m: 11, d: 15, travelTo: 20, partyTime: '06:10' });
+  eq('Giờ tiệc trước khi xong lễ nhà trai → có lưu ý', withParty.plans[0].notes.some((x) => /Giờ tiệc 06:10 sớm hơn/.test(x)), true);
+  let threw = false; try { W.plan({ y: 2026, m: 11, d: 15, travelTo: -5 }); } catch { threw = true; }
+  eq('Thời gian đi âm → báo lỗi', threw, true);
+  const prioD = W.plan({ y: 2026, m: 11, d: 15, travelTo: 90, priority: ['D', 'A'] });
+  eq('Đổi mốc ưu tiên sang xuất phát + vào nhà gái', [prioD.priority, prioD.plans[0].steps.filter((s) => s.priority).map((s) => s.key)], [['D', 'A'], ['D', 'A']]);
+
+  // Giờ đề xuất cho việc cưới nằm trong khung sinh hoạt; việc khác không đổi
+  const bride2 = NT.bazi.buildChart({ ...base, gender: 'female', birthDate: '1998-03-12', birthTime: '06:15' });
+  const wedDays = S.findDays({ chart: bride2, act: A.byId('wed_main'), nameInfo: null, from: '2026-11-01', to: '2027-01-31', mode: 'best' }).days;
+  const start = (h) => Number(h.label.slice(0, 2));
+  eq('Cưới hỏi: giờ đề xuất luôn trong 07:00–20:59; hộp chi tiết vẫn đủ 13 khung',
+    [wedDays.every((d) => start(d.chosen) >= 7 && start(d.chosen) < 21 && d.bestHours.every((h) => start(h) >= 7 && start(h) < 21)), wedDays[0].hours.length], [true, 13]);
+  const bizDays = S.findDays({ chart, act: A.byId('biz_open'), nameInfo: null, from: '2026-11-01', to: '2027-01-31', mode: 'best' }).days;
+  eq('Việc không có tiệc, nhạc: không giới hạn khung giờ', bizDays.some((d) => start(d.chosen) < 7 || start(d.chosen) >= 21), true);
 }
 
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);

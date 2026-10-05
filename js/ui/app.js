@@ -694,12 +694,129 @@
       <div class="sheet-actions">
         <button type="button" class="btn" id="dlg-ics">📅 Thêm vào lịch (.ics)</button>
         <button type="button" class="btn" id="dlg-copy">📋 Sao chép tóm tắt</button>
+        ${state.act.id === 'wed_main' ? '<button type="button" class="btn btn-secondary" id="dlg-plan">🗓️ Chọn làm ngày cưới và xếp lịch trình</button>' : ''}
       </div>`;
     $('#dlg-ics').addEventListener('click', () => downloadICS(r));
     $('#dlg-copy').addEventListener('click', () => copySummary(r, dsc));
+    $('#dlg-plan')?.addEventListener('click', () => openWeddingPlan(r));
     const dlg = $('#day-dialog');
     if (!dlg.open) dlg.showModal();
     $('#dlg-body').scrollTop = 0;
+  }
+
+  /* ------------------------------ Lịch trình ngày cưới (PRD §10.5) ------------------------------ */
+  const planState = { r: null, result: null };
+
+  function openWeddingPlan(r) {
+    planState.r = r;
+    planState.result = null;
+    const dsc = S.describeDay(r.ctx);
+    $('#dlg-body').innerHTML = `
+      <p class="hint" style="margin-top:0"><button type="button" class="link-btn" id="plan-back">← Quay lại chi tiết ngày</button></p>
+      <h3 style="margin-top:0">Lịch trình ngày cưới: ${esc(dsc.weekday)}, ${fmtDate(r.ctx)}</h3>
+      <p class="hint">Khai thời gian thực tế; ứng dụng xếp giờ xuất phát, giờ vào nhà gái và giờ về tới nhà trai theo giờ hoàng đạo của ngày này, tránh giờ xung tuổi ${esc(state.subject?.role ?? 'cô dâu')}${state.legalCtx?.spouseBirthDate ? ' và chú rể' : ''}.</p>
+      <div class="grid-2">
+        <div class="field"><label for="wp-to">Đi từ nhà trai tới nhà gái (phút)</label>
+          <input class="input" type="number" id="wp-to" min="0" max="1200" step="5" value="30"></div>
+        <div class="field"><label for="wp-back">Từ nhà gái về nhà trai (phút)</label>
+          <input class="input" type="number" id="wp-back" min="0" max="1200" step="5" placeholder="Bằng lượt đi"></div>
+        <div class="field"><label for="wp-cb">Lễ ở nhà gái (phút)</label>
+          <input class="input" type="number" id="wp-cb" min="0" max="600" step="5" value="${NT.weddingPlan.DEFAULTS.ceremonyBride}"></div>
+        <div class="field"><label for="wp-cg">Lễ ở nhà trai (phút)</label>
+          <input class="input" type="number" id="wp-cg" min="0" max="600" step="5" value="${NT.weddingPlan.DEFAULTS.ceremonyGroom}"></div>
+        <div class="field"><label for="wp-party">Giờ tiệc (nếu đã định)</label>
+          <input class="input" type="time" id="wp-party"></div>
+        <div class="field"><label for="wp-prio">Hai mốc ưu tiên</label>
+          <select class="input" id="wp-prio">
+            <option value="A,H">Vào nhà gái + về tới nhà trai</option>
+            <option value="D,A">Xuất phát + vào nhà gái</option>
+            <option value="D,H">Xuất phát + về tới nhà trai</option>
+          </select></div>
+      </div>
+      <div style="margin:14px 0"><button type="button" class="btn btn-primary" id="wp-run"><span>Xếp lịch trình</span></button></div>
+      <div id="wp-out" aria-live="polite"></div>
+      <p class="disclaimer">${esc(DISCLAIMER)}</p>`;
+    $('#plan-back').addEventListener('click', () => openDay(r.key));
+    $('#wp-run').addEventListener('click', runWeddingPlan);
+    $('#dlg-body').scrollTop = 0;
+  }
+
+  function runWeddingPlan() {
+    const r = planState.r;
+    const num = (id) => ($(id).value === '' ? null : Number($(id).value));
+    const groom = readGroom();
+    try {
+      planState.result = NT.weddingPlan.plan({
+        y: r.ctx.y, m: r.ctx.m, d: r.ctx.d,
+        travelTo: num('#wp-to') ?? 0, travelBack: num('#wp-back'),
+        ceremonyBride: num('#wp-cb'), ceremonyGroom: num('#wp-cg'),
+        partyTime: $('#wp-party').value || null,
+        priority: $('#wp-prio').value.split(','),
+        brideZhi: state.chart?.tuoi.zhi ?? null, groomZhi: groom?.zhi ?? null,
+      });
+    } catch (ex) {
+      $('#wp-out').innerHTML = `<p class="disclaimer">${esc(ex.message)}</p>`;
+      return;
+    }
+    const res = planState.result;
+    const stepHTML = (s) => `<li class="${s.judged && !s.good ? 'severe' : ''}"><b>${esc(s.time)}</b> — ${esc(s.label)}${s.priority ? ' <span class="tag">ưu tiên</span>' : ''}
+      <span class="hint">giờ ${esc(s.zhiVi)} (${esc(s.canh)}) · ${s.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} · ${esc(s.tianShen)}${s.clash.length ? ` · xung tuổi ${esc(s.clash.join(', '))}` : ''}</span></li>`;
+    const plans = res.plans.map((p, i) => `
+      <div class="cat-title">Phương án ${i + 1} — ${p.goodCount}/3 mốc rơi vào giờ hoàng đạo, không xung tuổi</div>
+      <ul class="score-items no-index">${p.steps.map(stepHTML).join('')}<li class="note"><b>${esc(p.endGroom)}</b> — Xong lễ ở nhà trai</li>${p.party ? stepHTML(p.party) : ''}</ul>
+      ${p.notes.length ? `<ul class="why">${p.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
+      <div class="sheet-actions">
+        <button type="button" class="btn" data-plan-ics="${i}">📅 Thêm lịch trình vào lịch (.ics)</button>
+        <button type="button" class="btn" data-plan-copy="${i}">📋 Sao chép</button>
+      </div>`).join('');
+    $('#wp-out').innerHTML = `
+      ${res.advice.map((a) => `<p class="disclaimer">${esc(a)}</p>`).join('')}
+      ${plans}
+      ${res.plans.length ? `<p class="hint">${esc(res.criteria)}</p>` : ''}`;
+    $$('#wp-out [data-plan-ics]').forEach((b) => b.addEventListener('click', () => downloadPlanICS(res.plans[+b.dataset.planIcs])));
+    $$('#wp-out [data-plan-copy]').forEach((b) => b.addEventListener('click', () => copyPlan(res.plans[+b.dataset.planCopy])));
+  }
+
+  const planLines = (p) => [...p.steps, ...(p.party ? [p.party] : [])].map((s) =>
+    `${s.time} — ${s.label} (giờ ${s.zhiVi}, ${s.huangDao ? 'Hoàng đạo' : 'Hắc đạo'}${s.clash.length ? `, xung tuổi ${s.clash.join(', ')}` : ''})`);
+
+  function downloadPlanICS(p) {
+    const r = planState.r;
+    const ymd = `${r.ctx.y}${pad(r.ctx.m)}${pad(r.ctx.d)}`;
+    const now = new Date();
+    const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}00Z`;
+    const steps = [...p.steps, ...(p.party ? [p.party] : [])];
+    const events = steps.map((s, i) => {
+      const end = steps[i + 1] && steps[i + 1].min > s.min ? steps[i + 1].time : s.time;
+      return ['BEGIN:VEVENT', `UID:${newId()}@ngaytot`, `DTSTAMP:${stamp}`,
+        `DTSTART:${ymd}T${s.time.replace(':', '')}00`, `DTEND:${ymd}T${end.replace(':', '')}00`,
+        `SUMMARY:${icsEsc(`Ngày cưới: ${s.label}`)}`,
+        `DESCRIPTION:${icsEsc(`Giờ ${s.zhiVi}, ${s.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} (${s.tianShen}). ${DISCLAIMER} Lập bởi Ngày Tốt.`)}`,
+        'END:VEVENT'].join('\r\n');
+    });
+    const body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NgayTot//VI', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n');
+    const url = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
+    const a = Object.assign(document.createElement('a'), { href: url, download: `ngay-cuoi-${r.key}.ics` });
+    document.body.append(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 2000);
+    toast('Đã tạo file lịch trình .ics');
+  }
+
+  async function copyPlan(p) {
+    const r = planState.r, dsc = S.describeDay(r.ctx);
+    const text = [`Lịch trình ngày cưới: ${dsc.weekday}, ${fmtDate(r.ctx)} (ÂL ${dsc.lunarText})`, ...planLines(p), ...p.notes.map((n) => `Lưu ý: ${n}`), '', DISCLAIMER].join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      const ta = Object.assign(document.createElement('textarea'), { value: text });
+      document.body.append(ta);
+      ta.select();
+      document.execCommand('copy');
+      ta.remove();
+    }
+    toast('Đã sao chép lịch trình');
   }
 
   /* ------------------------------ Xuất lịch / sao chép ------------------------------ */
