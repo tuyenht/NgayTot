@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Ngày Tốt — Chọn ngày giờ tốt theo Bát tự cá nhân</title>
+  <meta name="description" content="Chọn ngày giờ tốt cho khai trương, cưới hỏi, động thổ, ký hợp đồng… dựa trên Bát tự (Tứ trụ) của riêng bạn, Hoàng lịch Hiệp Kỷ Biện Phương Thư và âm lịch Việt Nam.">
+  <meta name="theme-color" content="#0b0e17">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23d9474f'/><text x='32' y='45' font-size='38' text-anchor='middle' fill='%23fff3dc' font-family='serif'>吉</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@600&display=swap">
+  <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#top" id="brand-link">
+      <span class="brand-seal" aria-hidden="true">吉</span>
+      <span><span class="brand-name">Ngày Tốt</span><span class="brand-sub">Trạch cát theo Bát tự</span></span>
+    </a>
+    <nav class="topnav" aria-label="Điều hướng chính">
+      <a href="#card-profile" id="nav-profile">Hồ sơ</a>
+      <a href="#card-chart" id="nav-chart">Lá số</a>
+      <a href="#card-results" id="nav-results">Kết quả</a>
+      <a href="#card-method" id="nav-method">Phương pháp</a>
+    </nav>
+  </header>
+
+  <section class="hero" id="top">
+    <div class="hero-inner">
+      <span class="eyebrow">擇日 · Trạch nhật cá nhân hóa</span>
+      <h1>Chọn ngày giờ tốt theo Bát tự của riêng bạn</h1>
+      <p>Nhập ngày giờ sinh để lập Tứ trụ, tìm Dụng thần, rồi chấm điểm từng ngày, từng giờ theo Hoàng lịch cổ, ngày kỵ dân gian Việt Nam và tương quan với lá số của bạn.</p>
+      <div class="hero-badges">
+        <span class="badge"><b>Hiệp Kỷ Biện Phương Thư</b> · 宜忌, thần sát</span>
+        <span class="badge"><b>Tử Bình</b> · vượng suy, Dụng thần</span>
+        <span class="badge"><b>Âm lịch VN</b> · UTC+7</span>
+      </div>
+    </div>
+  </section>
+
+  <main class="layout">
+    <!-- ===== Cột trái: nhập liệu ===== -->
+    <div class="col col-left">
+      <section class="card" id="card-profile" aria-labelledby="h-profile">
+        <div class="card-head">
+          <h2 id="h-profile"><span class="step-no">1</span>Hồ sơ Bát tự</h2>
+        </div>
+        <div class="profile-bar">
+          <label class="sr-only" for="profile-select">Hồ sơ đã lưu</label>
+          <select class="input" id="profile-select"><option value="">— Hồ sơ mới —</option></select>
+          <button type="button" class="btn btn-sm" id="btn-save-profile" title="Lưu hồ sơ">Lưu</button>
+          <button type="button" class="btn btn-sm btn-ghost" id="btn-delete-profile" title="Xóa hồ sơ">Xóa</button>
+        </div>
+        <form id="profile-form" class="grid-2" novalidate>
+          <div class="field full">
+            <label for="f-name">Họ và tên</label>
+            <input class="input" id="f-name" name="name" autocomplete="name" maxlength="80" placeholder="Nguyễn Văn An">
+          </div>
+          <div class="field full">
+            <span class="field-label">Giới tính</span>
+            <div class="segmented" role="radiogroup" aria-label="Giới tính">
+              <label><input type="radio" name="gender" value="male" id="f-gender-male" checked><span>Nam</span></label>
+              <label><input type="radio" name="gender" value="female" id="f-gender-female"><span>Nữ</span></label>
+            </div>
+          </div>
+          <div class="field">
+            <label for="f-date">Ngày sinh (dương lịch)</label>
+            <input class="input" type="date" id="f-date" name="birthDate" required min="1900-01-01" max="2100-12-31">
+          </div>
+          <div class="field">
+            <label for="f-time">Giờ sinh</label>
+            <input class="input" type="time" id="f-time" name="birthTime" value="08:00">
+          </div>
+          <label class="check full" for="f-unknown-time"><input type="checkbox" id="f-unknown-time"> Không rõ giờ sinh (lập lá số 3 trụ)</label>
+          <div class="field">
+            <label for="f-place">Nơi sinh</label>
+            <select class="input" id="f-place" name="place"></select>
+          </div>
+          <div class="field">
+            <label for="f-lon">Kinh độ (°E)</label>
+            <input class="input" type="number" id="f-lon" name="lon" step="0.01" min="-180" max="180" value="105.85">
+          </div>
+          <div class="field">
+            <label for="f-tz">Múi giờ khi sinh</label>
+            <select class="input" id="f-tz" name="tz">
+              <option value="7">UTC+7 (hiện nay)</option>
+              <option value="8">UTC+8</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-zi">Giờ Tý đổi ngày</label>
+            <select class="input" id="f-zi" name="ziSect">
+              <option value="1">23:00 (truyền thống)</option>
+              <option value="2">00:00 (giữ ngày cũ)</option>
+            </select>
+          </div>
+          <p class="hint full" id="tz-hint">Miền Nam giai đoạn 1960 – 13/6/1975 dùng UTC+8. Nếu sinh khi đó, hãy chọn UTC+8.</p>
+          <label class="check full" for="f-tst"><input type="checkbox" id="f-tst" checked> Hiệu chỉnh giờ Mặt Trời thực (theo kinh độ và phương trình thời gian)</label>
+        </form>
+        <div style="margin-top:16px">
+          <button type="button" class="btn btn-secondary" id="btn-build-chart">Lập lá số Bát tự</button>
+        </div>
+      </section>
+
+      <section class="card" id="card-task" aria-labelledby="h-task">
+        <div class="card-head"><h2 id="h-task"><span class="step-no">2</span>Công việc cần làm</h2></div>
+        <div class="act-grid" id="act-grid" role="radiogroup" aria-label="Loại việc"></div>
+        <div class="custom-panel hidden" id="custom-panel">
+          <div class="grid-2">
+            <div class="field full">
+              <label for="c-name">Tên công việc</label>
+              <input class="input" id="c-name" maxlength="60" placeholder="Ví dụ: Ra mắt sách, khởi công dự án…">
+            </div>
+            <div class="field">
+              <label for="c-element">Ngũ hành của việc</label>
+              <select class="input" id="c-element">
+                <option value="">— Không xét —</option>
+                <option value="0">Mộc (giáo dục, cây cối, y dược, thời trang)</option>
+                <option value="1">Hỏa (điện, công nghệ, ăn uống, truyền thông)</option>
+                <option value="2">Thổ (bất động sản, xây dựng, nông nghiệp)</option>
+                <option value="3">Kim (tài chính, kim khí, máy móc, xe cộ)</option>
+                <option value="4">Thủy (vận tải, du lịch, thương mại, đồ uống)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="c-base">Dùng quy tắc 宜/忌 của</label>
+              <select class="input" id="c-base"><option value="">— Chung (không xét 宜/忌) —</option></select>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section class="card" id="card-time" aria-labelledby="h-time">
+        <div class="card-head"><h2 id="h-time"><span class="step-no">3</span>Khoảng thời gian</h2></div>
+        <p class="disclaimer hidden" id="fixed-only-note"></p>
+        <div class="grid-2">
+          <div class="field">
+            <label for="t-from" id="t-from-label">Từ ngày</label>
+            <input class="input" type="date" id="t-from">
+          </div>
+          <div class="field" id="to-wrap">
+            <label for="t-to">Đến ngày</label>
+            <input class="input" type="date" id="t-to">
+          </div>
+        </div>
+        <div class="quick-ranges" id="quick-ranges">
+          <button type="button" class="chip-btn" data-days="30" id="qr-30">30 ngày</button>
+          <button type="button" class="chip-btn active" data-days="90" id="qr-90">3 tháng</button>
+          <button type="button" class="chip-btn" data-days="180" id="qr-180">6 tháng</button>
+          <button type="button" class="chip-btn" data-days="365" id="qr-365">1 năm</button>
+        </div>
+        <h3 id="mode-title">Chế độ giờ</h3>
+        <div class="segmented" id="mode-wrap" role="radiogroup" aria-label="Chế độ giờ">
+          <label><input type="radio" name="mode" value="best" id="m-best" checked><span>Tìm giờ tốt nhất</span></label>
+          <label><input type="radio" name="mode" value="fixed" id="m-fixed"><span>Giờ cố định hằng ngày</span></label>
+        </div>
+        <div class="field hidden" id="fixed-wrap" style="margin-top:12px">
+          <label for="t-fixed">Giờ cố định (giờ đồng hồ VN)</label>
+          <input class="input" type="time" id="t-fixed" value="09:00">
+          <span class="hint">Ví dụ: ca làm việc, giờ hẹn cố định… Hệ thống chấm điểm từng ngày đúng tại giờ này.</span>
+        </div>
+        <div style="display:flex;flex-direction:column;gap:10px;margin:16px 0 18px">
+          <label class="check" for="t-skip-weekend" id="skip-weekend-wrap"><input type="checkbox" id="t-skip-weekend"> Bỏ qua Thứ bảy và Chủ nhật</label>
+          <label class="check" for="t-ignore-year"><input type="checkbox" id="t-ignore-year"> Bỏ qua hạn năm Kim lâu, Hoang ốc (đã mượn tuổi)</label>
+        </div>
+        <button type="button" class="btn btn-primary" id="btn-find"><span>Tìm ngày tốt</span></button>
+      </section>
+    </div>
+
+    <!-- ===== Cột phải: lá số & kết quả ===== -->
+    <div class="col">
+      <section class="card" id="card-chart" aria-labelledby="h-chart">
+        <div class="card-head">
+          <h2 id="h-chart">Lá số Tứ trụ</h2>
+          <span class="hint" id="chart-meta"></span>
+        </div>
+        <div id="chart-body">
+          <div class="empty-state">
+            <div class="big-han">命</div>
+            <p>Nhập ngày giờ sinh rồi bấm <b>Lập lá số Bát tự</b> để xem Tứ trụ, vượng suy và Dụng thần.</p>
+          </div>
+        </div>
+      </section>
+
+      <section class="card hidden" id="card-results" aria-labelledby="h-results" aria-live="polite">
+        <div class="summary">
+          <h2 id="h-results">Ngày tốt đề xuất</h2>
+          <div class="summary-stats" id="summary-stats"></div>
+        </div>
+        <div class="top-list" id="top-list"></div>
+        <h3>Lịch tổng quan</h3>
+        <div class="legend" id="legend"></div>
+        <div class="heatmap" id="heatmap"></div>
+      </section>
+
+      <section class="card" id="card-method" aria-labelledby="h-method">
+        <div class="card-head"><h2 id="h-method">Phương pháp và nguồn</h2></div>
+        <div class="method-grid">
+          <div class="method-item"><h4>1 · Lá số chính xác</h4>Trụ năm và tháng tính theo <b>thời điểm</b> tiết khí (Lập Xuân, các Tiết), có quy đổi múi giờ. Trụ ngày và giờ tính theo giờ Mặt Trời thực tại nơi sinh. Có thể chọn phái đổi ngày ở giờ Tý.</div>
+          <div class="method-item"><h4>2 · Dụng thần</h4>Định lượng lực ngũ hành theo vị trí, tàng can và Vượng/Tướng/Hưu/Tù/Tử. Dụng thần chọn theo Phù ức (Tử Bình Chân Thuyên, Trích Thiên Tủy), có Điều hậu (Cùng Thông Bảo Giám) và cách Tòng.</div>
+          <div class="method-item"><h4>3 · Hoàng lịch</h4>Nên/Kỵ, thần sát, 12 Trực, 28 Tú, Hoàng đạo/Hắc đạo theo <i>Hiệp Kỷ Biện Phương Thư</i> (协纪辨方书). Nguồn dữ liệu: thư viện mã nguồn mở <a href="https://github.com/6tail/lunar-javascript" rel="noopener" target="_blank">lunar-javascript</a> (MIT).</div>
+          <div class="method-item"><h4>4 · Dân gian Việt Nam</h4>Tam nương, Nguyệt kỵ, Dương công kỵ nhật tính theo âm lịch VN (UTC+7, thuật toán Hồ Ngọc Đức). Hạn năm gồm Kim lâu, Hoang ốc, Tam tai. Ngũ hành tên tính theo Ngũ âm, chỉ là hệ số phụ.</div>
+        </div>
+        <p class="disclaimer">Trạch nhật là tri thức văn hóa truyền thống phương Đông, chưa có kiểm chứng khoa học. Điểm số chỉ để tham khảo. Mọi cộng/trừ điểm đều hiện lý do để bạn tự đối chiếu với thầy hoặc sách.</p>
+      </section>
+    </div>
+  </main>
+
+  <dialog class="sheet" id="day-dialog" aria-labelledby="dlg-title">
+    <div class="sheet-head">
+      <div class="ring lg" id="dlg-ring"><b id="dlg-score">0</b></div>
+      <div class="grow">
+        <p class="sheet-title" id="dlg-title"></p>
+        <div class="day-sub" id="dlg-sub"></div>
+        <span class="grade" id="dlg-grade"></span>
+      </div>
+      <button type="button" class="btn btn-sm btn-ghost" id="dlg-close" aria-label="Đóng">✕</button>
+    </div>
+    <div class="sheet-body" id="dlg-body"></div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <footer>Ngày Tốt · Dữ liệu tính hoàn toàn trên trình duyệt, không gửi thông tin cá nhân đi đâu.</footer>
+
+  <script src="vendor/lunar.js"></script>
+  <script src="js/core/data.js"></script>
+  <script src="js/core/i18n-vi.js"></script>
+  <script src="js/core/calendar-vn.js"></script>
+  <script src="js/core/bazi.js"></script>
+  <script src="js/core/name-element.js"></script>
+  <script src="js/core/activities.js"></script>
+  <script src="js/core/scoring.js"></script>
+  <script src="js/ui/app.js"></script>
+</body>
+</html>
