@@ -451,6 +451,9 @@ dialog.sheet::backdrop { background: hsl(228 50% 3% / .7); backdrop-filter: blur
   gap: 12px;
 }
 .advanced-body > .full { grid-column: 1 / -1; }
+@media (max-width: 480px) {
+  .advanced-body { grid-template-columns: 1fr; }
+}
 .tz-auto-notice {
   font-size: 0.78rem;
   color: var(--gold);
