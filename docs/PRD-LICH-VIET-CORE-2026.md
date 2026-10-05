@@ -852,7 +852,7 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`, sau khi mọi phiên sửa mã 
 | 19 | Vừa | Chưa chạy ngoại tuyến; ảnh nền 782 KB; quét 1 năm chậm | Tồn đọng | Chưa có service worker; ảnh nền vẫn 782 KB; quét 1 năm khoảng 1,2 giây |
 | 20 | Thấp | README và chú thích mã lệch với mã | Đã sửa | Đã đọc README: bảng điểm khớp bảng 8.3 |
 | 21 | Thấp | Chưa có chuỗi nhiều bước, nhiều người, chế độ không chỉ số, `engine_version` | Tồn đọng (G3–G4) | Đổi âm → dương đã có hàm và đã báo đúng ngày không tồn tại; chưa có trên giao diện |
-| 22 | Thấp | Script tạm trong `scratch/` | Còn nguyên, chờ chủ dự án cho phép xóa | Hai script cũ vẫn ở đó (chạy lại sẽ ghi đè `activities.js`, `scoring.js`). Thư mục nằm ngoài git |
+| 22 | Thấp | Script tạm trong `scratch/` có thể ghi đè `activities.js`, `scoring.js` | Đã xử lý | Chủ dự án cho phép; đã xóa `update_activities.mjs` và `update_scoring.mjs` ngày 2026-10-05. Thư mục `scratch/` vẫn nằm ngoài git |
 | 23 | Cao | `legal.js` dẫn sai văn bản (Thông tư 02/2009, Nghị định 144/2021) và hiện câu chữ sai đó cho người dùng | Đã sửa | Đạt: quàn và cải táng dẫn Thông tư 21/2021/TT-BYT (Điều 4, 9, 13); khung giờ nhạc dẫn Thông tư 04/2011; thông báo không còn chữ "cấm", "vi phạm". Cờ `verified` vẫn là `false` cho mọi dòng |
 | 24 | Cao | Quy định Huế 72 giờ bị dùng như giới hạn nới lỏng; thiếu trường hợp ≤ −10°C | Đã sửa | Đạt: hàm `burialLimitHours` lấy giá trị nhỏ nhất; 50 giờ không bảo quản lạnh ở Huế bị cảnh báo; bảo quản lạnh ở Huế bị chặn ở 72 giờ |
 | 25 | Vừa | Kiểm tra thời gian quàn và tuổi của người phối ngẫu không kích hoạt được từ giao diện: chưa có ô nhập thời điểm mất, cách bảo quản, tỉnh, ngày sinh người kia. Mức "Loại" của giới hạn quàn (3.2) vì thế chưa có hiệu lực trên giao diện | Tồn đọng (G4) | Không đổi; thuộc phần nhiều người và chuỗi tang lễ |
@@ -879,7 +879,7 @@ Cổng kiểm thử giữa các giai đoạn chính là tiêu chí nghiệm thu.
 | **G4 — Chuỗi nghi lễ** | Cưới hỏi, làm nhà, tang lễ và giỗ, Tết; `legal_limits` theo tỉnh; nhiều người | Kiểm thử chuỗi và giới hạn pháp luật |
 | **G5 — Luật từ sách gốc (tùy chọn)** | Thay dần dữ liệu `UNVERIFIED` bằng bảng đã kiểm với Hán văn | Lớp 6 |
 
-Việc còn mở sau G0, xếp theo giai đoạn: dòng 14, 19, 27 (G2); dòng 16 và phần đầu dòng 21 (G3); phần còn lại của dòng 10, 12, 21 cùng dòng 25, 30 (G4); dòng 22 chờ chủ dự án cho phép xóa.
+Việc còn mở sau G0, xếp theo giai đoạn: dòng 14, 19, 27 (G2); dòng 16 và phần đầu dòng 21 (G3); phần còn lại của dòng 10, 12, 21 cùng dòng 25, 30 (G4).
 
 ### 15.2 Rủi ro còn lại
 
