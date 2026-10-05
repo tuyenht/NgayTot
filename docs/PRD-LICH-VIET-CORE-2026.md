@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.9 — "giờ tốt" là giờ để làm gì theo từng việc (8.6); bấm một canh giờ để nhận giờ đề xuất cụ thể (10.5); sửa 9.5 cho khớp mã sau lượt phản biện độc lập |
+| Phiên bản | 4.10 — giờ đề xuất của mọi việc nằm trong khung sinh hoạt (8.6, QĐ-11); làm rõ 10.5 sau lượt phản biện độc lập thứ tư |
 | Ngày cập nhật | 2026-10-05 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
@@ -545,7 +545,7 @@ Sáu mức: Đại cát (≥ 80), Cát (≥ 68), Khá (≥ 55), Bình thường 
 
 13 khung: 12 canh, riêng canh Tý tách Tý sớm (00:00–00:59) và Tý muộn (23:00–23:59). Mỗi khung có: can chi giờ, thần trực giờ, hoàng đạo hay hắc đạo, quan hệ với lá số.
 
-Với việc có tiệc và nhạc (cưới, khánh thành), giờ được **đề xuất** trên thẻ ngày chỉ lấy trong khung sinh hoạt 07:00–20:59; bảng 13 khung trong hộp chi tiết vẫn hiện đủ **[SL]**. Lý do: giờ tốt lúc nửa đêm hay rạng sáng không dùng được cho đám cưới và nằm ngoài khung giờ nhạc ở 3.2. Thẻ ngày làm việc theo canh 2 tiếng nên lấy mốc 07:00 (canh 05:00–06:59 cắt ngang mốc 06:00); lịch trình ngày cưới ở 10.5 làm việc theo phút nên dùng mốc chính xác hơn: xuất phát từ 05:00, lễ ở nhà gái từ 06:00.
+Giờ được **đề xuất** trên thẻ ngày chỉ lấy trong khung sinh hoạt (QĐ-11): 05:00–20:59 cho mọi việc, 07:00–20:59 cho việc có tiệc và nhạc (cưới, khánh thành); bảng 13 khung trong hộp chi tiết vẫn hiện đủ **[SL]**. Lý do: không ai ký hợp đồng, cắt tóc hay đón dâu lúc 1 giờ sáng, và giờ cưới ngoài 06:00–22:00 còn vướng khung giờ nhạc ở 3.2. Thẻ ngày làm việc theo canh 2 tiếng nên lấy mốc 07:00 (canh 05:00–06:59 cắt ngang mốc 06:00); lịch trình ngày cưới ở 10.5 làm việc theo phút nên dùng mốc chính xác hơn: xuất phát từ 05:00, lễ ở nhà gái từ 06:00.
 
 **"Giờ tốt" là giờ để làm gì (QĐ-10).** Giờ tốt được hiểu là giờ khởi sự: lúc bắt đầu hành động chính của việc; không cần làm xong trong canh giờ đó **[SL — cách hiểu phổ biến, chưa có nguồn sách]**. Giao diện không được ghi "Giờ tốt" trống không; phải ghi giờ đó để làm gì:
 
@@ -696,7 +696,7 @@ Họ tên không được hỏi ở bất kỳ việc nào: luật "ngũ hành t
 
 Lá số Tứ trụ của chủ thể được lập và hiển thị sau khi người dùng khai xong bước 2. Lá số riêng cho người thứ hai làm ở G4.
 
-Kết quả đang hiện luôn phải khớp với việc và người đang khai: đổi việc, đổi người được xét, đổi ngày giờ sinh, hoặc một lượt tìm thất bại đều xóa kết quả cũ khỏi màn hình.
+Kết quả đang hiện luôn phải khớp với đầu vào: đổi việc, đổi người được xét, đổi ngày giờ hay nơi sinh, đổi khoảng ngày, chế độ giờ, bộ lọc, hoặc một lượt tìm thất bại đều xóa kết quả cũ khỏi màn hình. Bấm "Lập lá số" mà không đổi gì thì kết quả giữ nguyên.
 
 ### 9.6 Chủ thể xét tuổi do việc quy định (QĐ-08)
 
@@ -809,7 +809,9 @@ Sau khi có danh sách ngày cho việc `WED_MAIN`, người dùng chọn một 
 
 **Đầu vào:** thời gian đi từ nhà trai (hoặc điểm xuất phát) tới nhà gái — bắt buộc; thời gian từ nhà gái về nhà trai (mặc định bằng lượt đi); thời lượng lễ ở nhà gái (mặc định 45 phút) và ở nhà trai (mặc định 30 phút); giờ tiệc nếu đã định; hai mốc ưu tiên; tùy chọn gắn một mốc vào một canh giờ. Mọi số được làm tròn về phút nguyên; ô để trống dùng mặc định. Tuổi cô dâu và chú rể lấy từ bước 2 của 9.5.
 
-**Bấm một canh giờ để nhận giờ cụ thể.** Trên thẻ ngày cưới, mỗi canh hoàng đạo là một nút. Bấm vào thì ứng dụng gắn mốc "vào nhà gái" vào canh đó và đề xuất ngay một lịch trình với số liệu mặc định; người dùng sửa thời gian đi, đổi mốc được gắn (vào nhà gái, về tới nhà trai, hoặc xuất phát) hay đổi canh rồi xếp lại. Trong canh đã gắn, giờ đề xuất là giờ cho nhiều mốc ưu tiên vững nhất, rồi mới đến cách ranh giới canh xa nhất. Gắn mốc mà không xếp được thì nói rõ vì sao và đề nghị chọn canh khác.
+**Bấm một canh giờ để nhận giờ cụ thể.** Trên thẻ ngày cưới, mỗi canh hoàng đạo trong khung sinh hoạt mà không xung tuổi cô dâu, chú rể là một nút (bấm chuột hoặc Enter). Bấm vào thì ứng dụng gắn mốc "vào nhà gái" vào canh đó và đề xuất ngay một lịch trình với số liệu mặc định (đi 30 phút mỗi lượt, lễ 45 và 30 phút), kèm câu nói rõ đây là số mặc định cần sửa theo thực tế; người dùng sửa thời gian đi, đổi mốc được gắn (vào nhà gái, về tới nhà trai, hoặc xuất phát) hay đổi canh rồi xếp lại. Trong canh đã gắn, giờ đề xuất là giờ cho nhiều mốc ưu tiên vững nhất, rồi mới đến cách ranh giới canh xa nhất. Nếu không mốc nào rơi vào giờ tốt thì không gọi là "giờ đề xuất" mà là "giờ xếp được trong canh đã chọn". Gắn mốc mà không xếp được thì nói rõ vì sao và đề nghị chọn canh khác. Ô chọn canh ghi cả hoàng đạo, hắc đạo và xung tuổi ai.
+
+Lễ cưới ở chế độ "giờ cố định hằng ngày" không dùng lịch trình: giờ người dùng đặt được coi là giờ làm lễ và xử lý như việc một mốc.
 
 **Bốn mốc, tính dây chuyền từ mốc neo A:**
 
@@ -982,7 +984,7 @@ Giai đoạn nào đã đóng, tại commit nào, và việc nào còn mở: xem
 
 ## 16. Quyết định của chủ dự án
 
-Bảng quyết định QĐ-01 đến QĐ-10, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
+Bảng quyết định QĐ-01 đến QĐ-11, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
 
 | Mã | Quyết định |
 | --- | --- |
@@ -996,6 +998,7 @@ Bảng quyết định QĐ-01 đến QĐ-10, kèm phương án đã cân nhắc 
 | QĐ-08 | Chủ thể xét tuổi do việc quy định: cưới hỏi xét tuổi nữ; làm nhà xét tuổi gia chủ theo 9.6 |
 | QĐ-09 | Có lịch trình giờ trong ngày cưới: chọn ngày chính, xếp giờ xuất phát, vào nhà gái, về nhà trai (10.5) |
 | QĐ-10 | "Giờ tốt" phải ghi rõ là giờ để làm gì (8.6); bấm một canh giờ thì nhận giờ đề xuất cụ thể theo thời gian đã khai (10.5) |
+| QĐ-11 | Giờ đề xuất của mọi việc chỉ lấy trong khung sinh hoạt: 05:00–20:59, riêng việc có tiệc, nhạc 07:00–20:59 (8.6) |
 
 ---
 
