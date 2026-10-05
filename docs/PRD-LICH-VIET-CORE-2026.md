@@ -181,7 +181,7 @@ Cho đến khi có bảng đóng băng (giai đoạn G1–G2, mục 15), tầng 
 
 | Bảng | Khóa | Trường chính | Sinh từ |
 | --- | --- | --- | --- |
-| `astro_events` | `kind`, `seq`, `model_version` | `kind` = sóc hoặc tiết khí; `seq` = số thứ tự tuần trăng hoặc (năm, chỉ số tiết khí 0–23); `tt`; `utc`; `model_version` gồm lịch thiên văn, phiên bản Skyfield, mô hình ΔT | Tầng A |
+| `astro_events` | `kind`, `seq`, `model_version` | `kind` = sóc hoặc tiết khí; `seq` = số thứ tự tuần trăng hoặc (năm, chỉ số tiết khí 0–23); `tt`; `ut1`; `delta_t`; `model_version` gồm lịch thiên văn, phiên bản Skyfield, mô hình ΔT | Tầng A |
 | `lunar_months` | `calendar_tz`, `start_jdn` | `year`, `month`, `is_leap`, `length` 29 hoặc 30, can chi tháng âm | Tầng B |
 | `day_facts` | `calendar_tz`, `jdn` | Ngày, tháng, năm âm, nhuận; can chi ngày, năm, tháng tiết khí và tháng âm; tiết khí trong ngày; `boundary_risk` | Tầng B |
 | `official_overrides` | `calendar_tz`, `jdn` | Giá trị chính thức, nguồn, lý do lệch với phép tính | Nguồn chính thức |
@@ -231,7 +231,8 @@ Hai khái niệm vùng không được dùng chung một trường: `calendar_re
 
 - **Sóc:** thời điểm kinh độ hoàng đạo biểu kiến của Mặt Trăng bằng của Mặt Trời.
 - **Tiết khí:** thời điểm kinh độ biểu kiến Mặt Trời là bội số của 15°. Tính từ Xuân phân là 0: chỉ số chẵn là trung khí, lẻ là tiết **[KC]**.
-- Tầng A không biết gì về múi giờ hay âm lịch; chỉ trả thời điểm UTC và TT, độ phân giải 1 giây, kèm phiên bản lịch thiên văn, phiên bản Skyfield và mô hình ΔT. Đổi mô hình ΔT thì tính lại và so khác biệt.
+- Tầng A không biết gì về múi giờ hay âm lịch; chỉ trả thời điểm theo TT và UT1, độ phân giải 1 giây, kèm ΔT đã dùng, phiên bản lịch thiên văn, phiên bản Skyfield và mô hình ΔT. Đổi mô hình ΔT thì tính lại và so khác biệt. Trước 1972 chưa có UTC nên giờ dân sự được suy từ UT1; từ 1972 UT1 và UTC lệch nhau dưới 0,9 giây **[SL]**.
+- Tệp lịch thiên văn: `de440.bsp` (114 MB, phủ 1550–2650). Bản rút gọn `de440s.bsp` chỉ phủ 1849–2150 nên không đủ cho khoảng 1799–2200 **[KC — theo trang tài liệu Skyfield]**. Tệp này không đưa vào git.
 
 ### 5.2 Lựa chọn công cụ
 
@@ -418,7 +419,7 @@ Khung bảng lấy từ V5.1 (mục VI.2), đã sửa cho khớp bảng 8.3 và 
 
 | Nhóm dữ liệu | Nguồn được chấp nhận | Dùng để | Tiêu chuẩn chấp nhận | Nhãn |
 | --- | --- | --- | --- | --- |
-| Thiên văn | Skyfield + JPL DE440; đối chiếu DE441 (Yuk Tung Liu) | Sóc, 24 tiết khí (UTC) | Lệch ≤ 60 giây ở mọi sự kiện | `ASTRO` |
+| Thiên văn | Skyfield + JPL DE440; đối chiếu DE431 (Yuk Tung Liu) | Sóc, 24 tiết khí (UTC) | Lệch ≤ 60 giây ở mọi sự kiện | `ASTRO` |
 | Lịch pháp | Số liệu Ban Lịch Nhà nước; bảng Đài Thiên văn Hồng Kông; Quyết định 121-CP, 134/2002 | Tháng âm, tháng nhuận, can chi | Khớp toàn bộ, hoặc chỗ lệch có trong `official_overrides` kèm lý do | `CONVENTION` |
 | Sách chọn ngày | Hiệp Kỷ Biện Phương Thư; Ngọc Hạp Thông Thư; Đổng Công Tuyển Trạch | Thần sát, Trực, Tú, nghi/kỵ theo việc | Có ảnh chụp Hán văn, hai người kiểm độc lập, đạt mọi ví dụ trong sách (7.4) | `CONSENSUS` / `SCHOOL_SPLIT` |
 | Thư viện đối chiếu | 6tail, cnlunar, lichvang, Thọ Tinh | Đối chiếu; tạm dùng khi chưa có bảng từ sách | Khóa phiên bản; ghi rõ "chưa đối chiếu sách gốc" | `UNVERIFIED` |
@@ -756,7 +757,7 @@ Mã bước chuỗi Tết (theo V5.1): `TET_EVE` (giao thừa — là thời đi
 
 | # | Lớp | So với | Ngưỡng đạt |
 | --- | --- | --- | --- |
-| 1 | Thiên văn | Thời điểm sóc, tiết khí của Yuk Tung Liu (DE441) **[KC]** | Lệch ≤ 60 giây ở mọi sự kiện **[SL]** |
+| 1 | Thiên văn | Thời điểm sóc, tiết khí của Yuk Tung Liu: tệp `src/TDBtimes.txt` trong kho `ytliu0/ChineseCalendar`, thang giờ TDB, phủ 1600–3500, tính bằng DE431 **[KC — đã đọc README và phần đầu tệp]** | Lệch ≤ 60 giây ở mọi sự kiện khi so trên cùng thang giờ TDB/TT (không so qua UTC để khỏi dính sai khác mô hình ΔT) **[SL]** |
 | 2 | Quy tắc âm lịch | Bảng Đài Thiên văn Hồng Kông 1929–2100, chạy lõi ở UTC+8 **[KC]**. 1912–1928 chạy ở kinh tuyến Bắc Kinh, chấp nhận danh sách ngoại lệ | Khớp toàn bộ, hoặc chỗ lệch có trong `official_overrides` kèm lý do |
 | 3 | Múi giờ Việt | Số liệu Ban Lịch Nhà nước khi có; trước đó: ngày Tết các năm, "Lịch Thế kỷ XX" (1968–2000), "556 năm đối chiếu", bảng Hồ Ngọc Đức | Khớp 100% số liệu Ban Lịch; với nguồn khác, mọi chỗ lệch có giải thích |
 | 4 | Bất biến | Tự kiểm trên toàn bộ 1912–2100 | 0 vi phạm |
@@ -873,7 +874,7 @@ Cổng kiểm thử giữa các giai đoạn chính là tiêu chí nghiệm thu.
 | Giai đoạn | Nội dung | Cổng đạt |
 | --- | --- | --- |
 | **G0 — Vá lỗi đã kiểm chứng** | Mục 14.2 dòng 1–9, 11, 13, 15, 17, 18, 20, 23, 24, 26, 28, 29; dòng 10 và 12 ở phần không cần dữ liệu của G4 | **Đã đóng**: bất biến 13.2 không vi phạm trên 1912–2100; âm lịch 1929–1967 khớp từng ngày với 6tail ở UTC+8; lớp 7 phần từ khóa đạt; lớp 8 đạt (việc y tế, tài nguyên bên thứ ba, `localStorage` — cả ba đã thử trên trình duyệt). 78/78 kiểm thử của dự án đạt |
-| **G1 — Lõi thiên văn đóng băng** | Công cụ Skyfield sinh `astro_events`; đối chiếu Yuk Tung Liu | Lớp 1 |
+| **G1 — Lõi thiên văn đóng băng** | Công cụ Skyfield (Python, chạy trên máy phát triển, đặt trong `tools/astro/`) sinh `data/astro_events.json` cho 1799–2200 kèm tệp mã băm SHA-256; script đối chiếu với `TDBtimes.txt` | Lớp 1: lệch ≤ 60 giây ở mọi sự kiện; đủ 24 tiết khí mỗi năm; hai sóc liên tiếp cách nhau 29,2–29,9 ngày |
 | **G2 — Lịch pháp Việt Nam** | Sinh `day_facts` theo `calendar_tz`; `official_overrides`; trình duyệt đọc bảng thay cho tính tại chỗ; giao diện đổi âm → dương; dòng 14, 19, 27 | Lớp 2, 3, 4, 5 |
 | **G3 — Luật có nhãn và ngày cố định** | Dòng kết quả theo 8.2 (dòng 16); chế độ không chỉ số; use case đi thi đầy đủ (9.4) | Lớp 7, 8 |
 | **G4 — Chuỗi nghi lễ** | Cưới hỏi, làm nhà, tang lễ và giỗ, Tết; `legal_limits` theo tỉnh; nhiều người | Kiểm thử chuỗi và giới hạn pháp luật |
