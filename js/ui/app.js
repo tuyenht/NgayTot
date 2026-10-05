@@ -1,6 +1,6 @@
 /**
  * NgayTot — UI controller.
- * Toàn bộ dữ liệu xử lý cục bộ; hồ sơ lưu localStorage. Mọi chuỗi do người dùng nhập đều đi qua esc().
+ * Toàn bộ dữ liệu xử lý cục bộ; hồ sơ chỉ lưu localStorage khi người dùng bấm Lưu (PRD §3.3). Mọi chuỗi do người dùng nhập đều đi qua esc().
  */
 (function (NT) {
   'use strict';
@@ -14,11 +14,21 @@
   const pad = (n) => String(n).padStart(2, '0');
   const EL_KEY = ['moc', 'hoa', 'tho', 'kim', 'thuy'];
   const STORE_KEY = 'ngaytot.profiles.v1';
-  const LAST_KEY = 'ngaytot.last.v1';
+  const LAST_ID_KEY = 'ngaytot.lastProfileId.v1'; // chỉ id của hồ sơ đã chủ động Lưu
+  const LEGACY_AUTOSAVE_KEY = 'ngaytot.last.v1';   // bản cũ tự lưu hồ sơ vừa nhập — xóa khi khởi động
+  const KEY_PREFIX = 'ngaytot.';
   const TOP_N = 12;
   const CAT_LABEL = { cal: 'Hoàng lịch', folk: 'Ngày kỵ dân gian', bazi: 'Bát tự của bạn', name: 'Ngũ hành tên (hệ số phụ)', year: 'Hạn năm' };
+  /** Câu miễn trừ bắt buộc trên mọi màn hình kết quả (PRD §3.4). */
+  const DISCLAIMER = 'Trạch nhật là tri thức văn hóa truyền thống, chưa có kiểm chứng khoa học. Kết quả chỉ để tham khảo.';
 
   const state = { chart: null, nameInfo: null, results: null, act: null, mode: 'best' };
+  /** Việc có ngày đã ấn định: không hiện chỉ số, xếp loại (PRD §3.1, §8.4 điều 4). */
+  const noIndex = () => !!state.act?.fixedOnly;
+  /** Chế độ ngày cố định: diễn đạt trung tính, không dùng từ gây sợ (PRD §3.4). */
+  const neutral = (t) => (noIndex()
+    ? String(t).replace(/Hung sát/g, 'Sao cần lưu ý').replace(/ — hung$/, ' — không thuận').replace(/phạm /gi, 'gặp ')
+    : String(t));
 
   /* ------------------------------ Tiện ích ------------------------------ */
   let toastTimer;
@@ -171,7 +181,6 @@
     try {
       state.chart = NT.bazi.buildChart(p);
       state.nameInfo = NT.nameElement.analyzeName(p.name);
-      localStorage.setItem(LAST_KEY, JSON.stringify(p));
       renderChart();
       return state.chart;
     } catch (ex) {
@@ -311,19 +320,26 @@
   }
 
   function dayCardHTML(r, idx) {
+    const fixed = noIndex();
     const dsc = S.describeDay(r.ctx);
     const pos = r.day.items.filter((i) => i.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
     const neg = r.day.items.filter((i) => i.pts < 0).sort((a, b) => a.pts - b.pts).slice(0, 1);
     const hours = (r.bestHours.length ? r.bestHours : [r.chosen])
       .map((h) => `<span class="hour-chip" title="${esc(h.ganZhi)} · ${esc(h.tianShen)}">${esc(h.label)}</span>`).join('');
+    const head = fixed
+      ? '<div class="info-badge" aria-hidden="true">📅</div>'
+      : `<div class="ring ${gradeClass(r.grade)}" style="--p:${r.score}"><b>${r.score}</b></div>`;
+    const why = fixed
+      ? r.day.items.slice(0, 5).map((i) => `<li>${esc(neutral(i.text))}</li>`)
+      : [...pos, ...neg].map((i) => `<li><b class="pts ${i.pts > 0 ? 'pos' : 'neg'}">${i.pts > 0 ? '+' : ''}${i.pts}</b> ${esc(i.text)}</li>`);
     return `<article class="day-card" role="button" tabindex="0" aria-label="Xem chi tiết ngày ${fmtDate(r.ctx)}" data-key="${r.key}" id="day-card-${r.key}" style="animation-delay:${idx * 0.04}s">
-      <span class="rank">#${idx + 1}</span>
+      ${fixed ? '' : `<span class="rank">#${idx + 1}</span>`}
       <div class="day-top">
-        <div class="ring ${gradeClass(r.grade)}" style="--p:${r.score}"><b>${r.score}</b></div>
+        ${head}
         <div><div class="day-date">${dsc.weekday}, ${fmtDate(r.ctx)}</div>
           <div class="day-sub">Âm lịch ${esc(dsc.lunarText)}</div>
           <div class="day-sub">Ngày ${esc(dsc.ganZhi)}</div>
-          <span class="grade ${gradeClass(r.grade)}">${esc(r.grade.label)}</span></div>
+          ${fixed ? '' : `<span class="grade ${gradeClass(r.grade)}">${esc(r.grade.label)}</span>`}</div>
       </div>
       <div class="tags">
         <span class="tag ${dsc.huangDao ? 'good' : 'bad'}">${dsc.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} · ${esc(dsc.tianShen)}</span>
@@ -332,26 +348,37 @@
         ${dsc.jieqi ? `<span class="tag">${esc(dsc.jieqi)}</span>` : ''}
       </div>
       <div class="hours-row">${state.results.mode === 'fixed' ? 'Giờ cố định:' : 'Giờ tốt:'} ${hours}</div>
-      <ul class="why">${[...pos, ...neg].map((i) => `<li><b class="pts ${i.pts > 0 ? 'pos' : 'neg'}">${i.pts > 0 ? '+' : ''}${i.pts}</b> ${esc(i.text)}</li>`).join('')}</ul>
+      <ul class="why">${why.join('')}</ul>
     </article>`;
   }
 
   function renderResults() {
     const res = state.results;
+    const fixedOnly = noIndex();
+    $('#card-results').classList.remove('hidden');
+    $('#h-results').textContent = fixedOnly ? `Thông tin ngày giờ đã định: ${state.act.label}` : `Ngày tốt cho: ${state.act.label}`;
+    for (const id of ['#heatmap-title', '#legend', '#heatmap']) $(id).classList.toggle('hidden', fixedOnly);
+
+    if (fixedOnly) {
+      // Không chỉ số, không xếp loại, không thống kê tốt/xấu, không lịch nhiệt (PRD §3.1, §8.4 điều 4).
+      $('#summary-stats').innerHTML = `<div class="stat"><b>${res.days.length}</b>ngày đã định · giờ ${esc(res.fixedTime)}</div>`;
+      $('#top-list').innerHTML = `<p class="disclaimer">${esc(state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE)}</p>` + res.days.map(dayCardHTML).join('');
+      $('#heatmap').innerHTML = '';
+      $('#legend').innerHTML = '';
+      return;
+    }
+
     const severeCount = res.days.filter((d) => d.severe).length;
     const goodCount = res.ranked.filter((d) => d.score >= 68).length;
-    $('#card-results').classList.remove('hidden');
-    const fixedOnly = !!state.act.fixedOnly;
-    $('#h-results').textContent = fixedOnly ? `Thông tin ngày giờ đã định: ${state.act.label}` : `Ngày tốt cho: ${state.act.label}`;
     $('#summary-stats').innerHTML = `
       <div class="stat"><b>${res.days.length}</b>ngày đã quét (${res.ms} ms)</div>
       <div class="stat"><b>${goodCount}</b>ngày Cát trở lên</div>
-      <div class="stat"><b>${severeCount}</b>ngày phạm kỵ</div>`;
+      <div class="stat"><b>${severeCount}</b>ngày có điều kỵ nặng</div>`;
 
-    const top = fixedOnly ? res.days : res.ranked.slice(0, TOP_N);
-    $('#top-list').innerHTML = (fixedOnly ? `<p class="disclaimer">${esc(state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE)}</p>` : '') + (top.length
+    const top = res.ranked.slice(0, TOP_N);
+    $('#top-list').innerHTML = top.length
       ? top.map(dayCardHTML).join('')
-      : '<div class="empty-state"><div class="big-han">凶</div><p>Không có ngày phù hợp trong khoảng này. Hãy mở rộng khoảng thời gian hoặc đổi giờ cố định. Nếu năm đang xét phạm Kim lâu hoặc Hoang ốc và bạn đã mượn tuổi, hãy bật "Bỏ qua hạn năm".</p></div>');
+      : '<div class="empty-state"><div class="big-han">擇</div><p>Không có ngày phù hợp trong khoảng này. Hãy mở rộng khoảng thời gian hoặc đổi giờ cố định. Nếu năm đang xét gặp Kim lâu hoặc Hoang ốc và bạn đã mượn tuổi, hãy bật "Bỏ qua hạn năm".</p></div>';
 
     const topKeys = new Set(top.map((x) => x.key));
     const months = new Map();
@@ -373,12 +400,13 @@
       return `<div class="month"><h4>Tháng ${+mm}/${yy}</h4><div class="month-grid">${dows}${cells}</div></div>`;
     }).join('');
 
-    $('#legend').innerHTML = [['g5', 'Đại cát ≥80'], ['g4', 'Cát 68–79'], ['g3', 'Khá 55–67'], ['g2', 'Bình thường 40–54'], ['g1', 'Hung <40'], ['bad', 'Phạm kỵ']]
+    $('#legend').innerHTML = [['g5', 'Đại cát ≥80'], ['g4', 'Cát 68–79'], ['g3', 'Khá 55–67'], ['g2', 'Bình thường 40–54'], ['g1', 'Nên cân nhắc <40'], ['bad', 'Có điều kỵ nặng']]
       .map(([k, t]) => `<span class="c-${k}"><i></i>${t}</span>`).join('') + '<span><i style="--c:transparent;box-shadow:0 0 0 2px var(--gold)"></i>Top đề xuất</span>';
   }
 
   /* ------------------------------ Chi tiết ngày ------------------------------ */
-  function itemsHTML(items) {
+  function itemsHTML(items, fixed = false) {
+    if (fixed) return `<ul class="score-items no-index">${items.map((i) => `<li class="note">${esc(neutral(i.text))}</li>`).join('')}</ul>`;
     return `<ul class="score-items">${items.map((i) => `<li class="${i.severe ? 'severe' : ''}"><span class="pts ${i.pts > 0 ? 'pos' : 'neg'}">${i.pts > 0 ? '+' : ''}${i.pts}</span><span>${esc(i.text)}${i.severe ? ' <b class="pts neg">(kỵ nặng)</b>' : ''}</span></li>`).join('')}</ul>`;
   }
 
@@ -386,19 +414,28 @@
     const r = state.results?.days.find((x) => x.key === key);
     if (!r) return;
     const dsc = S.describeDay(r.ctx);
+    const fixed = noIndex();
     const ring = $('#dlg-ring');
-    ring.className = `ring lg ${gradeClass(r.grade)}`;
-    ring.style.setProperty('--p', r.score);
-    $('#dlg-score').textContent = r.score;
+    const g = $('#dlg-grade');
+    if (fixed) {
+      ring.className = 'info-badge lg';
+      ring.style.removeProperty('--p');
+      $('#dlg-score').textContent = '📅';
+      g.className = 'grade hidden';
+      g.textContent = '';
+    } else {
+      ring.className = `ring lg ${gradeClass(r.grade)}`;
+      ring.style.setProperty('--p', r.score);
+      $('#dlg-score').textContent = r.score;
+      g.className = `grade ${gradeClass(r.grade)}`;
+      g.textContent = `${r.grade.label} · ngày ${r.day.score} / giờ ${r.chosen.score}`;
+    }
     $('#dlg-title').textContent = `${dsc.weekday}, ${fmtDate(r.ctx)}`;
     $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng ${dsc.monthGanZhi}`;
-    const g = $('#dlg-grade');
-    g.className = `grade ${gradeClass(r.grade)}`;
-    g.textContent = `${r.grade.label} · ngày ${r.day.score} / giờ ${r.chosen.score}`;
 
     const groups = Object.keys(CAT_LABEL).map((cat) => {
       const its = r.day.items.filter((i) => i.cat === cat);
-      return its.length ? `<div class="cat-title">${CAT_LABEL[cat]}</div>${itemsHTML(its)}` : '';
+      return its.length ? `<div class="cat-title">${CAT_LABEL[cat]}</div>${itemsHTML(its, fixed)}` : '';
     }).join('');
 
     const bestKey = r.chosen.label;
@@ -407,36 +444,40 @@
         <td><b>${esc(h.label)}</b>${h.tag ? `<br><span class="hint">${esc(h.tag)}</span>` : ''}</td>
         <td>${esc(h.ganZhi)}</td>
         <td><span class="tag ${h.huangDao ? 'good' : 'bad'}">${esc(h.tianShen)}</span></td>
-        <td class="${gradeClass(S.gradeOf(h.score, h.severe))}"><div class="mini-bar"><i style="width:${h.score}%"></i></div> ${h.score}</td>
-        <td class="hint">${h.items.filter((i) => !/^Giờ (Hoàng|Hắc) đạo/.test(i.text) && (i.severe || Math.abs(i.pts) >= 3)).slice(0, 2).map((i) => esc(i.text)).join('; ')}</td>
+        ${fixed ? '' : `<td class="${gradeClass(S.gradeOf(h.score, h.severe))}"><div class="mini-bar"><i style="width:${h.score}%"></i></div> ${h.score}</td>`}
+        <td class="hint">${h.items.filter((i) => !/^Giờ (Hoàng|Hắc) đạo/.test(i.text) && (i.severe || Math.abs(i.pts) >= 3)).slice(0, 2).map((i) => esc(neutral(i.text))).join('; ')}</td>
       </tr>`).join('');
 
     const list = (arr) => arr.length ? arr.map((x) => `<span class="tag">${esc(x)}</span>`).join(' ') : '<span class="hint">—</span>';
+    const note = fixed ? `<p class="disclaimer" style="margin-top:0">${esc(state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE)}</p>` : '';
     $('#dlg-body').innerHTML = `
+      ${note}
       <div class="sheet-cols">
         <div>
-          <h3 style="margin-top:0">Vì sao có điểm này</h3>
+          <h3 style="margin-top:0">${fixed ? 'Thông tin tham khảo' : 'Vì sao có điểm này'}</h3>
           ${groups}
           <div class="cat-title">Giờ ${esc(r.chosen.label)} (${esc(r.chosen.ganZhi)})</div>
-          ${itemsHTML(r.chosen.items)}
+          ${itemsHTML(r.chosen.items, fixed)}
         </div>
         <div>
           <h3 style="margin-top:0">Giờ trong ngày</h3>
-          <table class="hours-table"><thead><tr><th>Giờ</th><th>Can chi</th><th>Thần</th><th>Điểm</th><th>Ghi chú</th></tr></thead><tbody>${hourRows}</tbody></table>
+          <table class="hours-table"><thead><tr><th>Giờ</th><th>Can chi</th><th>Thần</th>${fixed ? '' : '<th>Điểm</th>'}<th>Ghi chú</th></tr></thead><tbody>${hourRows}</tbody></table>
           <h3>Hoàng lịch</h3>
           <dl class="kv">
             <dt>Trực</dt><dd>${esc(dsc.zhixing)}</dd>
-            <dt>Sao (28 tú)</dt><dd>${esc(dsc.xiu)} · ${dsc.xiuGood ? 'Cát' : 'Hung'}</dd>
+            <dt>Sao (28 tú)</dt><dd>${esc(dsc.xiu)} · ${dsc.xiuGood ? 'Cát' : (fixed ? 'Không thuận' : 'Hung')}</dd>
             <dt>Thần ngày</dt><dd>${esc(dsc.tianShen)} · ${dsc.huangDao ? 'Hoàng đạo' : 'Hắc đạo'}</dd>
             <dt>Xung</dt><dd>${esc(dsc.chong)}</dd>
             ${dsc.jieqi ? `<dt>Tiết khí</dt><dd>${esc(dsc.jieqi)}</dd>` : ''}
             <dt>Nên</dt><dd>${list(dsc.yi)}</dd>
             <dt>Kỵ</dt><dd>${list(dsc.ji)}</dd>
             <dt>Cát thần</dt><dd>${list(dsc.jiShen)}</dd>
-            <dt>Hung sát</dt><dd>${list(dsc.xiongSha)}</dd>
+            <dt>${fixed ? 'Sao cần lưu ý' : 'Hung sát'}</dt><dd>${list(dsc.xiongSha)}</dd>
           </dl>
+          <p class="hint">Nguồn: lunar-javascript (dựa trên Hiệp Kỷ Biện Phương Thư), chưa đối chiếu sách gốc.</p>
         </div>
       </div>
+      <p class="disclaimer">${esc(DISCLAIMER)}</p>
       <h3>Thao tác</h3>
       <div class="sheet-actions">
         <button type="button" class="btn" id="dlg-ics">📅 Thêm vào lịch (.ics)</button>
@@ -466,12 +507,19 @@
     const now = new Date();
     const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}00Z`;
     const dsc = S.describeDay(r.ctx);
+    const fixed = noIndex();
+    const summary = fixed ? state.act.label : `${state.act.label} (${r.grade.label} ${r.score}/100)`;
+    const desc = [
+      `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}, ${r.chosen.tianShen}).`,
+      fixed ? (state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE) : '',
+      DISCLAIMER, 'Lập bởi Ngày Tốt.',
+    ].filter(Boolean).join(' ');
     const body = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NgayTot//VI', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
       `UID:${newId()}@ngaytot`, `DTSTAMP:${stamp}`,
       `DTSTART:${ymd}T${pad(sh)}${pad(sm)}00`, `DTEND:${ymd}T${pad(eh)}${pad(em)}00`,
-      `SUMMARY:${icsEsc(`${state.act.label} (${r.grade.label} ${r.score}/100)`)}`,
-      `DESCRIPTION:${icsEsc(`Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}, ${r.chosen.tianShen}). Lập bởi Ngày Tốt.`)}`,
+      `SUMMARY:${icsEsc(summary)}`,
+      `DESCRIPTION:${icsEsc(desc)}`,
       'END:VEVENT', 'END:VCALENDAR',
     ].join('\r\n');
     const url = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
@@ -484,11 +532,20 @@
   }
 
   async function copySummary(r, dsc) {
-    const lines = [
-      `${state.act.label}: ${dsc.weekday}, ${fmtDate(r.ctx)} (ÂL ${dsc.lunarText})`,
-      `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 · Giờ ${r.chosen.label} (${r.chosen.ganZhi})`,
-      ...r.day.items.map((i) => `${i.pts > 0 ? '+' : ''}${i.pts}  ${i.text}`),
-    ];
+    const fixed = noIndex();
+    const lines = fixed
+      ? [
+        `${state.act.label}: ${dsc.weekday}, ${fmtDate(r.ctx)} (ÂL ${dsc.lunarText})`,
+        `Ngày ${dsc.ganZhi} · Giờ ${r.chosen.label} (${r.chosen.ganZhi})`,
+        state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE,
+        ...r.day.items.map((i) => `- ${neutral(i.text)}`),
+      ]
+      : [
+        `${state.act.label}: ${dsc.weekday}, ${fmtDate(r.ctx)} (ÂL ${dsc.lunarText})`,
+        `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ ${r.chosen.label} (${r.chosen.ganZhi})`,
+        ...r.day.items.map((i) => `${i.pts > 0 ? '+' : ''}${i.pts}  ${i.text}`),
+      ];
+    lines.push('', DISCLAIMER);
     const text = lines.join('\n');
     try {
       await navigator.clipboard.writeText(text);
@@ -513,6 +570,7 @@
     const idx = list.findIndex((x) => x.id === id);
     if (idx >= 0) list[idx] = rec; else list.push(rec);
     saveProfiles(list);
+    localStorage.setItem(LAST_ID_KEY, id);
     refreshProfileSelect(id);
     toast(`Đã lưu hồ sơ ${p.name || ''}`.trim());
   }
@@ -521,8 +579,16 @@
     const id = $('#profile-select').value;
     if (!id) return toast('Chưa chọn hồ sơ để xóa.', true);
     saveProfiles(loadProfiles().filter((x) => x.id !== id));
+    if (localStorage.getItem(LAST_ID_KEY) === id) localStorage.removeItem(LAST_ID_KEY);
     refreshProfileSelect('');
     toast('Đã xóa hồ sơ');
+  }
+
+  /** Xóa mọi khóa của ứng dụng trong localStorage (PRD §3.3). */
+  function clearAllData() {
+    if (!confirm('Xóa toàn bộ hồ sơ và dữ liệu của Ngày Tốt trên trình duyệt này?')) return;
+    Object.keys(localStorage).filter((k) => k.startsWith(KEY_PREFIX)).forEach((k) => localStorage.removeItem(k));
+    location.reload();
   }
 
   /* ------------------------------ Wiring ------------------------------ */
@@ -535,10 +601,12 @@
 
     $('#profile-select').addEventListener('change', (e) => {
       const p = loadProfiles().find((x) => x.id === e.target.value);
-      if (p) { writeProfileForm(p); buildChartFromForm(); }
+      if (p) { localStorage.setItem(LAST_ID_KEY, p.id); writeProfileForm(p); buildChartFromForm(); }
+      else localStorage.removeItem(LAST_ID_KEY);
     });
     $('#btn-save-profile').addEventListener('click', saveCurrentProfile);
     $('#btn-delete-profile').addEventListener('click', deleteCurrentProfile);
+    $('#btn-clear-all').addEventListener('click', clearAllData);
     $('#btn-build-chart').addEventListener('click', () => {
       if (buildChartFromForm()) $('#card-chart').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -555,14 +623,15 @@
     $('#dlg-close').addEventListener('click', () => dlg.close());
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 
-    try {
-      const last = JSON.parse(localStorage.getItem(LAST_KEY) ?? 'null');
-      if (last?.birthDate) {
-        writeProfileForm(last);
-        if (last.id) refreshProfileSelect(last.id);
-        buildChartFromForm({ silent: true });
-      }
-    } catch { /* bỏ qua dữ liệu hỏng */ }
+    // Bản cũ tự lưu hồ sơ vừa nhập mà người dùng không bấm Lưu → xóa (PRD §3.3).
+    localStorage.removeItem(LEGACY_AUTOSAVE_KEY);
+    const lastId = localStorage.getItem(LAST_ID_KEY);
+    const last = lastId ? loadProfiles().find((x) => x.id === lastId) : null;
+    if (last) {
+      writeProfileForm(last);
+      refreshProfileSelect(last.id);
+      buildChartFromForm({ silent: true });
+    }
   }
 
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();

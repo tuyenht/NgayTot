@@ -242,8 +242,7 @@
     const add = (pts, text, severe = false) => { if (pts !== 0) items.push({ pts: Math.round(pts * 10) / 10, text, severe }); };
     const tianShen = l.getTimeTianShen();
     const luck = l.getTimeTianShenLuck();
-    const posXi = l.getTimePositionXiDesc();
-    const posCai = l.getTimePositionCaiDesc();
+    // Hướng Hỷ thần, Tài thần: chưa qua kiểm nguồn (PRD §7.1, §8.6) → không tính, không trả về.
     if (luck === '吉') add(6, `Giờ Hoàng đạo (${V.tianshen(tianShen)})`);
     else add(-6, `Giờ Hắc đạo (${V.tianshen(tianShen)})`);
 
@@ -272,18 +271,19 @@
     }
     const raw = items.reduce((s, it) => s + it.pts, 0);
     return {
-      g: tg, z: tzh, ganZhi: D.ganZhiVi(tg, tzh), tianShen: V.tianshen(tianShen), huangDao: luck === '吉', posXi, posCai,
+      g: tg, z: tzh, ganZhi: D.ganZhiVi(tg, tzh), tianShen: V.tianshen(tianShen), huangDao: luck === '吉',
       raw, score: clamp(Math.round(50 + raw * HOUR_SCALE), 0, 100), items, severe: items.some((i) => i.severe),
     };
   }
 
+  /** Xếp loại theo chỉ số tham khảo (HEURISTIC). Tên mức trung tính theo PRD §3.4, §8.5. */
   function gradeOf(score, severe) {
-    if (severe) return { key: 'bad', label: 'Phạm kỵ' };
+    if (severe) return { key: 'bad', label: 'Có điều kỵ nặng' };
     if (score >= 80) return { key: 'g5', label: 'Đại cát' };
     if (score >= 68) return { key: 'g4', label: 'Cát' };
     if (score >= 55) return { key: 'g3', label: 'Khá' };
     if (score >= 40) return { key: 'g2', label: 'Bình thường' };
-    return { key: 'g1', label: 'Hung' };
+    return { key: 'g1', label: 'Nên cân nhắc' };
   }
 
   /* ------------------------------------------------------------------ */

@@ -85,14 +85,15 @@
     },
     // Hiếu sự
     {
-      id: 'funeral_main', label: 'Khâm liệm / Di quan', icon: '🕊️',
-      desc: 'Tổ chức tang lễ, đưa tang',
+      id: 'funeral_main', label: 'Khâm liệm / Di quan (Cố định)', icon: '🕊️',
+      desc: 'Xem thông tin giờ đã định cho tang lễ, đưa tang',
       yiPrimary: ['入殓', '移柩', '行丧'], yi: ['成服', '除服'],
       zhixingGood: ['收', '除', '破'], zhixingBad: ['建', '满', '平', '定', '开'],
       shenGood: ['鸣吠', '鸣吠对'],
       shenBad: { '重日': 8, '复日': 8, '三丧': 8, '劫煞': 5, '天火': 5 },
       tenGods: () => [4], boost: { lu: 0, quyNhan: 1, vanXuong: 0, yiMa: 1, taoHua: 0 },
-      yearChecks: [], pk: 'PK-01', checkBurialTime: true, checkNoise: true
+      // QĐ-04: chưa có bộ giới hạn quàn đầy đủ (G4) → chỉ xem ngày giờ đã định, không quét khoảng ngày.
+      yearChecks: [], pk: 'PK-01', fixedOnly: true, checkBurialTime: true, checkNoise: true
     },
     {
       id: 'funeral_cremate', label: 'Lịch an táng (Cố định)', icon: '🪦',

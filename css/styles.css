@@ -408,6 +408,15 @@ dialog.sheet::backdrop { background: hsl(228 50% 3% / .7); backdrop-filter: blur
 .method-item { padding: 14px; border-radius: 14px; border: 1px solid var(--line); background: hsl(228 30% 11% / .6); font-size: 0.84rem; color: var(--text-dim); }
 .method-item h4 { margin: 0 0 6px; color: var(--text); font-size: 0.9rem; }
 .disclaimer { margin-top: 14px; font-size: 0.78rem; color: var(--text-faint); border-left: 3px solid var(--line-strong); padding-left: 12px; }
+.link-btn { background: none; border: 0; padding: 0; color: var(--gold); text-decoration: underline; cursor: pointer; font: inherit; }
+.link-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* Chế độ ngày cố định (PRD §3.1, §8.4.4): không chỉ số, không xếp loại */
+.info-badge { flex: none; width: 62px; height: 62px; border-radius: 50%; display: grid; place-items: center; font-size: 1.5rem; background: hsl(228 25% 20%); border: 1px solid var(--line-strong); }
+.info-badge.lg { width: 92px; height: 92px; font-size: 2rem; }
+.score-items.no-index li { grid-template-columns: 1fr; }
+.score-items li.note { background: hsl(228 30% 12% / .45); color: var(--text-dim); }
+.lbl { display: inline-block; font-size: 0.62rem; font-weight: 700; letter-spacing: .04em; padding: 1px 6px; margin-left: 6px; border-radius: 6px; background: hsl(228 30% 24%); color: var(--text-faint); vertical-align: middle; }
+.flag-legal { box-shadow: inset 3px 0 0 var(--gold); }
 footer { text-align: center; color: var(--text-faint); font-size: 0.78rem; padding: 0 20px 40px; }
 
 /* ---------- Toast & loader ---------- */

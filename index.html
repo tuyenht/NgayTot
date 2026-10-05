@@ -4,13 +4,11 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Ngày Tốt — Chọn ngày giờ tốt theo Bát tự cá nhân</title>
-  <meta name="description" content="Chọn ngày giờ tốt cho khai trương, cưới hỏi, động thổ, ký hợp đồng… dựa trên Bát tự (Tứ trụ) của riêng bạn, Hoàng lịch Hiệp Kỷ Biện Phương Thư và âm lịch Việt Nam.">
+  <meta name="description" content="Tra cứu ngày giờ cho khai trương, cưới hỏi, động thổ, ký hợp đồng… theo Bát tự (Tứ trụ) của riêng bạn, dữ liệu Hoàng lịch mã nguồn mở và âm lịch Việt Nam. Tính hoàn toàn trên máy, chỉ để tham khảo.">
   <meta name="theme-color" content="#0b0e17">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'none'">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self' data:; connect-src 'none'; object-src 'none'; base-uri 'none'; form-action 'none'">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'><rect width='64' height='64' rx='14' fill='%23d9474f'/><text x='32' y='45' font-size='38' text-anchor='middle' fill='%23fff3dc' font-family='serif'>吉</text></svg>">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700;800&family=Noto+Serif+SC:wght@600&display=swap">
+  <link rel="stylesheet" href="css/fonts.css">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body>
@@ -33,7 +31,7 @@
       <h1>Chọn ngày giờ tốt theo Bát tự của riêng bạn</h1>
       <p>Nhập ngày giờ sinh để lập Tứ trụ, tìm Dụng thần, rồi chấm điểm từng ngày, từng giờ theo Hoàng lịch cổ, ngày kỵ dân gian Việt Nam và tương quan với lá số của bạn.</p>
       <div class="hero-badges">
-        <span class="badge"><b>Hiệp Kỷ Biện Phương Thư</b> · 宜忌, thần sát</span>
+        <span class="badge"><b>Hoàng lịch</b> · 宜忌, thần sát (lunar-javascript)</span>
         <span class="badge"><b>Tử Bình</b> · vượng suy, Dụng thần</span>
         <span class="badge"><b>Âm lịch VN</b> · UTC+7</span>
       </div>
@@ -53,6 +51,7 @@
           <button type="button" class="btn btn-sm" id="btn-save-profile" title="Lưu hồ sơ">Lưu</button>
           <button type="button" class="btn btn-sm btn-ghost" id="btn-delete-profile" title="Xóa hồ sơ">Xóa</button>
         </div>
+        <p class="hint" id="privacy-hint">Hồ sơ chỉ được lưu trên trình duyệt này khi bạn bấm <b>Lưu</b>. <button type="button" class="link-btn" id="btn-clear-all">Xóa toàn bộ dữ liệu trên máy này</button></p>
         <form id="profile-form" class="grid-2" novalidate>
           <div class="field full">
             <label for="f-name">Họ và tên</label>
@@ -189,8 +188,9 @@
           <h2 id="h-results">Ngày tốt đề xuất</h2>
           <div class="summary-stats" id="summary-stats"></div>
         </div>
+        <p class="disclaimer" id="results-disclaimer">Trạch nhật là tri thức văn hóa truyền thống, chưa có kiểm chứng khoa học. Kết quả chỉ để tham khảo.</p>
         <div class="top-list" id="top-list"></div>
-        <h3>Lịch tổng quan</h3>
+        <h3 id="heatmap-title">Lịch tổng quan</h3>
         <div class="legend" id="legend"></div>
         <div class="heatmap" id="heatmap"></div>
       </section>
@@ -200,10 +200,11 @@
         <div class="method-grid">
           <div class="method-item"><h4>1 · Lá số chính xác</h4>Trụ năm và tháng tính theo <b>thời điểm</b> tiết khí (Lập Xuân, các Tiết), có quy đổi múi giờ. Trụ ngày và giờ tính theo giờ Mặt Trời thực tại nơi sinh. Có thể chọn phái đổi ngày ở giờ Tý.</div>
           <div class="method-item"><h4>2 · Dụng thần</h4>Định lượng lực ngũ hành theo vị trí, tàng can và Vượng/Tướng/Hưu/Tù/Tử. Dụng thần chọn theo Phù ức (Tử Bình Chân Thuyên, Trích Thiên Tủy), có Điều hậu (Cùng Thông Bảo Giám) và cách Tòng.</div>
-          <div class="method-item"><h4>3 · Hoàng lịch</h4>Nên/Kỵ, thần sát, 12 Trực, 28 Tú, Hoàng đạo/Hắc đạo theo <i>Hiệp Kỷ Biện Phương Thư</i> (协纪辨方书). Nguồn dữ liệu: thư viện mã nguồn mở <a href="https://github.com/6tail/lunar-javascript" rel="noopener" target="_blank">lunar-javascript</a> (MIT).</div>
+          <div class="method-item"><h4>3 · Hoàng lịch</h4>Nên/Kỵ, thần sát, 12 Trực, 28 Tú, Hoàng đạo/Hắc đạo lấy từ thư viện mã nguồn mở <a href="https://github.com/6tail/lunar-javascript" rel="noopener" target="_blank">lunar-javascript</a> (MIT), dựa trên <i>Hiệp Kỷ Biện Phương Thư</i> (协纪辨方书). <b>Chưa đối chiếu với sách gốc.</b></div>
           <div class="method-item"><h4>4 · Dân gian Việt Nam</h4>Tam nương, Nguyệt kỵ, Dương công kỵ nhật tính theo âm lịch VN (UTC+7, thuật toán Hồ Ngọc Đức). Hạn năm gồm Kim lâu, Hoang ốc, Tam tai. Ngũ hành tên tính theo Ngũ âm, chỉ là hệ số phụ.</div>
         </div>
-        <p class="disclaimer">Trạch nhật là tri thức văn hóa truyền thống phương Đông, chưa có kiểm chứng khoa học. Điểm số chỉ để tham khảo. Mọi cộng/trừ điểm đều hiện lý do để bạn tự đối chiếu với thầy hoặc sách.</p>
+        <p class="disclaimer" id="method-disclaimer">Trạch nhật là tri thức văn hóa truyền thống, chưa có kiểm chứng khoa học. Kết quả chỉ để tham khảo.</p>
+        <p class="hint">Chỉ số tham khảo 0–100 dùng trọng số do ứng dụng tự đặt, không có trong sách. Mọi cộng/trừ đều hiện lý do để bạn tự đối chiếu.</p>
       </section>
     </div>
   </main>

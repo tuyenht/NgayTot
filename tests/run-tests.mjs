@@ -112,7 +112,25 @@ let blocked = false;
 try { NT.scoring.findDays({ chart, act: surgery, nameInfo: null, from: '2026-10-05', to: '2026-10-31', mode: 'best' }); } catch { blocked = true; }
 eq('Phẫu thuật: không cho quét khoảng ngày để chọn ngày', blocked, true);
 const one = NT.scoring.findDays({ chart, act: surgery, nameInfo: null, from: '2026-10-12', to: '2026-10-12', mode: 'fixed', fixedTime: '08:30' });
-eq('Phẫu thuật: xem được đúng ngày giờ đã ấn định, có hướng Hỷ thần/Tài thần', [one.days.length, !!one.days[0].chosen.posXi, !!one.days[0].chosen.posCai], [1, true, true]);
+// Kỳ vọng cũ "có hướng Hỷ thần/Tài thần" trái PRD §8.6 (chưa qua kiểm nguồn) → thay theo đặc tả.
+eq('Phẫu thuật: xem được đúng ngày giờ đã ấn định, không trả hướng Hỷ thần/Tài thần', [one.days.length, 'posXi' in one.days[0].chosen, 'posCai' in one.days[0].chosen], [1, false, false]);
+let funeralBlocked = false;
+try { NT.scoring.findDays({ chart, act: NT.activities.byId('funeral_main'), nameInfo: null, from: '2026-10-05', to: '2026-10-10', mode: 'best' }); } catch { funeralBlocked = true; }
+eq('Khâm liệm/di quan: không quét khoảng ngày (QĐ-04)', funeralBlocked, true);
+eq('Không còn nhãn xếp loại gây sợ', [NT.scoring.gradeOf(10, false).label, NT.scoring.gradeOf(90, true).label], ['Nên cân nhắc', 'Có điều kỵ nặng']);
+
+// ---------- 8. An toàn & riêng tư (PRD §3.3, §13 lớp 8) ----------
+{
+  const html = readFileSync(path.join(root, 'index.html'), 'utf8');
+  const csp = /Content-Security-Policy" content="([^"]+)"/.exec(html)?.[1] ?? '';
+  const extTags = [...html.matchAll(/<(?:link|script)[^>]+(?:href|src)="(https?:[^"]+)"/g)].map((m) => m[1]);
+  eq('index.html không tải tài nguyên bên thứ ba; CSP không cho host ngoài', [extTags, /https?:/.test(csp), /script-src 'self'/.test(csp)], [[], false, true]);
+  const css = ['fonts.css', 'styles.css'].map((f) => readFileSync(path.join(root, 'css', f), 'utf8')).join('\n');
+  eq('CSS không gọi URL ngoài', /url\(\s*['"]?https?:/.test(css) || /@import/.test(css), false);
+  const appCode = ['data', 'i18n-vi', 'calendar-vn', 'bazi', 'name-element', 'activities', 'scoring'].map((f) => readFileSync(path.join(root, `js/core/${f}.js`), 'utf8'))
+    .concat(readFileSync(path.join(root, 'js/ui/app.js'), 'utf8')).join('\n');
+  eq('Mã ứng dụng không có API gửi dữ liệu ra mạng', /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource)\s*\(/.test(appCode), false);
+}
 
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);
