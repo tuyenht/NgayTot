@@ -254,5 +254,30 @@
     return 'person';
   }
 
-  NT.activities = Object.freeze({ ACTIVITIES, COMMON_GOOD, COMMON_BAD, makeCustom, subjectOf, byId: (id) => ACTIVITIES.find((a) => a.id === id) });
+  /**
+   * "Giờ tốt" của một việc là giờ để làm gì (PRD §8.6). Theo quan niệm chung, giờ tốt là giờ KHỞI SỰ:
+   * lúc bắt đầu hành động chính của việc. Riêng lễ cưới có nhiều mốc (xuất phát, vào nhà gái, về nhà trai)
+   * nên không gắn "giờ tốt" với một mốc nào — dùng lịch trình ngày cưới (PRD §10.5).
+   */
+  const HOUR_MEANING = Object.freeze({
+    wed_engage: 'nhà trai sang nhà gái làm lễ',
+    wed_main: null, // nhiều mốc — xem lịch trình ngày cưới
+    wed_bed: 'kê giường',
+    build_earth: 'làm lễ và bổ nhát cuốc đầu tiên',
+    build_roof: 'cất nóc, bắt đầu đổ mái',
+    build_in: 'vào nhà mới',
+    build_open: 'làm lễ khánh thành',
+    biz_open: 'mở cửa, khai trương',
+    biz_sign: 'đặt bút ký',
+    buy_asset: 'giao dịch, nhận tài sản',
+    travel_biz: 'ra khỏi nhà',
+    altar_set: 'an vị bàn thờ, bốc bát hương',
+    med_checkup: 'đi khám',
+    daily_hair: 'cắt tóc',
+    daily_crop: 'gieo trồng',
+  });
+  /** Chuỗi mô tả; null = việc có nhiều mốc giờ (lễ cưới). Việc không có trong bảng: 'bắt đầu việc'. */
+  const hourMeaningOf = (act) => (act && act.id in HOUR_MEANING ? HOUR_MEANING[act.id] : 'bắt đầu việc');
+
+  NT.activities = Object.freeze({ ACTIVITIES, COMMON_GOOD, COMMON_BAD, makeCustom, subjectOf, HOUR_MEANING, hourMeaningOf, byId: (id) => ACTIVITIES.find((a) => a.id === id) });
 })(globalThis.NT ??= {});

@@ -480,5 +480,53 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   eq('Việc không có tiệc, nhạc: không giới hạn khung giờ', bizDays.some((d) => start(d.chosen) < 7 || start(d.chosen) >= 21), true);
 }
 
+// ---------- Sau phản biện độc lập G0b + lịch trình; ý nghĩa giờ tốt; gắn mốc vào canh giờ ----------
+{
+  const W = NT.weddingPlan, A = NT.activities;
+  const toMin = (t) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3));
+  const D0 = { y: 2026, m: 11, d: 15 };
+  const key = (r) => r.plans.map((p) => p.steps.map((s) => s.time).join('>')).join('|');
+
+  // Tham số: chuỗi, số lẻ, rỗng
+  eq('Tham số dạng chuỗi cho cùng kết quả như dạng số', key(W.plan({ ...D0, travelTo: '20', ceremonyBride: '45', ceremonyGroom: '30' })), key(W.plan({ ...D0, travelTo: 20, ceremonyBride: 45, ceremonyGroom: 30 })));
+  const dec = W.plan({ ...D0, travelTo: 20.4, ceremonyBride: 12.5, ceremonyGroom: 7.3, buffer: 2.5 });
+  eq('Số lẻ được làm tròn: mọi mốc là HH:MM nguyên phút', dec.plans.every((p) => [...p.steps.map((s) => s.time), p.endGroom].every((t) => /^\d{2}:\d{2}$/.test(t))), true);
+  eq('Ô để trống dùng mặc định: lễ 45 và 30 phút, lượt về bằng lượt đi', (() => { const p = W.plan({ ...D0, travelTo: 20, travelBack: '', ceremonyBride: '', ceremonyGroom: null }).plans[0]; const t = Object.fromEntries(p.steps.map((s) => [s.key, toMin(s.time)])); return [t.L - t.A, t.H - t.L, toMin(p.endGroom) - t.H]; })(), [45, 20, 30]);
+  const threw = (o) => { try { W.plan(o); return false; } catch { return true; } };
+  eq('Thiếu thời gian đi, giờ tiệc sai định dạng → báo lỗi thay vì hiểu là 0', [threw({ ...D0 }), threw({ ...D0, travelTo: '' }), threw({ ...D0, travelTo: 'abc' }), threw({ ...D0, travelTo: 20, partyTime: '25h' })], [true, true, true, true]);
+  eq('step = 0 không treo; ưu tiên trùng lặp được khử', [W.plan({ ...D0, travelTo: 20, step: 0 }).plans.length >= 1, W.plan({ ...D0, travelTo: 20, priority: ['D', 'D'] }).priority], [true, ['D']]);
+
+  // Lượt về khác lượt đi
+  const asym = W.plan({ ...D0, travelTo: 30, travelBack: 75 }).plans[0], ta = Object.fromEntries(asym.steps.map((s) => [s.key, toMin(s.time)]));
+  eq('Lượt đi 30, lượt về 75 phút: A − D = 45, H − L = 75', [ta.A - ta.D, ta.H - ta.L], [45, 75]);
+
+  // Lễ ở nhà gái không trước 06:00; xuất phát được từ 05:00
+  let earlyA = 0, earlyD = 0, n = 0;
+  for (let d = 1; d <= 28; d++) for (const tr of [10, 20, 45, 90]) for (const p of W.plan({ y: 2026, m: 11, d, travelTo: tr }).plans) { n++; if (toMin(p.steps[1].time) < 360) earlyA++; if (toMin(p.steps[0].time) < 300) earlyD++; }
+  eq('112 lượt xếp: không lễ nào ở nhà gái bắt đầu trước 06:00, không xuất phát nào trước 05:00', [n > 100, earlyA, earlyD], [true, 0, 0]);
+
+  // Gắn mốc vào canh giờ đã chọn → đề xuất giờ cụ thể
+  const anc = W.plan({ ...D0, travelTo: 40, anchor: { key: 'A', from: 9 * 60, to: 11 * 60 } });
+  eq('Gắn "vào nhà gái" vào canh 09:00–10:59: mọi phương án có mốc đó trong canh; các mốc khác tính theo thời gian đi',
+    [anc.plans.length >= 1, anc.plans.every((p) => toMin(p.steps[1].time) >= 540 && toMin(p.steps[1].time) < 660), anc.plans.every((p) => toMin(p.steps[1].time) - toMin(p.steps[0].time) === 55)], [true, true, true]);
+  const ancH = W.plan({ ...D0, travelTo: 40, anchor: { key: 'H', from: 13 * 60, to: 15 * 60 } });
+  eq('Gắn "về tới nhà trai" vào canh 13:00–14:59', ancH.plans.every((p) => toMin(p.steps[3].time) >= 780 && toMin(p.steps[3].time) < 900) && ancH.plans.length >= 1, true);
+  const best = Math.max(...Array.from({ length: 24 }, (_, i) => 540 + i * 5).map((a) => W.hourInfo(2026, 11, 15, a, []).margin));
+  eq('Trong canh đã gắn, giờ đề xuất là giờ cách ranh giới canh xa nhất mà các mốc ưu tiên vẫn vững, hoặc có lưu ý', anc.plans[0].steps[1].margin <= best && (anc.plans[0].prioRobust > 0 || anc.plans[0].notes.length > 0), true);
+  const impossible = W.plan({ ...D0, travelTo: 300, anchor: { key: 'A', from: 7 * 60, to: 9 * 60 } });
+  eq('Gắn mốc không khả thi (đi 5 giờ mà vào nhà gái lúc 07–09 giờ) → không có phương án, có lời giải thích riêng', [impossible.plans.length, /khi gắn/.test(impossible.advice[0] ?? '')], [0, true]);
+
+  // Tiệc từ 23:00: ghi rõ thuộc ngày hôm sau
+  const late = W.plan({ ...D0, travelTo: 20, partyTime: '23:30' }).plans[0];
+  eq('Giờ tiệc 23:30: gắn cờ thuộc canh Tý ngày hôm sau và có lưu ý', [late.party.nextDay, late.notes.some((x) => /ngày hôm sau/.test(x))], [true, true]);
+
+  // "Giờ tốt" là giờ để làm gì
+  const flex = A.ACTIVITIES.filter((a) => !a.fixedOnly);
+  eq('Mọi việc tự chọn ngày đều có mô tả "giờ tốt là giờ để…"; riêng lễ cưới là nhiều mốc (null)',
+    [flex.filter((a) => a.id !== 'wed_main').every((a) => typeof A.hourMeaningOf(a) === 'string' && A.hourMeaningOf(a).length > 3), A.hourMeaningOf(A.byId('wed_main')), flex.filter((a) => !(a.id in A.HOUR_MEANING)).map((a) => a.id)],
+    [true, null, []]);
+  eq('Việc tùy chỉnh dùng mô tả chung', A.hourMeaningOf(A.makeCustom({ name: 'x', element: null, baseId: null })), 'bắt đầu việc');
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

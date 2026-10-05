@@ -85,7 +85,7 @@
     $('#h-profile-text').textContent = title;
     $('#subject-note').textContent = {
       bride: 'Cưới hỏi xét tuổi cô dâu (tập tục "lấy vợ xem tuổi đàn bà"). Người xem là nam vẫn khai ngày sinh cô dâu ở đây.',
-      owner: `Đang xét tuổi: ${sub.role}.`,
+      owner: `Đang xét tuổi: ${sub.role}.${$('#f-owner').value === 'son' ? ' Đây là dị bản ở một số nơi khi cha đã mất.' : ''}`,
     }[sub.kind] ?? '';
   }
 
@@ -244,6 +244,7 @@
       $('#custom-panel').classList.toggle('hidden', $('input[name="activity"]:checked').value !== 'custom');
       syncFixedOnly();
       syncSubject();
+      clearResults();
     });
     $('#c-base').innerHTML += NT.activities.ACTIVITIES.map((a) => `<option value="${a.id}">${esc(a.label)}</option>`).join('');
   }
@@ -391,6 +392,20 @@
     }));
   }
 
+  /**
+   * Bỏ kết quả đang hiện. Gọi khi việc, người được xét hoặc lá số thay đổi, hoặc khi tìm ngày thất bại,
+   * để thẻ ngày cũ không bao giờ bị đọc bằng việc hay tuổi của lượt nhập mới.
+   */
+  function clearResults() {
+    state.results = null;
+    $('#card-results').classList.add('hidden');
+    const dlg = $('#day-dialog');
+    if (dlg.open) dlg.close();
+  }
+  /** Câu ghi rõ đang xét tuổi ai (PRD §9.6) — dùng ở tiêu đề, hộp chi tiết, bản sao chép và .ics. */
+  const whoText = () => (state.chart && state.subject?.role
+    ? `Xét tuổi ${state.subject.role} (${D.ganZhiVi(state.chart.tuoi.gan, state.chart.tuoi.zhi)})${$('#f-owner')?.value === 'son' && state.subject.kind === 'owner' ? ' — phương án con trai trưởng là dị bản ở một số nơi' : ''}` : '');
+
   /* ------------------------------ Tìm ngày ------------------------------ */
   function getActivity() {
     const id = $('input[name="activity"]:checked')?.value ?? 'biz_open';
@@ -414,6 +429,7 @@
   }
 
   function runFind() {
+    clearResults();
     const act = getActivity();
     const sub = currentSubject();
     state.subject = sub;
@@ -485,8 +501,15 @@
     }
     const pos = r.day.items.filter((i) => i.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
     const neg = r.day.items.filter((i) => i.pts < 0).sort((a, b) => a.pts - b.pts).slice(0, 1);
-    const hours = (r.bestHours.length ? r.bestHours : [r.chosen])
-      .map((h) => `<span class="hour-chip" title="${esc(h.ganZhi)} · ${esc(h.tianShen)}">${esc(h.label)}</span>`).join('');
+    // "Giờ tốt" là giờ để làm gì thì do việc quy định (PRD §8.6). Lễ cưới có nhiều mốc nên chỉ liệt kê
+    // các canh hoàng đạo trong khung sinh hoạt theo thứ tự trong ngày, chưa gắn với mốc nào.
+    const meaning = NT.activities.hourMeaningOf(state.act);
+    const multiStep = meaning === null && state.results.mode !== 'fixed';
+    const dayHours = multiStep ? r.hours.filter((h) => h.practical && h.huangDao && !h.severe) : [];
+    const hours = (multiStep ? dayHours : (r.bestHours.length ? r.bestHours : [r.chosen]))
+      .map((h) => (multiStep
+        ? `<button type="button" class="hour-chip" data-plan-hour="${esc(h.label)}" title="${esc(h.ganZhi)} · ${esc(h.tianShen)} — bấm để xếp lịch trình với canh giờ này">${esc(h.label)}</button>`
+        : `<span class="hour-chip" title="${esc(h.ganZhi)} · ${esc(h.tianShen)}">${esc(h.label)}</span>`)).join('');
     const head = fixed
       ? '<div class="info-badge" aria-hidden="true">📅</div>'
       : `<div class="ring ${gradeClass(r.grade)}" style="--p:${r.score}"><b>${r.score}</b></div>`;
@@ -510,7 +533,8 @@
         <span class="tag ${fixed ? '' : (dsc.xiuGood ? 'good' : 'bad')}">Sao ${esc(dsc.xiu)}</span>
         ${dsc.jieqi ? `<span class="tag">${esc(dsc.jieqi)}</span>` : ''}
       </div>
-      <div class="hours-row">${state.results.mode === 'fixed' ? 'Giờ cố định:' : 'Giờ tốt:'} ${hours}</div>
+      <div class="hours-row">${state.results.mode === 'fixed' ? 'Giờ cố định:' : multiStep ? 'Giờ hoàng đạo trong ngày:' : `Giờ tốt để ${esc(meaning ?? 'làm lễ')}:`} ${hours || '<span class="hint">không có trong khung 07:00–20:59</span>'}</div>
+      ${multiStep ? '<div class="hint">Bấm vào một canh giờ để ứng dụng đề xuất giờ cụ thể cho từng mốc (xuất phát, vào nhà gái, về tới nhà trai) theo quãng đường.</div>' : ''}
       <ul class="why">${why.join('')}</ul>
     </article>`;
   }
@@ -519,8 +543,7 @@
     const res = state.results;
     const fixedOnly = noIndex();
     $('#card-results').classList.remove('hidden');
-    const who = state.chart && state.subject?.role
-      ? ` — xét tuổi ${state.subject.role} (${D.ganZhiVi(state.chart.tuoi.gan, state.chart.tuoi.zhi)})` : '';
+    const who = whoText() ? ` — ${whoText()[0].toLowerCase()}${whoText().slice(1)}` : '';
     $('#h-results').textContent = (fixedOnly ? `Thông tin ngày giờ đã định: ${state.act.label}` : `Ngày tốt cho: ${state.act.label}`) + who;
     for (const id of ['#heatmap-title', '#legend', '#heatmap']) $(id).classList.toggle('hidden', fixedOnly);
 
@@ -611,7 +634,7 @@
       g.textContent = `${r.grade.label} · ngày ${r.day.score} / giờ ${r.chosen.score}`;
     }
     $('#dlg-title').textContent = `${dsc.weekday}, ${fmtDate(r.ctx)}`;
-    $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng ${dsc.monthGanZhi}`;
+    $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng ${dsc.monthGanZhi}${whoText() ? ' · ' + whoText() : ''}`;
 
     if (calendarOnly()) {
       $('#dlg-body').innerHTML = `
@@ -668,11 +691,14 @@
         <div>
           <h3 style="margin-top:0">${fixed ? 'Thông tin tham khảo' : 'Vì sao có điểm này'}</h3>
           ${groups}
-          <div class="cat-title">Giờ ${esc(r.chosen.label)} (${esc(r.chosen.ganZhi)})</div>
+          <div class="cat-title">Giờ ${esc(r.chosen.label)} (${esc(r.chosen.ganZhi)})${fixed ? '' : NT.activities.hourMeaningOf(state.act) === null ? ' — một canh hoàng đạo trong ngày' : ` — giờ để ${esc(NT.activities.hourMeaningOf(state.act))}`}</div>
           ${itemsHTML(r.chosen.items, fixed)}
         </div>
         <div>
           <h3 style="margin-top:0">Giờ trong ngày</h3>
+          ${fixed ? '' : `<p class="hint">${NT.activities.hourMeaningOf(state.act) === null
+    ? 'Lễ cưới có nhiều mốc giờ (nhà trai xuất phát, vào nhà gái, về tới nhà trai), nên bảng này chỉ cho biết canh nào là giờ hoàng đạo. Dùng nút "xếp lịch trình" bên dưới để gắn giờ với từng mốc theo quãng đường.'
+    : `Giờ tốt là giờ khởi sự: lúc ${esc(NT.activities.hourMeaningOf(state.act))}. Không cần làm xong trong canh giờ đó.${suggestStart(r.chosen.label)}`}</p>`}
           <table class="hours-table"><thead><tr><th>Giờ</th><th>Can chi</th><th>Thần</th>${fixed ? '' : '<th>Điểm</th>'}<th>Ghi chú</th></tr></thead><tbody>${hourRows}</tbody></table>
           <h3>Hoàng lịch</h3>
           <dl class="kv">
@@ -704,10 +730,20 @@
     $('#dlg-body').scrollTop = 0;
   }
 
+  /** Với việc một mốc: đề xuất giờ bắt đầu cụ thể trong canh đã chọn, cách ranh giới canh 15 phút (PRD §8.6). */
+  function suggestStart(label) {
+    const m = /^(\d{2}):(\d{2})–(\d{2}):(\d{2})$/.exec(label ?? '');
+    if (!m) return '';
+    const a = +m[1] * 60 + +m[2], b = +m[3] * 60 + +m[4] + 1;
+    if (b - a < 90) return '';
+    const f = (x) => `${pad(Math.floor(x / 60))}:${pad(x % 60)}`;
+    return ` Đề xuất bắt đầu lúc ${f(a + 15)} (nên trong khoảng ${f(a + 15)}–${f(b - 15)}, để trễ một chút vẫn còn trong canh).`;
+  }
+
   /* ------------------------------ Lịch trình ngày cưới (PRD §10.5) ------------------------------ */
   const planState = { r: null, result: null };
 
-  function openWeddingPlan(r) {
+  function openWeddingPlan(r, presetHour = null) {
     planState.r = r;
     planState.result = null;
     const dsc = S.describeDay(r.ctx);
@@ -732,6 +768,18 @@
             <option value="D,A">Xuất phát + vào nhà gái</option>
             <option value="D,H">Xuất phát + về tới nhà trai</option>
           </select></div>
+        <div class="field"><label for="wp-akey">Gắn mốc này…</label>
+          <select class="input" id="wp-akey">
+            <option value="">Không gắn — ứng dụng tự chọn</option>
+            <option value="A">Vào nhà gái</option>
+            <option value="H">Về tới nhà trai</option>
+            <option value="D">Nhà trai xuất phát</option>
+          </select></div>
+        <div class="field"><label for="wp-acanh">…vào canh giờ</label>
+          <select class="input" id="wp-acanh">${[5, 7, 9, 11, 13, 15, 17, 19].map((h) => {
+    const i = NT.weddingPlan.hourInfo(r.ctx.y, r.ctx.m, r.ctx.d, h * 60 + 60, []);
+    return `<option value="${h}">${pad(h)}:00–${pad(h + 1)}:59 · giờ ${esc(i.zhiVi)} · ${i.huangDao ? 'Hoàng đạo' : 'Hắc đạo'}</option>`;
+  }).join('')}</select></div>
       </div>
       <div style="margin:14px 0"><button type="button" class="btn btn-primary" id="wp-run"><span>Xếp lịch trình</span></button></div>
       <div id="wp-out" aria-live="polite"></div>
@@ -739,6 +787,13 @@
     $('#plan-back').addEventListener('click', () => openDay(r.key));
     $('#wp-run').addEventListener('click', runWeddingPlan);
     $('#dlg-body').scrollTop = 0;
+    const ph = /^(\d{2}):00/.exec(presetHour ?? '');
+    if (ph && $(`#wp-acanh option[value="${Number(ph[1])}"]`)) {
+      // Người dùng bấm một canh giờ trên thẻ ngày: gắn mốc "vào nhà gái" vào canh đó và đề xuất luôn với số liệu mặc định.
+      $('#wp-akey').value = 'A';
+      $('#wp-acanh').value = String(Number(ph[1]));
+      runWeddingPlan();
+    }
   }
 
   function runWeddingPlan() {
@@ -748,10 +803,11 @@
     try {
       planState.result = NT.weddingPlan.plan({
         y: r.ctx.y, m: r.ctx.m, d: r.ctx.d,
-        travelTo: num('#wp-to') ?? 0, travelBack: num('#wp-back'),
+        travelTo: num('#wp-to'), travelBack: num('#wp-back'),
         ceremonyBride: num('#wp-cb'), ceremonyGroom: num('#wp-cg'),
         partyTime: $('#wp-party').value || null,
         priority: $('#wp-prio').value.split(','),
+        anchor: $('#wp-akey').value ? { key: $('#wp-akey').value, from: Number($('#wp-acanh').value) * 60, to: Number($('#wp-acanh').value) * 60 + 120 } : null,
         brideZhi: state.chart?.tuoi.zhi ?? null, groomZhi: groom?.zhi ?? null,
       });
     } catch (ex) {
@@ -760,9 +816,11 @@
     }
     const res = planState.result;
     const stepHTML = (s) => `<li class="${s.judged && !s.good ? 'severe' : ''}"><b>${esc(s.time)}</b> — ${esc(s.label)}${s.priority ? ' <span class="tag">ưu tiên</span>' : ''}
-      <span class="hint">giờ ${esc(s.zhiVi)} (${esc(s.canh)}) · ${s.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} · ${esc(s.tianShen)}${s.clash.length ? ` · xung tuổi ${esc(s.clash.join(', '))}` : ''}</span></li>`;
+      <span class="hint">giờ ${esc(s.zhiVi)} (${esc(s.canh)}) · ${s.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} · ${esc(s.tianShen)}${s.nextDay ? ' (tính theo ngày hôm sau)' : ''}${s.clash.length ? ` · xung tuổi ${esc(s.clash.join(', '))}` : ''}</span></li>`;
+    const anchored = (p) => (res.anchor ? p.steps.find((s) => s.key === res.anchor.key) : null);
     const plans = res.plans.map((p, i) => `
-      <div class="cat-title">Phương án ${i + 1} — ${p.goodCount}/3 mốc rơi vào giờ hoàng đạo, không xung tuổi</div>
+      <div class="cat-title">${i === 0 && res.anchor ? 'Giờ đề xuất' : `Phương án ${i + 1}`} — ${p.goodCount}/3 mốc rơi vào giờ hoàng đạo, không xung tuổi</div>
+      ${anchored(p) ? `<p style="margin:6px 0"><b>${esc(anchored(p).label)} lúc ${esc(anchored(p).time)}</b> <span class="hint">(trong canh ${esc(anchored(p).canh)} bạn đã chọn; các mốc khác tính theo thời gian đã khai)</span></p>` : ''}
       <ul class="score-items no-index">${p.steps.map(stepHTML).join('')}<li class="note"><b>${esc(p.endGroom)}</b> — Xong lễ ở nhà trai</li>${p.party ? stepHTML(p.party) : ''}</ul>
       ${p.notes.length ? `<ul class="why">${p.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
       <div class="sheet-actions">
@@ -787,14 +845,16 @@
     const stamp = `${now.getUTCFullYear()}${pad(now.getUTCMonth() + 1)}${pad(now.getUTCDate())}T${pad(now.getUTCHours())}${pad(now.getUTCMinutes())}00Z`;
     const steps = [...p.steps, ...(p.party ? [p.party] : [])];
     const events = steps.map((s, i) => {
-      const end = steps[i + 1] && steps[i + 1].min > s.min ? steps[i + 1].time : s.time;
+      // Mốc về nhà trai kết thúc khi xong lễ; mốc cuối (tiệc) hoặc mốc trùng giờ với mốc sau dài 30 phút.
+      const hmOf = (x) => `${pad(Math.floor(Math.min(x, 1439) / 60))}:${pad(Math.min(x, 1439) % 60)}`;
+      const end = s.key === 'H' ? p.endGroom : (steps[i + 1] && steps[i + 1].min > s.min ? steps[i + 1].time : hmOf(s.min + 30));
       return ['BEGIN:VEVENT', `UID:${newId()}@ngaytot`, `DTSTAMP:${stamp}`,
         `DTSTART:${ymd}T${s.time.replace(':', '')}00`, `DTEND:${ymd}T${end.replace(':', '')}00`,
         `SUMMARY:${icsEsc(`Ngày cưới: ${s.label}`)}`,
         `DESCRIPTION:${icsEsc(`Giờ ${s.zhiVi}, ${s.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} (${s.tianShen}). ${DISCLAIMER} Lập bởi Ngày Tốt.`)}`,
         'END:VEVENT'].join('\r\n');
     });
-    const body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NgayTot//VI', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n');
+    const body = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NgayTot//VI', 'CALSCALE:GREGORIAN', ...events, 'END:VCALENDAR'].join('\r\n') + '\r\n';
     const url = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
     const a = Object.assign(document.createElement('a'), { href: url, download: `ngay-cuoi-${r.key}.ics` });
     document.body.append(a);
@@ -838,18 +898,24 @@
     const dsc = S.describeDay(r.ctx);
     const fixed = noIndex();
     const summary = fixed ? state.act.label : `${state.act.label} (${r.grade.label} ${r.score}/100)`;
+    // Lễ cưới chưa xếp lịch trình: sự kiện cả ngày, không gắn với một canh giờ cụ thể (PRD §8.6).
+    const allDay = !fixed && NT.activities.hourMeaningOf(state.act) === null;
+    const hdList = r.hours.filter((h) => h.practical && h.huangDao && !h.severe).map((h) => h.label).join(', ');
     const desc = [
       calendarOnly()
         ? `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}).`
-        : `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}, ${r.chosen.tianShen}).`,
+        : allDay
+          ? `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ hoàng đạo trong ngày: ${hdList || 'không có trong khung 07:00–20:59'}. Chưa xếp lịch trình các mốc.`
+          : `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}, ${r.chosen.tianShen}).`,
       fixed ? (state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE) : '',
+      whoText() ? whoText() + '.' : '',
       ...hardWarningTexts(r),
       DISCLAIMER, 'Lập bởi Ngày Tốt.',
     ].filter(Boolean).join(' ');
     const body = [
       'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//NgayTot//VI', 'CALSCALE:GREGORIAN', 'BEGIN:VEVENT',
       `UID:${newId()}@ngaytot`, `DTSTAMP:${stamp}`,
-      `DTSTART:${ymd}T${pad(sh)}${pad(sm)}00`, `DTEND:${ymd}T${pad(eh)}${pad(em)}00`,
+      ...(allDay ? [`DTSTART;VALUE=DATE:${ymd}`] : [`DTSTART:${ymd}T${pad(sh)}${pad(sm)}00`, `DTEND:${ymd}T${pad(eh)}${pad(em)}00`]),
       `SUMMARY:${icsEsc(summary)}`,
       `DESCRIPTION:${icsEsc(desc)}`,
       'END:VEVENT', 'END:VCALENDAR',
@@ -874,10 +940,12 @@
       ]
       : [
         `${state.act.label}: ${dsc.weekday}, ${fmtDate(r.ctx)} (ÂL ${dsc.lunarText})`,
-        `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ ${r.chosen.label} (${r.chosen.ganZhi})`,
+        NT.activities.hourMeaningOf(state.act) === null
+          ? `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ hoàng đạo trong ngày: ${r.hours.filter((h) => h.practical && h.huangDao && !h.severe).map((h) => h.label).join(', ') || 'không có trong khung 07:00–20:59'}`
+          : `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ ${r.chosen.label} (${r.chosen.ganZhi}) — giờ để ${NT.activities.hourMeaningOf(state.act)}`,
         ...r.day.items.map((i) => `${i.pts > 0 ? '+' : ''}${i.pts}  ${i.text}`),
       ];
-    lines.push(...hardWarningTexts(r), '', DISCLAIMER);
+    lines.push(...(whoText() ? [whoText() + '.'] : []), ...hardWarningTexts(r), '', DISCLAIMER);
     const text = lines.join('\n');
     try {
       await navigator.clipboard.writeText(text);
@@ -898,13 +966,21 @@
     initActivities();
     initRange();
     syncSubject();
-    $('#f-owner').addEventListener('change', syncSubject);
+    $('#f-owner').addEventListener('change', () => { syncSubject(); clearResults(); });
+    for (const id of ['#f-date', '#g-date', '#f-time', '#f-unknown-time', '#f-place', '#f-region', '#f-tz', '#f-zi', '#f-tst']) $(id).addEventListener('change', clearResults);
+    $$('input[name="gender"]').forEach((el) => el.addEventListener('change', clearResults));
     $('#t-use-name').addEventListener('change', syncSubject);
     $('#btn-build-chart').addEventListener('click', () => {
+      clearResults();
       if (buildChartFromForm()) $('#card-chart').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     $('#btn-find').addEventListener('click', runFind);
     document.addEventListener('click', (e) => {
+      const ph = e.target.closest('#top-list [data-plan-hour]');
+      if (ph && state.act?.id === 'wed_main') {
+        const r = state.results?.days.find((x) => x.key === ph.closest('[data-key]')?.dataset.key);
+        if (r) { openDay(r.key); openWeddingPlan(r, ph.dataset.planHour); return; }
+      }
       const t = e.target.closest('[data-key]');
       if (t && (t.closest('#top-list') || t.closest('#heatmap'))) openDay(t.dataset.key);
     });

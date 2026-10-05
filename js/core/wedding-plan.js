@@ -23,6 +23,7 @@
   const DEFAULTS = Object.freeze({
     ceremonyBride: 45, ceremonyGroom: 30, buffer: 15,
     windowFrom: '05:00', windowTo: '21:00',
+    ceremonyFrom: '06:00', // lễ ở nhà gái không bắt đầu trước 06:00 (khung giờ nhạc, PRD §3.2); xuất phát thì được từ 05:00
     step: 5, marginWarn: 15, farMinutes: 180,
     priority: ['A', 'H'],
   });
@@ -47,6 +48,7 @@
       clash, good: huangDao && clash.length === 0,
       margin: Math.min(min - cs, ce - min), // phút tới ranh giới canh gần nhất
       canh: `${hm(Math.max(cs, 0))}–${hm(Math.min(ce, 1440) - 1)}`,
+      nextDay: min >= 1380, // từ 23:00 là canh Tý của ngày hôm sau: hoàng đạo, hắc đạo tính theo ngày kế
     };
   }
 
@@ -58,26 +60,41 @@
    * @param {number|null} [o.brideZhi] chi tuổi cô dâu  @param {number|null} [o.groomZhi] chi tuổi chú rể
    * @param {string|null} [o.partyTime] 'HH:MM' nếu đã định giờ tiệc
    * @param {string[]} [o.priority] hai mốc ưu tiên trong ['D','A','H']
+   * @param {{key:'D'|'A'|'H', from:number, to:number}|null} [o.anchor] gắn một mốc vào khoảng phút [from, to) — vd một canh giờ người dùng đã chọn
    */
   function plan(o) {
-    const c = { ...DEFAULTS, ...Object.fromEntries(Object.entries(o).filter(([, v]) => v != null)) };
-    const travelTo = Math.round(Number(o.travelTo));
-    const travelBack = Math.round(Number(o.travelBack ?? o.travelTo));
+    const c = { ...DEFAULTS };
+    // Chuẩn hóa mọi tham số số về số nguyên phút; chuỗi rỗng / null = dùng mặc định. Không để chuỗi lọt vào phép cộng.
+    const int = (v, def) => (v == null || v === '' ? def : Math.round(Number(v)));
+    const travelTo = int(o.travelTo, NaN);
+    if (!Number.isFinite(travelTo)) throw new Error('Hãy nhập thời gian đi từ nhà trai tới nhà gái (phút).');
+    const travelBack = int(o.travelBack, travelTo);
     if (!(travelTo >= 0 && travelTo <= 1200) || !(travelBack >= 0 && travelBack <= 1200)) throw new Error('Thời gian di chuyển không hợp lệ (0–1200 phút).');
-    for (const k of ['ceremonyBride', 'ceremonyGroom', 'buffer']) if (!(c[k] >= 0 && c[k] <= 600)) throw new Error('Thời lượng lễ hoặc khoảng đệm không hợp lệ.');
-    const priority = (Array.isArray(c.priority) ? c.priority : DEFAULTS.priority).filter((k) => ['D', 'A', 'H'].includes(k));
+    for (const k of ['ceremonyBride', 'ceremonyGroom', 'buffer']) {
+      c[k] = int(o[k], DEFAULTS[k]);
+      if (!(c[k] >= 0 && c[k] <= 600)) throw new Error('Thời lượng lễ hoặc khoảng đệm không hợp lệ (0–600 phút).');
+    }
+    c.step = Math.max(1, int(o.step, DEFAULTS.step) || DEFAULTS.step);
+    for (const k of ['windowFrom', 'windowTo', 'ceremonyFrom']) if (typeof o[k] === 'string' && /^\d{1,2}:\d{2}$/.test(o[k])) c[k] = o[k];
+    if (o.partyTime != null && o.partyTime !== '' && !/^\d{1,2}:\d{2}$/.test(o.partyTime)) throw new Error('Giờ tiệc không hợp lệ.');
+    const priority = [...new Set(Array.isArray(o.priority) ? o.priority : DEFAULTS.priority)].filter((k) => ['D', 'A', 'H'].includes(k));
     const prio = priority.length ? priority : DEFAULTS.priority;
     const other = ['D', 'A', 'H'].filter((k) => !prio.includes(k));
     const zhis = [{ role: 'cô dâu', zhi: o.brideZhi }, { role: 'chú rể', zhi: o.groomZhi }];
-    const w0 = toMin(c.windowFrom), w1 = toMin(c.windowTo);
+    const w0 = toMin(c.windowFrom), w1 = toMin(c.windowTo), a0 = Math.max(w0, toMin(c.ceremonyFrom));
     const info = (min) => hourInfo(o.y, o.m, o.d, min, zhis);
+    const anchor = o.anchor && ['D', 'A', 'H'].includes(o.anchor.key) && Number.isFinite(o.anchor.from) && Number.isFinite(o.anchor.to) ? o.anchor : null;
 
     const cands = [];
-    for (let A = w0; A <= w1; A += c.step) {
+    for (let A = a0; A <= w1; A += c.step) {
       const Dm = A - travelTo - c.buffer;
       const L = A + c.ceremonyBride;
       const H = L + travelBack;
       if (Dm < w0 || H + c.ceremonyGroom > w1) continue; // không xuất phát trước khung, không kết thúc sau khung
+      if (anchor) {
+        const at = { D: Dm, A, H }[anchor.key];
+        if (at < anchor.from || at >= anchor.to) continue; // mốc đã gắn phải nằm trong canh giờ người dùng chọn
+      }
       const ms = { D: info(Dm), A: info(A), L: info(L), H: info(H) };
       const prioGood = prio.filter((k) => ms[k].good).length;
       const otherGood = other.filter((k) => ms[k].good).length;
@@ -114,23 +131,26 @@
       if (party) {
         if (party.min < endGroom) notes.push(`Giờ tiệc ${party.time} sớm hơn lúc lễ ở nhà trai xong (${hm(endGroom)}).`);
         if (party.min < 360 || party.min >= 1320) notes.push(`Giờ tiệc ${party.time} nằm ngoài khung 06:00–22:00 cho nhạc đám cưới.`);
+        if (party.nextDay) notes.push(`Giờ tiệc ${party.time} thuộc canh Tý của ngày hôm sau; nhãn hoàng đạo, hắc đạo của mốc này tính theo ngày kế.`);
       }
       return { steps, party: party ? { key: 'P', label: LABEL.P, judged: false, priority: false, ...party } : null, endGroom: hm(endGroom), prioGood: x.prioGood, prioRobust: x.prioRobust, goodCount: x.prioGood + x.otherGood, notes };
     });
 
     const advice = [];
-    if (!cands.length) {
+    if (!cands.length && anchor) {
+      advice.push(`Không xếp được lịch trình khi gắn "${LABEL[anchor.key].toLowerCase()}" vào khoảng ${hm(anchor.from)}–${hm(anchor.to - 1)}: với thời gian đi và thời lượng lễ đã khai, các mốc còn lại sẽ rơi ra ngoài khung ${c.windowFrom}–${c.windowTo}. Hãy chọn canh giờ khác hoặc mốc khác.`);
+    } else if (!cands.length) {
       advice.push(`Không xếp được lịch trình trong khung ${c.windowFrom}–${c.windowTo}: với quãng đường này, đoàn phải xuất phát trước ${c.windowFrom} hoặc kết thúc sau ${c.windowTo}. Ứng dụng không gợi ý chạy xe đêm.`);
     } else if (plans[0].prioGood < prio.length) {
       advice.push('Trong ngày này không có lịch trình nào để cả hai mốc ưu tiên cùng rơi vào giờ hoàng đạo. Ưu tiên an toàn và đúng hẹn; mốc nào không đẹp đã ghi rõ ở từng phương án.');
     }
-    if (travelTo >= c.farMinutes || !cands.length) {
+    if (travelTo >= c.farMinutes || (!cands.length && !anchor)) {
       advice.push('Đường xa, các gia đình thường chọn một trong ba cách: (1) đi sớm trong ngày; (2) nhà trai đến từ hôm trước và xuất phát từ một điểm gần nhà gái — khi đó nhập lại thời gian đi theo điểm xuất phát mới; (3) làm hai ngày: lễ ở nhà gái hôm trước, lễ ở nhà trai hôm sau — khi đó xem riêng từng ngày.');
     }
     return {
-      plans, advice, priority: prio,
+      plans, advice, priority: prio, anchor,
       criteria: `Sắp theo: số mốc ưu tiên (${prio.map((k) => LABEL[k].toLowerCase()).join('; ')}) rơi vào giờ hoàng đạo, không xung tuổi và cách ranh giới canh giờ ít nhất ${c.marginWarn} phút → số mốc ưu tiên rơi vào giờ hoàng đạo → các mốc còn lại → khoảng cách tới ranh giới canh giờ → giờ sớm hơn. Thứ tự này do ứng dụng đặt, không có trong sách.`,
-      params: { travelTo, travelBack, ceremonyBride: c.ceremonyBride, ceremonyGroom: c.ceremonyGroom, buffer: c.buffer, windowFrom: c.windowFrom, windowTo: c.windowTo },
+      params: { travelTo, travelBack, ceremonyBride: c.ceremonyBride, ceremonyGroom: c.ceremonyGroom, buffer: c.buffer, windowFrom: c.windowFrom, windowTo: c.windowTo, ceremonyFrom: c.ceremonyFrom },
     };
   }
 
