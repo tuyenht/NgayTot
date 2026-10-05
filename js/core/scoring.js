@@ -323,6 +323,8 @@
    * @param {boolean} [o.skipWeekend]
    * @param {{yearlyAsSevere?:boolean, hideSevere?:boolean, useNameElement?:boolean}} [o.options]
    */
+  const isCalendarOnly = (act) => !!(act?.isMedical && act?.fixedOnly);
+
   function findDays(o) {
     const t0 = performance.now();
     const [fy, fm, fd] = o.from.split('-').map(Number);
@@ -336,12 +338,27 @@
     // Việc y tế / lịch đã ấn định: chỉ xem thông tin đúng ngày giờ đó, không xếp hạng để gợi ý đổi ngày.
     if (o.act.fixedOnly && (o.mode !== 'fixed' || end !== cur)) throw new Error('Việc này chỉ xem thông tin cho ngày giờ đã được ấn định.');
     const [fh, fmin] = (o.fixedTime ?? '08:00').split(':').map(Number);
+    // Lịch mổ, sinh mổ do bác sĩ ấn định: chỉ thông tin lịch thuần, không dòng luật, không điểm (PRD §3.1).
+    const calendarOnly = isCalendarOnly(o.act);
 
     const days = [];
     for (; cur <= end; cur += 864e5) {
       const dt = new Date(cur);
       const ctx = dayContext(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
       const isWeekend = ctx.weekday === 0 || ctx.weekday === 6;
+      if (calendarOnly) {
+        const l = globalThis.Solar.fromYmdHms(ctx.y, ctx.m, ctx.d, fh, fmin, 0).getLunar();
+        const chosen = { g: l.getTimeGanIndex(), z: l.getTimeZhiIndex(), label: `${pad(fh)}:${pad(fmin)}`, items: [], severe: false, score: null };
+        chosen.ganZhi = D.ganZhiVi(chosen.g, chosen.z);
+        days.push({
+          ctx, key: ctx.key, isWeekend, calendarOnly: true,
+          day: { raw: 0, score: null, items: [], severe: [] },
+          hours: [chosen], chosen, bestHours: [chosen], severe: false, excluded: false,
+          flags: NT.calendar.inVerifiedRange(ctx.y) ? [] : ['OUT_OF_VERIFIED_RANGE'],
+          score: null, grade: null,
+        });
+        continue;
+      }
       const day = scoreDay(ctx, o.chart, o.act, o.nameInfo, o.options);
       let hours, chosen;
       if (o.mode === 'fixed') {
@@ -383,5 +400,5 @@
     };
   }
 
-  NT.scoring = Object.freeze({ dayContext, scoreDay, scoreHour, findDays, describeDay, gradeOf, yearWarnings, ymdKey });
+  NT.scoring = Object.freeze({ dayContext, scoreDay, scoreHour, findDays, describeDay, gradeOf, yearWarnings, ymdKey, isCalendarOnly });
 })(globalThis.NT ??= {});

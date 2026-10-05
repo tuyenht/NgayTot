@@ -2,6 +2,8 @@
  * NgayTot — Giới hạn pháp luật Việt Nam (PRD §3.2, §8.3, §10).
  * Bảng giới hạn pháp luật được cấu trúc dạng dữ liệu (data-driven), có cờ verified: false
  * kèm số hiệu văn bản pháp quy. Đây là căn cứ duy nhất được phép loại hoặc cảnh báo cứng ngày/giờ.
+ * Số văn bản lấy theo PRD §3.2. Cờ verified chỉ đổi thành true khi đã đối chiếu văn bản gốc
+ * còn hiệu lực ngay trước lần phát hành.
  */
 (function (NT) {
   'use strict';
@@ -20,35 +22,58 @@
     BURIAL_TIME_EXCEEDED: {
       id: 'LEGAL_BURIAL_TIME_EXCEEDED',
       name: 'Thời gian lưu giữ thi hài (quàn)',
-      doc: 'Thông tư 02/2009/TT-BYT, Điều 4 & 5',
+      doc: 'Thông tư 21/2021/TT-BYT, Điều 4 và Điều 13 khoản 1',
       verified: false,
       severity: 'block', // Loại ngày nếu vượt
-      desc: 'Thi hài người chết phải được mai táng trong vòng 48 giờ; nếu có bảo quản lạnh (≤ 4°C) không quá 7 ngày; người chết do bệnh truyền nhiễm nguy hiểm không quá 24 giờ.',
+      desc: 'Thời gian quàn không quá 48 giờ kể từ khi chết nếu không bảo quản lạnh; không quá 7 ngày nếu bảo quản lạnh từ 4°C trở xuống; lâu hơn chỉ khi bảo quản từ −10°C trở xuống. Người chết do dịch bệnh nguy hiểm: không quá 24 giờ kể từ khi chết hoặc phát hiện thi thể, trừ khi bảo quản từ −10°C trở xuống.',
       maxHoursNormal: 48,
-      maxHoursCold: 168, // 7 ngày
+      maxHoursCold: 168, // 7 ngày, bảo quản lạnh ≤ 4°C
       maxHoursInfectious: 24,
-      maxHoursHueCustom: 72, // Tham khảo tập tục Huế 72h
+      // Bảo quản ≤ −10°C: thông tư không đặt giới hạn thời gian.
     },
     REBURIAL_TOO_EARLY: {
       id: 'LEGAL_REBURIAL_TOO_EARLY',
       name: 'Khoảng cách cải táng tối thiểu',
-      doc: 'Thông tư 02/2009/TT-BYT',
+      doc: 'Thông tư 21/2021/TT-BYT, Điều 9 khoản 1',
       verified: false,
       severity: 'block',
-      desc: 'Cải táng (sang cát) thường chỉ thực hiện sau khi chôn cất đủ 36 tháng trở lên.',
+      desc: 'Thời gian từ khi mai táng đến khi cải táng không dưới 36 tháng (người không chết do dịch bệnh nguy hiểm).',
       minMonths: 36,
     },
     NOISE_WINDOW: {
       id: 'LEGAL_NOISE_WINDOW',
-      name: 'Khung giờ âm thanh, tiếng ồn công cộng',
-      doc: 'Nghị định 144/2021/NĐ-CP, Điều 8',
+      name: 'Khung giờ nhạc trong đám cưới, đám tang',
+      doc: 'Thông tư 04/2011/TT-BVHTTDL',
       verified: false,
       severity: 'warning', // Cảnh báo
-      desc: 'Cấm gây tiếng động lớn, làm ồn ào từ 22h đêm đến 06h sáng hôm sau tại khu dân cư, nơi công cộng.',
+      desc: 'Nhạc trong đám cưới, đám tang chỉ trong khoảng 06:00–22:00. Ngoài ra, từ 15/12/2025 hành vi gây ồn ào ở khu dân cư có thể bị xử phạt ở mọi khung giờ (Nghị định 282/2025/NĐ-CP).',
       startHour: 6,
       endHour: 22,
     },
   });
+
+  /**
+   * Quy định của tỉnh về thời gian từ khi mất đến đưa tang (giờ). Giới hạn hiệu lực là giới hạn
+   * CHẶT NHẤT giữa quốc gia và tỉnh (PRD §3.2): quy định tỉnh không bao giờ nới giới hạn quốc gia.
+   */
+  const PROVINCE_BURIAL_HOURS = Object.freeze({
+    hue: { hours: 72, doc: 'Quy định của thành phố Huế về tổ chức lễ tang (theo PRD §3.2)', verified: false },
+  });
+
+  /**
+   * Giới hạn quàn hiệu lực, tính bằng giờ (Infinity = không giới hạn thời gian).
+   * @param {{storageType?: 'none'|'cold'|'frozen', isInfectious?: boolean, province?: string}} p
+   */
+  function burialLimitHours(p = {}) {
+    const B = LEGAL_LIMITS.BURIAL_TIME_EXCEEDED;
+    let national;
+    if (p.storageType === 'frozen') national = Infinity; // ≤ −10°C
+    else if (p.isInfectious) national = B.maxHoursInfectious;
+    else if (p.storageType === 'cold') national = B.maxHoursCold; // ≤ 4°C
+    else national = B.maxHoursNormal;
+    const prov = PROVINCE_BURIAL_HOURS[p.province]?.hours ?? Infinity;
+    return Math.min(national, prov);
+  }
 
   /** Tính tuổi tròn dương lịch tại thời điểm targetDate ('YYYY-MM-DD'). */
   function exactAge(birthDateStr, targetDateStr) {
@@ -66,7 +91,9 @@
    * @param {object} chart Hồ sơ / lá số người xem
    * @param {string} targetDate 'YYYY-MM-DD'
    * @param {string} [timeStr] 'HH:MM'
-   * @param {object} [contextParams] Tham số bổ sung (vd: deathTime, storageType, isInfectious, spouseBirthDate, spouseGender)
+   * @param {object} [contextParams] Tham số bổ sung: deathTime (thời điểm mất hoặc phát hiện thi thể),
+   *   storageType ('none' | 'cold' ≤ 4°C | 'frozen' ≤ −10°C), isInfectious, province ('hue'),
+   *   spouseBirthDate, spouseGender. Giao diện hiện chưa có ô nhập các tham số này (PRD §14.2 dòng 25).
    */
   function checkLegal(act, chart, targetDate, timeStr, contextParams = {}) {
     const flags = [];
@@ -81,7 +108,7 @@
         if (age !== null && age < minAge) {
           flags.push({
             rule: LEGAL_LIMITS.UNDERAGE_MARRIAGE,
-            message: `Cảnh báo pháp luật: Người xem (${p.gender === 'female' ? 'Nữ' : 'Nam'}) chưa đủ ${minAge} tuổi vào ngày này (hiện ${age} tuổi). Vi phạm điều kiện kết hôn theo Luật Hôn nhân & Gia đình.`,
+            message: `Cảnh báo pháp luật: Người xem (${p.gender === 'female' ? 'Nữ' : 'Nam'}) chưa đủ ${minAge} tuổi vào ngày này (hiện ${age} tuổi), chưa đủ điều kiện đăng ký kết hôn theo Luật Hôn nhân và gia đình.`,
             severity: LEGAL_LIMITS.UNDERAGE_MARRIAGE.severity,
           });
         }
@@ -106,7 +133,7 @@
       if (Number.isFinite(hh) && (hh < LEGAL_LIMITS.NOISE_WINDOW.startHour || hh >= LEGAL_LIMITS.NOISE_WINDOW.endHour)) {
         flags.push({
           rule: LEGAL_LIMITS.NOISE_WINDOW,
-          message: `Lưu ý pháp luật: Giờ ${timeStr} nằm trong khung giờ cấm gây ồn ào (22:00 – 06:00) theo NĐ 144/2021/NĐ-CP. Hãy hạn chế âm thanh, loa đài kèn trống.`,
+          message: `Lưu ý pháp luật: Giờ ${timeStr} nằm ngoài khung 06:00–22:00 mà Thông tư 04/2011/TT-BVHTTDL quy định cho nhạc đám cưới, đám tang. Hãy hạn chế âm thanh, loa đài, kèn trống.`,
           severity: LEGAL_LIMITS.NOISE_WINDOW.severity,
         });
       }
@@ -120,15 +147,13 @@
       const targetMs = Date.UTC(y, m - 1, d, hh - 7, mi); // UTC ms quy từ UTC+7
       if (!Number.isNaN(deathMs) && targetMs > deathMs) {
         const diffHours = (targetMs - deathMs) / 3600e3;
-        let limitHours = LEGAL_LIMITS.BURIAL_TIME_EXCEEDED.maxHoursNormal;
-        if (contextParams.isInfectious) limitHours = LEGAL_LIMITS.BURIAL_TIME_EXCEEDED.maxHoursInfectious;
-        else if (contextParams.storageType === 'cold') limitHours = LEGAL_LIMITS.BURIAL_TIME_EXCEEDED.maxHoursCold;
-        else if (contextParams.isHueCustom) limitHours = LEGAL_LIMITS.BURIAL_TIME_EXCEEDED.maxHoursHueCustom;
+        const limitHours = burialLimitHours(contextParams);
+        const byProvince = limitHours < burialLimitHours({ ...contextParams, province: undefined });
 
         if (diffHours > limitHours) {
           flags.push({
             rule: LEGAL_LIMITS.BURIAL_TIME_EXCEEDED,
-            message: `Vi phạm pháp luật y tế: Thời gian từ khi mất đến khi khâm liệm/an táng là ${Math.round(diffHours)} giờ, vượt quá giới hạn tối đa ${limitHours} giờ theo Thông tư 02/2009/TT-BYT.`,
+            message: `Lưu ý pháp luật: Thời gian từ khi mất đến thời điểm này là ${Math.round(diffHours)} giờ, vượt giới hạn ${limitHours} giờ ${byProvince ? 'theo quy định của địa phương' : 'theo Thông tư 21/2021/TT-BYT'}.`,
             severity: LEGAL_LIMITS.BURIAL_TIME_EXCEEDED.severity,
           });
         }
@@ -140,6 +165,8 @@
 
   NT.legal = Object.freeze({
     LEGAL_LIMITS,
+    PROVINCE_BURIAL_HOURS,
+    burialLimitHours,
     exactAge,
     checkLegal,
   });

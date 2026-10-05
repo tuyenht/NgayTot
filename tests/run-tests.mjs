@@ -283,5 +283,56 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   eq('Mã ứng dụng không có API gửi dữ liệu ra mạng', /\b(fetch|XMLHttpRequest|sendBeacon|WebSocket|EventSource)\s*\(/.test(appCode), false);
 }
 
+// ---------- Đóng G0: PRD §14.2 dòng 6, 23, 24, 26, 28 ----------
+{
+  const S = NT.scoring, L = NT.legal, C = NT.calendar;
+  // Dòng 6 — việc y tế chỉ có thông tin lịch (PRD §3.1)
+  for (const id of ['med_surgery', 'med_birth']) {
+    const d = S.findDays({ chart, act: NT.activities.byId(id), nameInfo: n, from: '2026-10-12', to: '2026-10-12', mode: 'fixed', fixedTime: '08:30' }).days[0];
+    eq(`${id}: không điểm, không xếp loại, không dòng luật, không hoàng đạo/hắc đạo`,
+      [d.score, d.grade, d.day.score, d.day.items.length, d.chosen.items.length, d.severe, 'huangDao' in d.chosen, 'tianShen' in d.chosen, d.chosen.ganZhi],
+      [null, null, null, 0, 0, false, false, false, 'Mậu Thìn']);
+  }
+  const checkup = S.findDays({ chart, act: NT.activities.byId('med_checkup'), nameInfo: null, from: '2026-10-12', to: '2026-10-20', mode: 'best' });
+  eq('Khám định kỳ tự chọn ngày vẫn được đánh giá như việc thường', [checkup.days.length, checkup.days[0].day.items.length > 0], [9, true]);
+
+  // Dòng 23 — dẫn đúng văn bản pháp luật (PRD §3.2)
+  const legalSrc = readFileSync(path.join(root, 'js/core/legal.js'), 'utf8');
+  eq('legal.js không còn dẫn Thông tư 02/2009 hay Nghị định 144/2021', [/02\/2009/.test(legalSrc), /144\/2021/.test(legalSrc)], [false, false]);
+  const LL = L.LEGAL_LIMITS;
+  eq('Quàn, cải táng dẫn Thông tư 21/2021; khung giờ nhạc dẫn Thông tư 04/2011',
+    [/21\/2021\/TT-BYT, Điều 4/.test(LL.BURIAL_TIME_EXCEEDED.doc), /21\/2021\/TT-BYT, Điều 9/.test(LL.REBURIAL_TOO_EARLY.doc), /04\/2011\/TT-BVHTTDL/.test(LL.NOISE_WINDOW.doc)],
+    [true, true, true]);
+  const noiseMsg = L.checkLegal(NT.activities.byId('wed_main'), chart, '2026-11-01', '23:00').map((f) => f.message).join(' ');
+  eq('Thông báo khung giờ nhạc không viết "cấm" và dẫn Thông tư 04/2011', [/cấm/i.test(noiseMsg), /04\/2011/.test(noiseMsg)], [false, true]);
+
+  // Dòng 24 — giới hạn quàn là giới hạn chặt nhất
+  eq('Giới hạn quàn: thường 48, lạnh 168, dịch bệnh 24, ≤ −10°C không giới hạn',
+    [L.burialLimitHours({}), L.burialLimitHours({ storageType: 'cold' }), L.burialLimitHours({ isInfectious: true }), L.burialLimitHours({ storageType: 'cold', isInfectious: true }), L.burialLimitHours({ storageType: 'frozen', isInfectious: true })],
+    [48, 168, 24, 24, Infinity]);
+  eq('Huế 72 giờ không nới 48 giờ khi không bảo quản lạnh; có siết khi bảo quản lạnh',
+    [L.burialLimitHours({ province: 'hue' }), L.burialLimitHours({ province: 'hue', storageType: 'cold' }), L.burialLimitHours({ province: 'hue', storageType: 'frozen' })],
+    [48, 72, 72]);
+  const fAct = NT.activities.byId('funeral_main');
+  const at50h = L.checkLegal(fAct, chart, '2026-10-07', '10:00', { deathTime: '2026-10-05T08:00:00+07:00', province: 'hue' });
+  eq('Huế, không bảo quản lạnh, 50 giờ sau khi mất → vẫn bị cảnh báo', at50h.some((f) => f.rule.id === 'LEGAL_BURIAL_TIME_EXCEEDED'), true);
+  const at50hCold = L.checkLegal(fAct, chart, '2026-10-07', '10:00', { deathTime: '2026-10-05T08:00:00+07:00', province: 'hue', storageType: 'cold' });
+  eq('Huế, bảo quản lạnh, 50 giờ → không cảnh báo', at50hCold.some((f) => f.rule.id === 'LEGAL_BURIAL_TIME_EXCEEDED'), false);
+
+  // Dòng 26 — ngày âm không tồn tại
+  eq('lunarToSolar: 30/2/2026 (tháng thiếu), ngày 0, ngày 31 → null',
+    [C.lunarToSolar(30, 2, 2026, false), C.lunarToSolar(0, 1, 2026, false), C.lunarToSolar(31, 1, 2026, false)], [null, null, null]);
+  eq('lunarToSolar: ngày hợp lệ vẫn đổi đúng (29/2/2026, 30/1/2026, 15/6 nhuận 2025)',
+    [C.lunarToSolar(29, 2, 2026, false), C.lunarToSolar(30, 1, 2026, false), C.lunarToSolar(15, 6, 2025, true)], [[16, 4, 2026], [18, 3, 2026], [8, 8, 2025]]);
+
+  // Dòng 28 — nơi sinh hai bên vĩ tuyến 17
+  const reg = (id) => NT.data.PLACES.find((x) => x.id === id)?.region;
+  eq('Quảng Bình thuộc vùng bắc, Quảng Trị thuộc vùng nam; mọi nơi sinh đều có vùng', [reg('qb'), reg('qt'), NT.data.PLACES.every((x) => ['bac', 'nam', 'unknown'].includes(x.region))], ['bac', 'nam', true]);
+
+  // Nguồn dữ liệu phải ghi đúng là thư viện, chưa đối chiếu sách gốc (PRD §7.1, §7.7)
+  const page = readFileSync(path.join(root, 'index.html'), 'utf8') + readFileSync(path.join(root, 'js/ui/app.js'), 'utf8');
+  eq('Giao diện ghi nguồn lunar-javascript và "chưa đối chiếu" sách gốc', [/lunar-javascript/.test(page), /[Cc]hưa đối chiếu (với )?sách gốc/.test(page)], [true, true]);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

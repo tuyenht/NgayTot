@@ -29,6 +29,8 @@
   const state = { chart: null, nameInfo: null, results: null, act: null, mode: 'best' };
   /** Việc có ngày đã ấn định: không hiện chỉ số, xếp loại (PRD §3.1, §8.4 điều 4). */
   const noIndex = () => !!state.act?.fixedOnly;
+  /** Lịch mổ, sinh mổ đã ấn định: chỉ thông tin lịch thuần, không dòng luật tốt xấu (PRD §3.1). */
+  const calendarOnly = () => S.isCalendarOnly(state.act);
   /** Chế độ ngày cố định: diễn đạt trung tính, không dùng từ gây sợ (PRD §3.4). */
   const neutral = (t) => (noIndex()
     ? String(t).replace(/Hung sát/g, 'Sao cần lưu ý').replace(/ — hung$/, ' — không thuận').replace(/phạm /gi, 'gặp ')
@@ -164,7 +166,10 @@
           const autoTz = C.civilTz(y, m, d, pl.region);
           const regName = pl.region === 'nam' ? 'Miền Nam' : 'Miền Bắc';
           noticeEl.classList.remove('hidden');
-          noticeEl.innerHTML = `📍 <b>Tự động nhận diện múi giờ lịch sử:</b> UTC+${C.fmtTz(autoTz)} (${regName} thời kỳ ${y}).`;
+          const notes = C.civilTzNote(y, m, d, pl.region);
+          noticeEl.innerHTML = `📍 <b>Tự động nhận diện múi giờ lịch sử:</b> UTC+${C.fmtTz(autoTz)} (${regName} thời kỳ ${y}).`
+            + (notes.length ? ` ⚠️ ${esc(notes.join(' '))} Đổi ở "Tùy chọn nâng cao" bên dưới.` : '');
+          if (notes.length) $('#advanced-opts')?.setAttribute('open', '');
         }
       } else {
         // Nơi sinh "Khác" hoặc chưa rõ vùng -> cần người dùng input
@@ -442,6 +447,18 @@
   function dayCardHTML(r, idx) {
     const fixed = noIndex();
     const dsc = S.describeDay(r.ctx);
+    if (calendarOnly()) {
+      return `<article class="day-card" role="button" tabindex="0" aria-label="Xem thông tin lịch ngày ${fmtDate(r.ctx)}" data-key="${r.key}" id="day-card-${r.key}">
+      <div class="day-top">
+        <div class="info-badge" aria-hidden="true">📅</div>
+        <div><div class="day-date">${dsc.weekday}, ${fmtDate(r.ctx)}</div>
+          <div class="day-sub">Âm lịch ${esc(dsc.lunarText)}</div>
+          <div class="day-sub">Ngày ${esc(dsc.ganZhi)} · Tháng ${esc(dsc.monthGanZhi)}</div></div>
+      </div>
+      <div class="tags">${dsc.jieqi ? `<span class="tag">${esc(dsc.jieqi)}</span>` : ''}</div>
+      <div class="hours-row">Giờ đã định: <span class="hour-chip">${esc(r.chosen.label)}</span> (giờ ${esc(r.chosen.ganZhi)})</div>
+    </article>`;
+    }
     const pos = r.day.items.filter((i) => i.pts > 0).sort((a, b) => b.pts - a.pts).slice(0, 3);
     const neg = r.day.items.filter((i) => i.pts < 0).sort((a, b) => a.pts - b.pts).slice(0, 1);
     const hours = (r.bestHours.length ? r.bestHours : [r.chosen])
@@ -555,6 +572,31 @@
     $('#dlg-title').textContent = `${dsc.weekday}, ${fmtDate(r.ctx)}`;
     $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng ${dsc.monthGanZhi}`;
 
+    if (calendarOnly()) {
+      $('#dlg-body').innerHTML = `
+      <p class="disclaimer" style="margin-top:0">${esc(MEDICAL_NOTE)}</p>
+      <h3 style="margin-top:0">Thông tin lịch</h3>
+      <dl class="kv">
+        <dt>Dương lịch</dt><dd>${esc(dsc.weekday)}, ${fmtDate(r.ctx)}</dd>
+        <dt>Âm lịch</dt><dd>${esc(dsc.lunarText)}</dd>
+        <dt>Can chi</dt><dd>Ngày ${esc(dsc.ganZhi)} · Tháng ${esc(dsc.monthGanZhi)}</dd>
+        <dt>Giờ đã định</dt><dd>${esc(r.chosen.label)} (giờ ${esc(r.chosen.ganZhi)})</dd>
+        ${dsc.jieqi ? `<dt>Tiết khí</dt><dd>${esc(dsc.jieqi)}</dd>` : ''}
+      </dl>
+      <p class="hint">Với lịch mổ, sinh mổ và điều trị do bác sĩ chỉ định, ứng dụng không xem ngày tốt xấu.</p>
+      <h3>Thao tác</h3>
+      <div class="sheet-actions">
+        <button type="button" class="btn" id="dlg-ics">📅 Thêm vào lịch (.ics)</button>
+        <button type="button" class="btn" id="dlg-copy">📋 Sao chép tóm tắt</button>
+      </div>`;
+      $('#dlg-ics').addEventListener('click', () => downloadICS(r));
+      $('#dlg-copy').addEventListener('click', () => copySummary(r, dsc));
+      const dlgEl = $('#day-dialog');
+      if (!dlgEl.open) dlgEl.showModal();
+      $('#dlg-body').scrollTop = 0;
+      return;
+    }
+
     const groups = Object.keys(CAT_LABEL).map((cat) => {
       const its = r.day.items.filter((i) => i.cat === cat);
       return its.length ? `<div class="cat-title">${CAT_LABEL[cat]}</div>${itemsHTML(its, fixed)}` : '';
@@ -603,7 +645,7 @@
             <dt>Cát thần</dt><dd>${list(dsc.jiShen)}</dd>
             <dt>${fixed ? 'Sao cần lưu ý' : 'Hung sát'}</dt><dd>${list(dsc.xiongSha)}</dd>
           </dl>
-          <p class="hint">Nghi/Kỵ, thần sát dựa trên truyền thống Hiệp Kỷ Biện Phương Thư (协纪辨方书).</p>
+          <p class="hint">Nguồn: lunar-javascript (dựa trên Hiệp Kỷ Biện Phương Thư), chưa đối chiếu sách gốc.</p>
         </div>
       </div>
       <p class="disclaimer">${esc(DISCLAIMER)}</p>
@@ -639,7 +681,9 @@
     const fixed = noIndex();
     const summary = fixed ? state.act.label : `${state.act.label} (${r.grade.label} ${r.score}/100)`;
     const desc = [
-      `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}, ${r.chosen.tianShen}).`,
+      calendarOnly()
+        ? `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}).`
+        : `Ngày ${dsc.ganZhi}, âm lịch ${dsc.lunarText}. Giờ ${r.chosen.label} (${r.chosen.ganZhi}, ${r.chosen.tianShen}).`,
       fixed ? (state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE) : '',
       DISCLAIMER, 'Lập bởi Ngày Tốt.',
     ].filter(Boolean).join(' ');

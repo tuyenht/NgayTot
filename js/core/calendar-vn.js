@@ -214,9 +214,17 @@
       } else if (lLeap) return null;
       return jdToDate(newMoonDay(k + off, z) + lDay - 1);
     };
-    if (tz != null) return run(tz);
+    // Ngày âm không tồn tại (ngày 30 của tháng thiếu, ngày 0, ngày 31…) → null (PRD §4.5): đổi ngược phải ra đúng ngày đã hỏi.
+    const check = (res, z) => {
+      if (!res || !Number.isInteger(lDay) || lDay < 1 || lDay > 30) return null;
+      const back = solarToLunar(res[0], res[1], res[2], z);
+      return back.day === lDay && back.month === lMonth && back.year === lYear && back.leap === !!lLeap ? res : null;
+    };
+    if (tz != null) return check(run(tz), tz);
     const guess = run(TZ_VN);
-    return guess && run(calendarTz(guess[2], guess[1], guess[0]));
+    if (!guess) return null;
+    const z = calendarTz(guess[2], guess[1], guess[0]);
+    return check(run(z), z);
   }
 
   /** Chi của năm âm lịch (tuổi theo Tết — cách tính tuổi dân gian VN). */

@@ -112,7 +112,8 @@
     { id: 'th', name: 'Thanh Hóa', lon: 105.78, region: 'bac' },
     { id: 'na', name: 'Nghệ An (Vinh)', lon: 105.68, region: 'bac' },
     { id: 'ht', name: 'Hà Tĩnh', lon: 105.90, region: 'bac' },
-    { id: 'qb', name: 'Quảng Bình / Quảng Trị', lon: 106.60, region: 'bac' },
+    { id: 'qb', name: 'Quảng Bình (Đồng Hới)', lon: 106.60, region: 'bac' },
+    { id: 'qt', name: 'Quảng Trị (Đông Hà)', lon: 107.10, region: 'nam' }, // nam vĩ tuyến 17 giai đoạn 1954–1975
     { id: 'qng', name: 'Quảng Ngãi', lon: 108.80, region: 'nam' },
     { id: 'bd', name: 'Bình Định (Quy Nhơn)', lon: 109.22, region: 'nam' },
     { id: 'kh', name: 'Khánh Hòa (Nha Trang)', lon: 109.19, region: 'nam' },
