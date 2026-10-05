@@ -65,7 +65,14 @@
   function plan(o) {
     const c = { ...DEFAULTS };
     // Chuẩn hóa mọi tham số số về số nguyên phút; chuỗi rỗng / null = dùng mặc định. Không để chuỗi lọt vào phép cộng.
-    const int = (v, def) => (v == null || v === '' ? def : Math.round(Number(v)));
+    // Chỉ nhận số hữu hạn hoặc chuỗi số thập phân thường; true/false, mảng, đối tượng, '1e3'… đều bị từ chối.
+    const int = (v, def) => {
+      if (v == null || (typeof v === 'string' && v.trim() === '')) return def;
+      if (typeof v === 'number') return Number.isFinite(v) ? Math.round(v) : NaN;
+      if (typeof v === 'string' && /^\s*-?\d+(\.\d+)?\s*$/.test(v)) return Math.round(Number(v));
+      return NaN;
+    };
+    const clock = (t) => { const m = /^(\d{1,2}):(\d{2})$/.exec(t ?? ''); return m && +m[1] < 24 && +m[2] < 60 ? +m[1] * 60 + +m[2] : null; };
     const travelTo = int(o.travelTo, NaN);
     if (!Number.isFinite(travelTo)) throw new Error('Hãy nhập thời gian đi từ nhà trai tới nhà gái (phút).');
     const travelBack = int(o.travelBack, travelTo);
@@ -74,16 +81,25 @@
       c[k] = int(o[k], DEFAULTS[k]);
       if (!(c[k] >= 0 && c[k] <= 600)) throw new Error('Thời lượng lễ hoặc khoảng đệm không hợp lệ (0–600 phút).');
     }
-    c.step = Math.max(1, int(o.step, DEFAULTS.step) || DEFAULTS.step);
-    for (const k of ['windowFrom', 'windowTo', 'ceremonyFrom']) if (typeof o[k] === 'string' && /^\d{1,2}:\d{2}$/.test(o[k])) c[k] = o[k];
-    if (o.partyTime != null && o.partyTime !== '' && !/^\d{1,2}:\d{2}$/.test(o.partyTime)) throw new Error('Giờ tiệc không hợp lệ.');
+    const step = int(o.step, DEFAULTS.step);
+    c.step = Number.isFinite(step) && step >= 1 && step <= 60 ? step : DEFAULTS.step;
+    for (const k of ['windowFrom', 'windowTo', 'ceremonyFrom']) {
+      if (o[k] == null) continue;
+      if (clock(o[k]) == null) throw new Error('Khung giờ không hợp lệ.');
+      c[k] = o[k];
+    }
+    if (!(clock(c.windowFrom) < clock(c.windowTo)) || clock(c.ceremonyFrom) > clock(c.windowTo)) throw new Error('Khung giờ không hợp lệ.');
+    if (o.partyTime != null && o.partyTime !== '' && clock(o.partyTime) == null) throw new Error('Giờ tiệc không hợp lệ.');
+    if (o.anchor != null && !(['D', 'A', 'H'].includes(o.anchor.key) && Number.isFinite(o.anchor.from) && Number.isFinite(o.anchor.to) && o.anchor.from < o.anchor.to)) {
+      throw new Error('Mốc gắn hoặc canh giờ gắn không hợp lệ.');
+    }
     const priority = [...new Set(Array.isArray(o.priority) ? o.priority : DEFAULTS.priority)].filter((k) => ['D', 'A', 'H'].includes(k));
     const prio = priority.length ? priority : DEFAULTS.priority;
     const other = ['D', 'A', 'H'].filter((k) => !prio.includes(k));
     const zhis = [{ role: 'cô dâu', zhi: o.brideZhi }, { role: 'chú rể', zhi: o.groomZhi }];
     const w0 = toMin(c.windowFrom), w1 = toMin(c.windowTo), a0 = Math.max(w0, toMin(c.ceremonyFrom));
     const info = (min) => hourInfo(o.y, o.m, o.d, min, zhis);
-    const anchor = o.anchor && ['D', 'A', 'H'].includes(o.anchor.key) && Number.isFinite(o.anchor.from) && Number.isFinite(o.anchor.to) ? o.anchor : null;
+    const anchor = o.anchor ?? null;
 
     const cands = [];
     for (let A = a0; A <= w1; A += c.step) {

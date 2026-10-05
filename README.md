@@ -28,7 +28,8 @@ Kiểm thử engine: `node tests/run-tests.mjs`
   - Chỉ xếp trong khung 05:00–21:00; đường xa có gợi ý cách làm; xuất cả lịch trình ra `.ics`.
   - Bấm một canh giờ hoàng đạo trên thẻ ngày cưới để nhận ngay giờ đề xuất cụ thể cho từng mốc.
 - **Giờ tốt ghi rõ để làm gì**
-  - Mỗi việc ghi giờ tốt là giờ khởi sự của hành động nào (mở cửa, đặt bút ký, vào nhà mới…), kèm một giờ bắt đầu đề xuất trong canh.
+  - Việc một mốc ghi giờ tốt là giờ khởi sự của hành động nào (mở cửa, đặt bút ký, vào nhà mới…); hộp chi tiết kèm một giờ bắt đầu đề xuất trong canh. Lễ cưới thì dùng lịch trình.
+  - Giờ đề xuất chỉ lấy trong khung sinh hoạt: 05:00–20:59 cho mọi việc, 07:00–20:59 cho việc có tiệc, nhạc.
 
 - **Lá số Tứ trụ chính xác**
   - Trụ năm/tháng theo **thời điểm** tiết khí (múi giờ đồng hồ tự đề xuất theo thời kỳ và vùng: UTC+7, +8 hoặc +9; chọn tay được).
@@ -65,6 +66,7 @@ js/core/bazi.js         Lập lá số, vượng suy, Dụng thần, xử lý m�
 js/core/name-element.js Ngũ hành tên (Ngũ âm), hệ số phụ
 js/core/activities.js   Quy tắc theo từng loại việc
 js/core/legal.js        Giới hạn pháp luật Việt Nam (kết hôn, tiếng ồn, quàn/an táng)
+js/core/wedding-plan.js Lịch trình giờ trong ngày cưới
 js/core/scoring.js      Chấm điểm ngày/giờ, tìm ngày (Bảng quy chiếu 8.3)
 js/ui/app.js            Điều khiển giao diện
 tests/run-tests.mjs     Kiểm thử engine

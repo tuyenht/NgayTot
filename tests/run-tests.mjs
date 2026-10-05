@@ -477,7 +477,8 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   eq('Cưới hỏi: giờ đề xuất luôn trong 07:00–20:59; hộp chi tiết vẫn đủ 13 khung',
     [wedDays.every((d) => start(d.chosen) >= 7 && start(d.chosen) < 21 && d.bestHours.every((h) => start(h) >= 7 && start(h) < 21)), wedDays[0].hours.length], [true, 13]);
   const bizDays = S.findDays({ chart, act: A.byId('biz_open'), nameInfo: null, from: '2026-11-01', to: '2027-01-31', mode: 'best' }).days;
-  eq('Việc không có tiệc, nhạc: không giới hạn khung giờ', bizDays.some((d) => start(d.chosen) < 7 || start(d.chosen) >= 21), true);
+  eq('Việc không có tiệc, nhạc: giờ đề xuất trong 05:00–20:59 (không đề xuất nửa đêm, rạng sáng); hộp chi tiết vẫn đủ 13 khung',
+    [bizDays.every((d) => start(d.chosen) >= 5 && start(d.chosen) < 21 && d.bestHours.every((h) => start(h) >= 5 && start(h) < 21)), bizDays[0].hours.length], [true, 13]);
 }
 
 // ---------- Sau phản biện độc lập G0b + lịch trình; ý nghĩa giờ tốt; gắn mốc vào canh giờ ----------
@@ -494,6 +495,10 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   eq('Ô để trống dùng mặc định: lễ 45 và 30 phút, lượt về bằng lượt đi', (() => { const p = W.plan({ ...D0, travelTo: 20, travelBack: '', ceremonyBride: '', ceremonyGroom: null }).plans[0]; const t = Object.fromEntries(p.steps.map((s) => [s.key, toMin(s.time)])); return [t.L - t.A, t.H - t.L, toMin(p.endGroom) - t.H]; })(), [45, 20, 30]);
   const threw = (o) => { try { W.plan(o); return false; } catch { return true; } };
   eq('Thiếu thời gian đi, giờ tiệc sai định dạng → báo lỗi thay vì hiểu là 0', [threw({ ...D0 }), threw({ ...D0, travelTo: '' }), threw({ ...D0, travelTo: 'abc' }), threw({ ...D0, travelTo: 20, partyTime: '25h' })], [true, true, true, true]);
+  const bad = (o) => { try { W.plan({ ...D0, travelTo: 20, ...o }); return false; } catch (e) { return /[àáảãạăâđêôơư]/i.test(e.message); } };
+  eq('Tham số sai kiểu hoặc sai khoảng bị từ chối bằng thông báo tiếng Việt',
+    [bad({ travelTo: true }), bad({ travelTo: [5] }), bad({ travelTo: '1e3' }), bad({ travelTo: '   ' }), bad({ partyTime: '24:00' }), bad({ partyTime: '12:60' }), bad({ windowFrom: '21:00', windowTo: '05:00' }), bad({ anchor: { key: 'X', from: 0, to: 60 } }), bad({ anchor: { key: 'A', from: '540', to: '660' } }), bad({ anchor: { key: 'A', from: 660, to: 540 } })],
+    Array(10).fill(true));
   eq('step = 0 không treo; ưu tiên trùng lặp được khử', [W.plan({ ...D0, travelTo: 20, step: 0 }).plans.length >= 1, W.plan({ ...D0, travelTo: 20, priority: ['D', 'D'] }).priority], [true, ['D']]);
 
   // Lượt về khác lượt đi
@@ -503,7 +508,7 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   // Lễ ở nhà gái không trước 06:00; xuất phát được từ 05:00
   let earlyA = 0, earlyD = 0, n = 0;
   for (let d = 1; d <= 28; d++) for (const tr of [10, 20, 45, 90]) for (const p of W.plan({ y: 2026, m: 11, d, travelTo: tr }).plans) { n++; if (toMin(p.steps[1].time) < 360) earlyA++; if (toMin(p.steps[0].time) < 300) earlyD++; }
-  eq('112 lượt xếp: không lễ nào ở nhà gái bắt đầu trước 06:00, không xuất phát nào trước 05:00', [n > 100, earlyA, earlyD], [true, 0, 0]);
+  eq('112 lần gọi (28 ngày × 4 quãng đường): không phương án nào có lễ ở nhà gái trước 06:00 hay xuất phát trước 05:00', [n > 100, earlyA, earlyD], [true, 0, 0]);
 
   // Gắn mốc vào canh giờ đã chọn → đề xuất giờ cụ thể
   const anc = W.plan({ ...D0, travelTo: 40, anchor: { key: 'A', from: 9 * 60, to: 11 * 60 } });
@@ -511,8 +516,20 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
     [anc.plans.length >= 1, anc.plans.every((p) => toMin(p.steps[1].time) >= 540 && toMin(p.steps[1].time) < 660), anc.plans.every((p) => toMin(p.steps[1].time) - toMin(p.steps[0].time) === 55)], [true, true, true]);
   const ancH = W.plan({ ...D0, travelTo: 40, anchor: { key: 'H', from: 13 * 60, to: 15 * 60 } });
   eq('Gắn "về tới nhà trai" vào canh 13:00–14:59', ancH.plans.every((p) => toMin(p.steps[3].time) >= 780 && toMin(p.steps[3].time) < 900) && ancH.plans.length >= 1, true);
-  const best = Math.max(...Array.from({ length: 24 }, (_, i) => 540 + i * 5).map((a) => W.hourInfo(2026, 11, 15, a, []).margin));
-  eq('Trong canh đã gắn, giờ đề xuất là giờ cách ranh giới canh xa nhất mà các mốc ưu tiên vẫn vững, hoặc có lưu ý', anc.plans[0].steps[1].margin <= best && (anc.plans[0].prioRobust > 0 || anc.plans[0].notes.length > 0), true);
+  // Vét cạn: trong canh đã gắn, phương án đầu đạt số mốc ưu tiên vững cao nhất có thể (28 ngày × 3 canh)
+  let ancBad = 0, ancN = 0;
+  for (let d = 1; d <= 28; d++) for (const hh of [7, 9, 13]) {
+    const r = W.plan({ y: 2026, m: 11, d, travelTo: 40, anchor: { key: 'A', from: hh * 60, to: hh * 60 + 120 } });
+    let max = -1;
+    for (let a = hh * 60; a < hh * 60 + 120; a += 5) {
+      const dm = a - 55, h = a + 85;
+      if (a < 360 || dm < 300 || h + 30 > 1260) continue;
+      max = Math.max(max, [a, h].filter((x) => { const i = W.hourInfo(2026, 11, d, x, []); return i.good && i.margin >= 15; }).length);
+    }
+    ancN++;
+    if ((r.plans[0]?.prioRobust ?? -1) !== max) ancBad++;
+  }
+  eq('Gắn mốc vào canh: phương án đầu đạt số mốc ưu tiên vững tối đa trong canh đó (vét cạn 84 ca)', [ancN, ancBad], [84, 0]);
   const impossible = W.plan({ ...D0, travelTo: 300, anchor: { key: 'A', from: 7 * 60, to: 9 * 60 } });
   eq('Gắn mốc không khả thi (đi 5 giờ mà vào nhà gái lúc 07–09 giờ) → không có phương án, có lời giải thích riêng', [impossible.plans.length, /khi gắn/.test(impossible.advice[0] ?? '')], [0, true]);
 

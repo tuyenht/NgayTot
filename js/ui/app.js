@@ -28,6 +28,14 @@
   const noIndex = () => !!state.act?.fixedOnly;
   /** Lịch mổ, sinh mổ đã ấn định: chỉ thông tin lịch thuần, không dòng luật tốt xấu (PRD §3.1). */
   const calendarOnly = () => S.isCalendarOnly(state.act);
+  /**
+   * "Giờ tốt" của việc đang có kết quả là giờ để làm gì (PRD §8.6). null = lễ cưới ở chế độ tìm giờ:
+   * nhiều mốc, chưa gắn với giờ nào. Lễ cưới ở chế độ giờ cố định thì giờ người dùng đặt là giờ làm lễ.
+   */
+  const hourMeaning = () => {
+    const m = NT.activities.hourMeaningOf(state.act);
+    return m === null && state.results?.mode === 'fixed' ? 'làm lễ' : m;
+  };
   /** Chế độ ngày cố định: diễn đạt trung tính, không dùng từ gây sợ (PRD §3.4). */
   const neutral = (t) => (noIndex()
     ? String(t).replace(/Hung sát/g, 'Sao cần lưu ý').replace(/ — hung$/, ' — không thuận').replace(/phạm /gi, 'gặp ')
@@ -396,7 +404,9 @@
    * Bỏ kết quả đang hiện. Gọi khi việc, người được xét hoặc lá số thay đổi, hoặc khi tìm ngày thất bại,
    * để thẻ ngày cũ không bao giờ bị đọc bằng việc hay tuổi của lượt nhập mới.
    */
+  let findToken = 0;
   function clearResults() {
+    findToken++;
     state.results = null;
     $('#card-results').classList.add('hidden');
     const dlg = $('#day-dialog');
@@ -458,7 +468,13 @@
     const btn = $('#btn-find');
     btn.disabled = true;
     btn.innerHTML = '<span class="spinner" aria-hidden="true"></span><span>Đang tính toán…</span>';
+    const token = findToken;
     setTimeout(() => {
+      if (token !== findToken) { // đầu vào đã đổi trong lúc chờ: bỏ lượt này
+        btn.disabled = false;
+        btn.innerHTML = '<span>Tìm ngày tốt</span>';
+        return;
+      }
       try {
         state.results = S.findDays({
           chart, act, nameInfo: chart ? state.nameInfo : null, from, to, mode, fixedTime,
@@ -503,8 +519,8 @@
     const neg = r.day.items.filter((i) => i.pts < 0).sort((a, b) => a.pts - b.pts).slice(0, 1);
     // "Giờ tốt" là giờ để làm gì thì do việc quy định (PRD §8.6). Lễ cưới có nhiều mốc nên chỉ liệt kê
     // các canh hoàng đạo trong khung sinh hoạt theo thứ tự trong ngày, chưa gắn với mốc nào.
-    const meaning = NT.activities.hourMeaningOf(state.act);
-    const multiStep = meaning === null && state.results.mode !== 'fixed';
+    const meaning = hourMeaning();
+    const multiStep = meaning === null;
     const dayHours = multiStep ? r.hours.filter((h) => h.practical && h.huangDao && !h.severe) : [];
     const hours = (multiStep ? dayHours : (r.bestHours.length ? r.bestHours : [r.chosen]))
       .map((h) => (multiStep
@@ -691,14 +707,14 @@
         <div>
           <h3 style="margin-top:0">${fixed ? 'Thông tin tham khảo' : 'Vì sao có điểm này'}</h3>
           ${groups}
-          <div class="cat-title">Giờ ${esc(r.chosen.label)} (${esc(r.chosen.ganZhi)})${fixed ? '' : NT.activities.hourMeaningOf(state.act) === null ? ' — một canh hoàng đạo trong ngày' : ` — giờ để ${esc(NT.activities.hourMeaningOf(state.act))}`}</div>
+          <div class="cat-title">Giờ ${esc(r.chosen.label)} (${esc(r.chosen.ganZhi)})${fixed ? '' : hourMeaning() === null ? ' — một canh hoàng đạo trong ngày' : ` — giờ để ${esc(hourMeaning())}`}</div>
           ${itemsHTML(r.chosen.items, fixed)}
         </div>
         <div>
           <h3 style="margin-top:0">Giờ trong ngày</h3>
-          ${fixed ? '' : `<p class="hint">${NT.activities.hourMeaningOf(state.act) === null
+          ${fixed ? '' : `<p class="hint">${hourMeaning() === null
     ? 'Lễ cưới có nhiều mốc giờ (nhà trai xuất phát, vào nhà gái, về tới nhà trai), nên bảng này chỉ cho biết canh nào là giờ hoàng đạo. Dùng nút "xếp lịch trình" bên dưới để gắn giờ với từng mốc theo quãng đường.'
-    : `Giờ tốt là giờ khởi sự: lúc ${esc(NT.activities.hourMeaningOf(state.act))}. Không cần làm xong trong canh giờ đó.${suggestStart(r.chosen.label)}`}</p>`}
+    : `Giờ tốt là giờ khởi sự: lúc ${esc(hourMeaning())}. Không cần làm xong trong canh giờ đó.${suggestStart(r.chosen.label)}`}</p>`}
           <table class="hours-table"><thead><tr><th>Giờ</th><th>Can chi</th><th>Thần</th>${fixed ? '' : '<th>Điểm</th>'}<th>Ghi chú</th></tr></thead><tbody>${hourRows}</tbody></table>
           <h3>Hoàng lịch</h3>
           <dl class="kv">
@@ -777,8 +793,8 @@
           </select></div>
         <div class="field"><label for="wp-acanh">…vào canh giờ</label>
           <select class="input" id="wp-acanh">${[5, 7, 9, 11, 13, 15, 17, 19].map((h) => {
-    const i = NT.weddingPlan.hourInfo(r.ctx.y, r.ctx.m, r.ctx.d, h * 60 + 60, []);
-    return `<option value="${h}">${pad(h)}:00–${pad(h + 1)}:59 · giờ ${esc(i.zhiVi)} · ${i.huangDao ? 'Hoàng đạo' : 'Hắc đạo'}</option>`;
+    const i = NT.weddingPlan.hourInfo(r.ctx.y, r.ctx.m, r.ctx.d, h * 60 + 60, [{ role: 'cô dâu', zhi: state.chart?.tuoi.zhi }, { role: 'chú rể', zhi: readGroom()?.zhi }]);
+    return `<option value="${h}">${pad(h)}:00–${pad(h + 1)}:59 · giờ ${esc(i.zhiVi)} · ${i.huangDao ? 'Hoàng đạo' : 'Hắc đạo'}${i.clash.length ? ` · xung tuổi ${esc(i.clash.join(', '))}` : ''}</option>`;
   }).join('')}</select></div>
       </div>
       <div style="margin:14px 0"><button type="button" class="btn btn-primary" id="wp-run"><span>Xếp lịch trình</span></button></div>
@@ -793,6 +809,7 @@
       $('#wp-akey').value = 'A';
       $('#wp-acanh').value = String(Number(ph[1]));
       runWeddingPlan();
+      $('#wp-out').insertAdjacentHTML('afterbegin', `<p class="disclaimer">Đây là đề xuất với số mặc định: đi ${esc($('#wp-to').value)} phút mỗi lượt, lễ ở nhà gái ${esc($('#wp-cb').value)} phút, ở nhà trai ${esc($('#wp-cg').value)} phút. Hãy sửa các ô trên theo thực tế rồi bấm "Xếp lịch trình".</p>`);
     }
   }
 
@@ -819,8 +836,8 @@
       <span class="hint">giờ ${esc(s.zhiVi)} (${esc(s.canh)}) · ${s.huangDao ? 'Hoàng đạo' : 'Hắc đạo'} · ${esc(s.tianShen)}${s.nextDay ? ' (tính theo ngày hôm sau)' : ''}${s.clash.length ? ` · xung tuổi ${esc(s.clash.join(', '))}` : ''}</span></li>`;
     const anchored = (p) => (res.anchor ? p.steps.find((s) => s.key === res.anchor.key) : null);
     const plans = res.plans.map((p, i) => `
-      <div class="cat-title">${i === 0 && res.anchor ? 'Giờ đề xuất' : `Phương án ${i + 1}`} — ${p.goodCount}/3 mốc rơi vào giờ hoàng đạo, không xung tuổi</div>
-      ${anchored(p) ? `<p style="margin:6px 0"><b>${esc(anchored(p).label)} lúc ${esc(anchored(p).time)}</b> <span class="hint">(trong canh ${esc(anchored(p).canh)} bạn đã chọn; các mốc khác tính theo thời gian đã khai)</span></p>` : ''}
+      <div class="cat-title">${i === 0 && res.anchor ? (p.goodCount > 0 ? 'Giờ đề xuất' : 'Giờ xếp được trong canh đã chọn') : `Phương án ${i + 1}`} — ${p.goodCount}/3 mốc rơi vào giờ hoàng đạo, không xung tuổi</div>
+      ${anchored(p) ? `<p style="margin:6px 0"><b>${esc(anchored(p).label)} lúc ${esc(anchored(p).time)}</b> <span class="hint">(trong canh ${esc(anchored(p).canh)} bạn đã chọn; các mốc khác tính theo thời gian ở các ô trên)</span></p>` : ''}
       <ul class="score-items no-index">${p.steps.map(stepHTML).join('')}<li class="note"><b>${esc(p.endGroom)}</b> — Xong lễ ở nhà trai</li>${p.party ? stepHTML(p.party) : ''}</ul>
       ${p.notes.length ? `<ul class="why">${p.notes.map((n) => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
       <div class="sheet-actions">
@@ -899,7 +916,7 @@
     const fixed = noIndex();
     const summary = fixed ? state.act.label : `${state.act.label} (${r.grade.label} ${r.score}/100)`;
     // Lễ cưới chưa xếp lịch trình: sự kiện cả ngày, không gắn với một canh giờ cụ thể (PRD §8.6).
-    const allDay = !fixed && NT.activities.hourMeaningOf(state.act) === null;
+    const allDay = !fixed && hourMeaning() === null;
     const hdList = r.hours.filter((h) => h.practical && h.huangDao && !h.severe).map((h) => h.label).join(', ');
     const desc = [
       calendarOnly()
@@ -919,7 +936,7 @@
       `SUMMARY:${icsEsc(summary)}`,
       `DESCRIPTION:${icsEsc(desc)}`,
       'END:VEVENT', 'END:VCALENDAR',
-    ].join('\r\n');
+    ].join('\r\n') + '\r\n';
     const url = URL.createObjectURL(new Blob([body], { type: 'text/calendar;charset=utf-8' }));
     const a = Object.assign(document.createElement('a'), { href: url, download: `ngay-tot-${r.key}.ics` });
     document.body.append(a);
@@ -940,9 +957,9 @@
       ]
       : [
         `${state.act.label}: ${dsc.weekday}, ${fmtDate(r.ctx)} (ÂL ${dsc.lunarText})`,
-        NT.activities.hourMeaningOf(state.act) === null
+        hourMeaning() === null
           ? `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ hoàng đạo trong ngày: ${r.hours.filter((h) => h.practical && h.huangDao && !h.severe).map((h) => h.label).join(', ') || 'không có trong khung 07:00–20:59'}`
-          : `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ ${r.chosen.label} (${r.chosen.ganZhi}) — giờ để ${NT.activities.hourMeaningOf(state.act)}`,
+          : `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ ${r.chosen.label} (${r.chosen.ganZhi}) — giờ để ${hourMeaning()}`,
         ...r.day.items.map((i) => `${i.pts > 0 ? '+' : ''}${i.pts}  ${i.text}`),
       ];
     lines.push(...(whoText() ? [whoText() + '.'] : []), ...hardWarningTexts(r), '', DISCLAIMER);
@@ -967,11 +984,12 @@
     initRange();
     syncSubject();
     $('#f-owner').addEventListener('change', () => { syncSubject(); clearResults(); });
-    for (const id of ['#f-date', '#g-date', '#f-time', '#f-unknown-time', '#f-place', '#f-region', '#f-tz', '#f-zi', '#f-tst']) $(id).addEventListener('change', clearResults);
+    for (const id of ['#f-date', '#g-date', '#f-time', '#f-unknown-time', '#f-place', '#f-lon', '#f-name', '#f-region', '#f-tz', '#f-zi', '#f-tst',
+      '#c-name', '#c-element', '#c-base', '#t-yearly-severe', '#t-hide-severe', '#t-skip-weekend', '#t-from', '#t-to', '#t-fixed']) $(id).addEventListener('change', clearResults);
+    $$('input[name="mode"]').forEach((el) => el.addEventListener('change', clearResults));
     $$('input[name="gender"]').forEach((el) => el.addEventListener('change', clearResults));
-    $('#t-use-name').addEventListener('change', syncSubject);
+    $('#t-use-name').addEventListener('change', () => { syncSubject(); clearResults(); });
     $('#btn-build-chart').addEventListener('click', () => {
-      clearResults();
       if (buildChartFromForm()) $('#card-chart').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
     $('#btn-find').addEventListener('click', runFind);
@@ -985,6 +1003,7 @@
       if (t && (t.closest('#top-list') || t.closest('#heatmap'))) openDay(t.dataset.key);
     });
     $('#top-list').addEventListener('keydown', (e) => {
+      if (e.target.closest('[data-plan-hour]')) return; // nút canh giờ tự xử lý Enter/Space qua sự kiện click
       const t = e.target.closest('.day-card');
       if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); openDay(t.dataset.key); }
     });
