@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.5 — thay thế bản 3.0; G0 đã đóng, đã qua hai lượt phản biện độc lập và một lượt quét toàn bộ sau khi mọi phiên sửa mã kết thúc |
+| Phiên bản | 4.6 — thay thế bản 3.0; G0 đã đóng; đã rà lại toàn văn để gỡ các câu lỗi thời sau đợt sửa mã |
 | Ngày cập nhật | 2026-10-05 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Năm quyết định ở mục 16 đã có phương án (QĐ-05 áp dụng theo khuyến nghị, chờ chủ dự án phản hồi nếu muốn khác). Việc tiếp theo là G1 |
@@ -49,7 +49,7 @@ Khi các tài liệu mâu thuẫn, bản này chọn theo thứ tự: an toàn v
 | --- | --- | --- |
 | 1929–2100 | Vùng cam kết chính xác, có dữ liệu chính thức để đối chiếu | Lập được |
 | 1912–1928, 2101–2199 | Tính được, gắn cờ `OUT_OF_VERIFIED_RANGE` | Lập được, kèm cờ |
-| Trước 1912 | Không tính; chỉ hiển thị nếu có bảng lịch cổ nhập vào | Lập được theo tiết khí, kèm cờ; tuổi âm lịch lấy theo Lập xuân và ghi rõ **[SL]** |
+| Trước 1912 | Không tính; chỉ hiển thị nếu có bảng lịch cổ nhập vào | Không hỗ trợ: ô ngày sinh và khoảng tìm ngày giới hạn 1912–2100. Có thể mở lại sau G2 nếu có nhu cầu **[SL]** |
 
 ---
 
@@ -147,7 +147,7 @@ Web tĩnh: không máy chủ ứng dụng, không bước build bắt buộc, ch
 Công cụ ngoại tuyến (máy của người phát triển)        Trình duyệt người dùng
 ┌──────────────────────────────────────────────┐      ┌───────────────────────────────┐
 │ Tầng A: Skyfield + JPL DE440                 │      │ Đọc bảng day_facts theo năm   │
-│   → astro_events (sóc, tiết khí; UTC)        │      │ Tầng C: tra luật + Bát tự     │
+│   → astro_events (sóc, tiết khí; TT, UT1)    │      │ Tầng C: tra luật + Bát tự     │
 │ Tầng B: quy tắc lịch + calendar_tz           │ ───► │ Giao diện, .ics               │
 │   → day_facts/<năm>.json (đóng băng, có hash)│      │ Không gọi mạng với dữ liệu    │
 │ Golden test, đối chiếu Hồng Kông / 6tail     │      │ cá nhân                       │
@@ -160,7 +160,7 @@ Bỏ khỏi v3.0: endpoint `POST /api/v3/fengshui/evaluate`, `x-api-key`, giới
 
 ### 4.2 Trạng thái chuyển tiếp
 
-Cho đến khi có bảng đóng băng (giai đoạn G1–G2, mục 15), tầng A và B tiếp tục dùng thuật toán đang có trong `js/core/calendar-vn.js` (Hồ Ngọc Đức, công thức xấp xỉ Meeus) và `vendor/lunar.js` (6tail, tính theo UTC+8), với các lỗi đã biết ở mục 14 phải vá trước.
+Cho đến khi có bảng đóng băng (giai đoạn G1–G2, mục 15), tầng A và B tiếp tục dùng thuật toán đang có trong `js/core/calendar-vn.js` (Hồ Ngọc Đức, công thức xấp xỉ Meeus) và `vendor/lunar.js` (6tail, tính theo UTC+8). Các lỗi đã biết của hai thuật toán này đã vá ở G0; phần còn lại ghi ở 13.3 và 14.2 (dòng 14, 27).
 
 ### 4.3 Thành phần mã hiện có
 
@@ -200,7 +200,7 @@ Thay cho ba endpoint HTTP của Đặc tả, engine cung cấp ba hàm thuần (
 | Hàm | Đầu vào | Đầu ra |
 | --- | --- | --- |
 | `dayFacts(date, opts)` | Ngày dương; `tz_profile`, `region`, các tham số quy ước ở 6.5 | Bản ghi `day_facts` + giờ hoàng đạo + cờ |
-| `lunarToSolar(y, m, d, isLeap, opts)` | Ngày âm | Ngày dương, hoặc lỗi "ngày không tồn tại" (ví dụ ngày 30 của tháng thiếu, tháng nhuận không có trong năm đó) |
+| `lunarToSolar(d, m, y, isLeap, tz?, region?)` | Ngày âm; không truyền múi giờ thì tự chọn theo thời kỳ và vùng | Ngày dương, hoặc `null` khi ngày không tồn tại (ví dụ ngày 30 của tháng thiếu, tháng nhuận không có trong năm đó). Hàm đã có trong `calendar-vn.js`; `dayFacts` và `evaluate` là giao diện đích, hiện tương ứng với `dayContext` và `findDays` |
 | `evaluate(request)` | Một ngày hoặc khoảng ngày hoặc chuỗi; việc; từng người gồm vai trò, ngày sinh, `region`, giới tính; tỉnh | Danh sách dòng kết quả luật (8.2), kèm `engine_version` và `data_hash` |
 
 Ví dụ đầu vào của `evaluate` (khung lấy từ V5.1, sửa cho nhiều người và cho hai loại vùng):
@@ -378,7 +378,7 @@ Luật được lưu như dữ liệu có nguồn. Engine là bộ tra bảng th
 ### 7.2 Hai sửa đổi thuật ngữ so với v3.0 và PRD-FENGSHUI
 
 - "Tứ hành xung" không phải tiêu chí loại ngày. Luật đúng là **lục xung** (hai chi đối nhau: Tý–Ngọ, Sửu–Mùi…). Trong một nhóm tứ hành xung có những cặp không xung nhau (Tý–Mão là hình). Mã hiện tại đã dùng lục xung, giữ nguyên.
-- "Sát chủ" chưa tìm được nguồn đáng tin **[CK]** nên không là luật. Chú thích trong `scoring.js` đang gọi nhóm Nguyệt phá, Thụ tử, Đại hao, Vãng vong là "Sát chủ, Nguyệt phá" — nhầm tên, cần sửa.
+- "Sát chủ" chưa tìm được nguồn đáng tin **[CK]** nên không là luật. Chú thích mã từng gọi nhầm nhóm Nguyệt phá, Đại hao, Vãng vong là "Sát chủ"; đã sửa ở G0.
 
 ### 7.3 Lược đồ một luật
 
