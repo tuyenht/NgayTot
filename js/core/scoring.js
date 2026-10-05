@@ -309,6 +309,8 @@
     const end = Date.UTC(ty, tm - 1, td);
     if (!(end >= cur)) throw new Error('Khoảng ngày không hợp lệ');
     if ((end - cur) / 864e5 > 731) throw new Error('Khoảng tìm tối đa 2 năm');
+    const R = NT.calendar.SUPPORTED_RANGE;
+    if (fy < R.from || ty > R.to) throw new Error(`Chỉ hỗ trợ ngày trong khoảng ${R.from}–${R.to}.`);
     // Việc y tế / lịch đã ấn định: chỉ xem thông tin đúng ngày giờ đó, không xếp hạng để gợi ý đổi ngày.
     if (o.act.fixedOnly && (o.mode !== 'fixed' || end !== cur)) throw new Error('Việc này chỉ xem thông tin cho ngày giờ đã được ấn định.');
     const [fh, fmin] = (o.fixedTime ?? '08:00').split(':').map(Number);
@@ -334,6 +336,7 @@
       days.push({
         ctx, key: ctx.key, isWeekend, day, hours, chosen, bestHours, severe,
         excluded: o.skipWeekend && isWeekend,
+        flags: NT.calendar.inVerifiedRange(ctx.y) ? [] : ['OUT_OF_VERIFIED_RANGE'],
         score, grade: gradeOf(score, severe),
       });
     }

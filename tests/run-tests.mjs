@@ -119,6 +119,110 @@ try { NT.scoring.findDays({ chart, act: NT.activities.byId('funeral_main'), name
 eq('Khâm liệm/di quan: không quét khoảng ngày (QĐ-04)', funeralBlocked, true);
 eq('Không còn nhãn xếp loại gây sợ', [NT.scoring.gradeOf(10, false).label, NT.scoring.gradeOf(90, true).label], ['Nên cân nhắc', 'Có điều kỵ nặng']);
 
+// ---------- 6. Lịch VN theo thời kỳ (PRD §6.3, §1.4) ----------
+{
+  const C = NT.calendar;
+  const iso = (d, m, y) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const LV = (d, m, y, region) => { const r = C.solarToLunarVN(d, m, y, region); return [r.day, r.month, r.year, r.leap]; };
+
+  // 6a. Bất biến: ngày 1–30, tăng liên tục, tháng dài 29/30, thứ tự tháng, đổi xuôi–ngược khớp
+  const invariants = (from, to, region) => {
+    const bad = []; let prev = null, run = 0, start = null;
+    for (let t = Date.UTC(from, 0, 1); t <= Date.UTC(to, 11, 31); t += 864e5) {
+      const dt = new Date(t); const [d, m, y] = [dt.getUTCDate(), dt.getUTCMonth() + 1, dt.getUTCFullYear()];
+      const tz = C.calendarTz(y, m, d, region);
+      const l = C.solarToLunar(d, m, y, tz);
+      if (l.day < 1 || l.day > 30) bad.push(`day ${iso(d, m, y)}`);
+      if (prev && !(l.day === prev.day + 1 || l.day === 1)) bad.push(`step ${iso(d, m, y)}`);
+      if (l.day === 1) { if (start && (run < 29 || run > 30)) bad.push(`len ${start}`); run = 0; start = iso(d, m, y); }
+      if (prev && l.day === 1 && !(l.month === prev.month || l.leap || l.month === (prev.month % 12) + 1)) bad.push(`month ${iso(d, m, y)}`);
+      run++;
+      const back = C.lunarToSolar(l.day, l.month, l.year, l.leap, tz);
+      if (!back || back[0] !== d || back[1] !== m || back[2] !== y) bad.push(`rt ${iso(d, m, y)}`);
+      prev = l;
+    }
+    return bad.slice(0, 5);
+  };
+  eq('Bất biến âm lịch + đổi ngược 1912–2100 (Bắc)', invariants(1912, 2100, 'bac'), []);
+  eq('Bất biến âm lịch + đổi ngược 1960–1980 (Nam)', invariants(1960, 1980, 'nam'), []);
+
+  // 6b. Đông chí thuộc tháng 11, tháng nhuận không chứa trung khí (bỏ qua mốc cách nửa đêm < 10 phút ngoài vùng kiểm chứng)
+  const ZHONG = ['冬至', '大寒', '雨水', '春分', '谷雨', '小满', '夏至', '大暑', '处暑', '秋分', '霜降', '小雪'];
+  const NAME = { DONG_ZHI: '冬至', DA_HAN: '大寒', YU_SHUI: '雨水' };
+  const seen = new Set(), fails = [], edge = [];
+  for (let yy = 1911; yy <= 2101; yy++) {
+    for (const [k, s] of Object.entries(Lunar.fromYmd(yy, 6, 1).getJieQiTable())) {
+      const name = NAME[k] ?? k;
+      if (!ZHONG.includes(name)) continue;
+      const ms = Date.UTC(s.getYear(), s.getMonth() - 1, s.getDay(), s.getHour(), s.getMinute(), s.getSecond()) - 8 * 3600e3;
+      if (seen.has(ms)) continue; seen.add(ms);
+      const u = new Date(ms), y = u.getUTCFullYear();
+      if (y < 1912 || y > 2100) continue;
+      const tz = C.calendarTz(y, u.getUTCMonth() + 1, u.getUTCDate(), 'bac');
+      const loc = new Date(ms + tz * 3600e3);
+      const l = C.solarToLunar(loc.getUTCDate(), loc.getUTCMonth() + 1, loc.getUTCFullYear(), tz);
+      if ((name === '冬至' && (l.month !== 11 || l.leap)) || l.leap) {
+        const mod = loc.getUTCHours() * 60 + loc.getUTCMinutes();
+        ((mod < 10 || mod > 1430) && !C.inVerifiedRange(y) ? edge : fails).push(`${name} ${loc.toISOString().slice(0, 16)}`);
+      }
+    }
+  }
+  eq('Đông chí ở tháng 11, tháng nhuận không có trung khí (1912–2100)', fails, []);
+  console.log(`ℹ️  Ca biên ngoài vùng kiểm chứng (< 10 phút từ nửa đêm): ${edge.length} ${JSON.stringify(edge)}`);
+
+  // 6c. Golden: thuật toán ở UTC+8 phải trùng 6tail (lịch TQ) 1929–2100 — cổng 0 ngày lệch
+  let mism = 0, firstMism = null;
+  for (let t = Date.UTC(1929, 0, 1); t <= Date.UTC(2100, 11, 31); t += 864e5) {
+    const dt = new Date(t); const [d, m, y] = [dt.getUTCDate(), dt.getUTCMonth() + 1, dt.getUTCFullYear()];
+    const l = C.solarToLunar(d, m, y, 8);
+    const cn = Solar.fromYmd(y, m, d).getLunar();
+    if (l.day !== cn.getDay() || l.month !== Math.abs(cn.getMonth()) || l.leap !== cn.getMonth() < 0) { mism++; firstMism ??= iso(d, m, y); }
+  }
+  eq('Golden UTC+8 so với 6tail 1929–2100: 0 ngày lệch', [mism, firstMism], [0, null]);
+
+  // 6d. Tết bắt buộc & ca "mùng 0"
+  eq('Tết Ất Hợi 1935 = 04/02', LV(4, 2, 1935, 'bac'), [1, 1, 1935, false]);
+  eq('Tết Ất Tỵ 1965 = 02/02', LV(2, 2, 1965, 'bac'), [1, 1, 1965, false]);
+  eq('Tết Mậu Thân 1968: Bắc 29/01, Nam 30/01', [LV(29, 1, 1968, 'bac'), LV(30, 1, 1968, 'nam'), LV(29, 1, 1968, 'nam')[0]], [[1, 1, 1968, false], [1, 1, 1968, false], 30]);
+  eq('Tết Kỷ Dậu 1969: Nam 17/02', [LV(17, 2, 1969, 'nam'), LV(16, 2, 1969, 'nam')[0]], [[1, 1, 1969, false], 30]);
+  eq('Không còn "mùng 0": 07/05/2054 = 30/3, 09/04/2062 = 30/2', [LV(7, 5, 2054, 'bac').slice(0, 2), LV(9, 4, 2062, 'bac').slice(0, 2)], [[30, 3], [30, 2]]);
+
+  // 6e. Tháng nhuận
+  const leapOf = (Y, tz) => {
+    const found = new Set();
+    for (let t = Date.UTC(Y, 0, 1); t <= Date.UTC(Y + 1, 2, 1); t += 864e5) {
+      const dt = new Date(t);
+      const l = C.solarToLunar(dt.getUTCDate(), dt.getUTCMonth() + 1, dt.getUTCFullYear(), tz ?? C.calendarTz(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate()));
+      if (l.leap && l.year === Y) found.add(l.month);
+    }
+    return [...found];
+  };
+  eq('Nhuận: 1984 VN không nhuận, 1985 VN nhuận tháng 2', [leapOf(1984), leapOf(1985)], [[], [2]]);
+  eq('Nhuận 2033 = tháng 11 ở cả UTC+7 và UTC+8', [leapOf(2033, 7), leapOf(2033, 8)], [[11], [11]]);
+
+  // 6f. Giờ đồng hồ theo thời kỳ (civil_tz)
+  eq('civil_tz: SG 1950=8, SG 1970=8, HN 1970=7, 1935=7, 1943=8, 04/1945=9, SG 20/05/1975=8, SG 13/06/1975=7', [
+    C.civilTz(1950, 6, 1, 'nam'), C.civilTz(1970, 6, 1, 'nam'), C.civilTz(1970, 6, 1, 'bac'), C.civilTz(1935, 6, 1, 'bac'),
+    C.civilTz(1943, 6, 1, 'bac'), C.civilTz(1945, 4, 15, 'bac'), C.civilTz(1975, 5, 20, 'nam'), C.civilTz(1975, 6, 13, 'nam'),
+  ], [8, 8, 7, 7, 8, 9, 8, 7]);
+  const auto = { gender: 'male', tz: null, lon: 106.7, useTrueSolar: false, ziSect: 1, birthTime: '10:00' };
+  const tzOf = (date, region) => { const ch = NT.bazi.buildChart({ ...auto, birthDate: date, region }); return [ch.tz, ch.tzAuto]; };
+  eq('Lá số tự động múi giờ: SG 1950 → 8, SG 1970 → 8, HN 1970 → 7', [tzOf('1950-06-01', 'nam'), tzOf('1970-06-01', 'nam'), tzOf('1970-06-01', 'bac')], [[8, true], [8, true], [7, true]]);
+
+  // 6g. Không rõ vùng: lá số/ngày âm khác nhau giữa hai phương án → trả cả hai
+  const unk = NT.bazi.buildChart({ ...auto, birthDate: '1969-02-16', birthTime: '13:30', region: 'unknown' });
+  eq('Không rõ vùng 16/02/1969: hiện phương án miền Nam (30 tháng Chạp)', [unk.lunarVN.day, unk.alternative?.region, unk.alternative?.lunarVN.day], [1, 'nam', 30]);
+  const same = NT.bazi.buildChart({ ...auto, birthDate: '1990-05-15', region: 'unknown' });
+  eq('Không rõ vùng 1990: hai phương án trùng → không có alternative', same.alternative, null);
+
+  // 6h. Phạm vi năm
+  eq('Sinh 1920 → cờ OUT_OF_VERIFIED_RANGE; 1990 → không cờ', [NT.bazi.buildChart({ ...auto, birthDate: '1920-06-01' }).flags, NT.bazi.buildChart({ ...auto, birthDate: '1990-06-01' }).flags], [['OUT_OF_VERIFIED_RANGE'], []]);
+  let outRange = false;
+  try { NT.scoring.findDays({ chart, act: NT.activities.byId('biz_open'), nameInfo: null, from: '1911-12-25', to: '1912-01-05', mode: 'best' }); } catch { outRange = true; }
+  const old = NT.scoring.findDays({ chart, act: NT.activities.byId('biz_open'), nameInfo: null, from: '1920-03-01', to: '1920-03-01', mode: 'best' });
+  eq('Tìm ngày: chặn trước 1912; ngày 1920 gắn cờ ngoài vùng kiểm chứng', [outRange, old.days[0].flags], [true, ['OUT_OF_VERIFIED_RANGE']]);
+}
+
 // ---------- 8. An toàn & riêng tư (PRD §3.3, §13 lớp 8) ----------
 {
   const html = readFileSync(path.join(root, 'index.html'), 'utf8');

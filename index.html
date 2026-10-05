@@ -33,7 +33,7 @@
       <div class="hero-badges">
         <span class="badge"><b>Hoàng lịch</b> · 宜忌, thần sát (lunar-javascript)</span>
         <span class="badge"><b>Tử Bình</b> · vượng suy, Dụng thần</span>
-        <span class="badge"><b>Âm lịch VN</b> · UTC+7</span>
+        <span class="badge"><b>Âm lịch VN</b> · múi giờ theo thời kỳ</span>
       </div>
     </div>
   </section>
@@ -66,7 +66,7 @@
           </div>
           <div class="field">
             <label for="f-date">Ngày sinh (dương lịch)</label>
-            <input class="input" type="date" id="f-date" name="birthDate" required min="1900-01-01" max="2100-12-31">
+            <input class="input" type="date" id="f-date" name="birthDate" required min="1912-01-01" max="2100-12-31">
           </div>
           <div class="field">
             <label for="f-time">Giờ sinh</label>
@@ -82,10 +82,20 @@
             <input class="input" type="number" id="f-lon" name="lon" step="0.01" min="-180" max="180" value="105.85">
           </div>
           <div class="field">
-            <label for="f-tz">Múi giờ khi sinh</label>
+            <label for="f-region">Vùng nơi sinh</label>
+            <select class="input" id="f-region" name="region">
+              <option value="bac">Miền Bắc</option>
+              <option value="nam">Miền Nam (Sài Gòn, vùng chính quyền miền Nam)</option>
+              <option value="unknown">Không rõ</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="f-tz">Giờ đồng hồ khi sinh</label>
             <select class="input" id="f-tz" name="tz">
-              <option value="7">UTC+7 (hiện nay)</option>
+              <option value="auto">Tự động theo thời kỳ</option>
+              <option value="7">UTC+7</option>
               <option value="8">UTC+8</option>
+              <option value="9">UTC+9</option>
             </select>
           </div>
           <div class="field">
@@ -95,7 +105,7 @@
               <option value="2">00:00 (giữ ngày cũ)</option>
             </select>
           </div>
-          <p class="hint full" id="tz-hint">Miền Nam giai đoạn 1960 – 13/6/1975 dùng UTC+8. Nếu sinh khi đó, hãy chọn UTC+8.</p>
+          <p class="hint full" id="tz-hint" aria-live="polite">Giờ đồng hồ ở Việt Nam đã đổi nhiều lần (1943–1975). Chọn "Tự động" để ứng dụng đề xuất theo ngày sinh và vùng.</p>
           <label class="check full" for="f-tst"><input type="checkbox" id="f-tst" checked> Hiệu chỉnh giờ Mặt Trời thực (theo kinh độ và phương trình thời gian)</label>
         </form>
         <div style="margin-top:16px">
@@ -201,7 +211,7 @@
           <div class="method-item"><h4>1 · Lá số chính xác</h4>Trụ năm và tháng tính theo <b>thời điểm</b> tiết khí (Lập Xuân, các Tiết), có quy đổi múi giờ. Trụ ngày và giờ tính theo giờ Mặt Trời thực tại nơi sinh. Có thể chọn phái đổi ngày ở giờ Tý.</div>
           <div class="method-item"><h4>2 · Dụng thần</h4>Định lượng lực ngũ hành theo vị trí, tàng can và Vượng/Tướng/Hưu/Tù/Tử. Dụng thần chọn theo Phù ức (Tử Bình Chân Thuyên, Trích Thiên Tủy), có Điều hậu (Cùng Thông Bảo Giám) và cách Tòng.</div>
           <div class="method-item"><h4>3 · Hoàng lịch</h4>Nên/Kỵ, thần sát, 12 Trực, 28 Tú, Hoàng đạo/Hắc đạo lấy từ thư viện mã nguồn mở <a href="https://github.com/6tail/lunar-javascript" rel="noopener" target="_blank">lunar-javascript</a> (MIT), dựa trên <i>Hiệp Kỷ Biện Phương Thư</i> (协纪辨方书). <b>Chưa đối chiếu với sách gốc.</b></div>
-          <div class="method-item"><h4>4 · Dân gian Việt Nam</h4>Tam nương, Nguyệt kỵ, Dương công kỵ nhật tính theo âm lịch VN (UTC+7, thuật toán Hồ Ngọc Đức). Hạn năm gồm Kim lâu, Hoang ốc, Tam tai. Ngũ hành tên tính theo Ngũ âm, chỉ là hệ số phụ.</div>
+          <div class="method-item"><h4>4 · Dân gian Việt Nam</h4>Tam nương, Nguyệt kỵ, Dương công kỵ nhật tính theo âm lịch VN (thuật toán Hồ Ngọc Đức; dựng lịch theo UTC+7 từ 1968 ở miền Bắc và từ 1976 cả nước, UTC+8 trước đó). Hạn năm gồm Kim lâu, Hoang ốc, Tam tai. Ngũ hành tên tính theo Ngũ âm, chỉ là hệ số phụ.</div>
         </div>
         <p class="disclaimer" id="method-disclaimer">Trạch nhật là tri thức văn hóa truyền thống, chưa có kiểm chứng khoa học. Kết quả chỉ để tham khảo.</p>
         <p class="hint">Chỉ số tham khảo 0–100 dùng trọng số do ứng dụng tự đặt, không có trong sách. Mọi cộng/trừ đều hiện lý do để bạn tự đối chiếu.</p>

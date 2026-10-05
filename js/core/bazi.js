@@ -47,7 +47,8 @@
    * @param {string} p.birthDate 'YYYY-MM-DD'
    * @param {string|null} p.birthTime 'HH:MM' hoặc null nếu không rõ giờ
    * @param {'male'|'female'} p.gender
-   * @param {number} p.tz múi giờ khi sinh (7 hoặc 8)
+   * @param {'bac'|'nam'|'unknown'} [p.region] vùng nơi sinh (PRD §6.3)
+   * @param {number|null} [p.tz] giờ đồng hồ khi sinh (UTC+x); null = tự động theo bảng civil_tz
    * @param {number} p.lon kinh độ nơi sinh
    * @param {boolean} p.useTrueSolar
    * @param {1|2} p.ziSect
@@ -59,8 +60,12 @@
     if (!y || !m || !d) throw new Error('Ngày sinh không hợp lệ');
     const hasTime = typeof p.birthTime === 'string' && /^\d{1,2}:\d{2}$/.test(p.birthTime);
     const [hh, mi] = hasTime ? p.birthTime.split(':').map(Number) : [12, 0];
-    const tz = Number.isFinite(p.tz) ? p.tz : NT.calendar.getHistoricalTimezone(y, m, d, p.region || 'north');
+    const region = ['bac', 'nam', 'unknown'].includes(p.region) ? p.region : 'bac';
+    const tzAuto = !Number.isFinite(p.tz);
+    const tz = tzAuto ? NT.calendar.civilTz(y, m, d, region) : p.tz;
     const lon = Number.isFinite(p.lon) ? p.lon : 105.85;
+    const flags = [];
+    if (!NT.calendar.inVerifiedRange(y)) flags.push('OUT_OF_VERIFIED_RANGE');
 
     // --- Trụ Năm/Tháng theo thời điểm tuyệt đối (quy về UTC+8 cho lunar-javascript) ---
     const utcMs = Date.UTC(y, m - 1, d, hh, mi) - tz * 3600e3;
@@ -209,8 +214,10 @@
     const roles = { dung: order[0], hy: order[1], nhan: order[2], cuu: order[3], ky: order[4] };
     reasons.push(`→ Dụng thần ${D.ELEMENTS[roles.dung].vi}, Hỷ thần ${D.ELEMENTS[roles.hy].vi}; Kỵ thần ${D.ELEMENTS[roles.ky].vi}, Cừu thần ${D.ELEMENTS[roles.cuu].vi}.`);
 
-    // --- Tuổi âm lịch VN (theo Tết) ---
-    const lunarVN = NT.calendar.solarToLunar(d, m, y);
+    // --- Tuổi âm lịch VN (theo Tết), dựng lịch theo calendar_tz của vùng (PRD §6.3) ---
+    const calRegion = region === 'nam' ? 'nam' : 'bac';
+    const calTz = NT.calendar.calendarTz(y, m, d, calRegion);
+    const lunarVN = NT.calendar.solarToLunar(d, m, y, calTz);
     const tuoi = { lunarYear: lunarVN.year, zhi: NT.calendar.lunarYearZhi(lunarVN.year), gan: NT.calendar.lunarYearGan(lunarVN.year) };
 
     // --- Đại vận ---
@@ -225,9 +232,21 @@
       currentDaYun = daYun.find((x) => x.startYear <= cy && cy <= x.endYear) ?? null;
     } catch { /* Đại vận chỉ để tham khảo */ }
 
+    // --- Vùng "Không rõ": nếu phương án miền Nam cho lá số hoặc ngày âm khác → trả cả hai (PRD §6.3) ---
+    let alternative = null;
+    if (region === 'unknown') {
+      const alt = buildChart({ ...p, region: 'nam' }, now);
+      const sig = (c) => ['year', 'month', 'day', 'hour'].map((k) => (c.pillars[k] ? `${c.pillars[k].g}-${c.pillars[k].z}` : '-')).join('|')
+        + `|${c.lunarVN.day}/${c.lunarVN.month}/${c.lunarVN.year}/${c.lunarVN.leap}`;
+      if (sig(alt) !== sig({ pillars, lunarVN })) {
+        alternative = { region: 'nam', tz: alt.tz, calTz: alt.calTz, pillars: alt.pillars, lunarVN: alt.lunarVN, tuoi: alt.tuoi };
+      }
+    }
+
     return Object.freeze({
       profile: { ...p },
       hasTime, pillars, pillarInfo, nayin, dm, dmEl, tstInfo,
+      region, tz, tzAuto, calTz, flags, alternative,
       weights: w, pct, groupWeights: gw, ratio, level, levelLabel, pattern, hasRoot,
       seasonKey, elFav, roles, reasons, tuoi, lunarVN, daYun, currentDaYun,
     });

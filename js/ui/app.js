@@ -19,6 +19,10 @@
   const KEY_PREFIX = 'ngaytot.';
   const TOP_N = 12;
   const CAT_LABEL = { cal: 'Hoàng lịch', folk: 'Ngày kỵ dân gian', bazi: 'Bát tự của bạn', name: 'Ngũ hành tên (hệ số phụ)', year: 'Hạn năm' };
+  const REGIONS = ['bac', 'nam', 'unknown'];
+  const REGION_LABEL = { bac: 'Miền Bắc', nam: 'Miền Nam', unknown: 'Không rõ vùng' };
+  const TZ_MANUAL = [7, 8, 9]; // lựa chọn tay của #f-tz; còn lại = tự động
+  const TZ_HINT_DEFAULT = 'Giờ đồng hồ ở Việt Nam đã đổi nhiều lần (1943–1975). Chọn "Tự động" để ứng dụng đề xuất theo ngày sinh và vùng.';
   /** Câu miễn trừ bắt buộc trên mọi màn hình kết quả (PRD §3.4). */
   const DISCLAIMER = 'Trạch nhật là tri thức văn hóa truyền thống, chưa có kiểm chứng khoa học. Kết quả chỉ để tham khảo.';
 
@@ -79,7 +83,8 @@
       birthTime: unknown ? null : ($('#f-time').value || null),
       placeId: $('#f-place').value,
       lon: Number.parseFloat($('#f-lon').value),
-      tz: Number($('#f-tz').value) === 8 ? 8 : 7,
+      region: REGIONS.includes($('#f-region').value) ? $('#f-region').value : 'bac',
+      tz: TZ_MANUAL.includes(Number($('#f-tz').value)) ? Number($('#f-tz').value) : null, // null = tự động (PRD §6.3)
       ziSect: Number($('#f-zi').value) === 2 ? 2 : 1,
       useTrueSolar: $('#f-tst').checked,
     };
@@ -94,15 +99,39 @@
     $('#f-time').disabled = !p.birthTime;
     $('#f-place').value = D.PLACES.some((x) => x.id === p.placeId) ? p.placeId : 'custom';
     $('#f-lon').value = Number.isFinite(p.lon) ? p.lon : 105.85;
-    $('#f-tz').value = String(p.tz === 8 ? 8 : 7);
+    // Hồ sơ cũ (chưa có region) luôn lưu tz=7 mặc định → chuyển sang tự động; tz=8 là chủ động chọn → giữ.
+    const legacy = !REGIONS.includes(p.region);
+    $('#f-region').value = legacy ? 'bac' : p.region;
+    const tz = legacy && p.tz === 7 ? null : p.tz;
+    $('#f-tz').value = TZ_MANUAL.includes(tz) ? String(tz) : 'auto';
     $('#f-zi').value = String(p.ziSect === 2 ? 2 : 1);
     $('#f-tst').checked = p.useTrueSolar !== false;
+    updateTzHint();
+  }
+
+  /** Gợi ý giờ đồng hồ theo ngày sinh + vùng (PRD §6.3). */
+  function updateTzHint() {
+    const hint = $('#tz-hint');
+    const iso = $('#f-date').value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) { hint.textContent = TZ_HINT_DEFAULT; return; }
+    const [y, m, d] = iso.split('-').map(Number);
+    const region = $('#f-region').value;
+    const C = NT.calendar;
+    const auto = C.civilTz(y, m, d, region === 'nam' ? 'nam' : 'bac');
+    const manual = Number($('#f-tz').value);
+    const parts = [TZ_MANUAL.includes(manual)
+      ? `Đang dùng UTC+${manual} (chọn tay). Đề xuất theo thời kỳ: UTC+${C.fmtTz(auto)}.`
+      : `Tự động: UTC+${C.fmtTz(auto)} cho ngày ${pad(d)}/${pad(m)}/${y}.`];
+    parts.push(...C.civilTzNote(y, m, d, region));
+    if (!C.inVerifiedRange(y)) parts.push(`Năm ${y} ngoài vùng kiểm chứng ${C.VERIFIED_RANGE.from}–${C.VERIFIED_RANGE.to}: âm lịch chỉ để tham khảo.`);
+    hint.textContent = parts.join(' ');
   }
 
   function validateProfile(p) {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(p.birthDate)) return 'Vui lòng nhập ngày sinh.';
     const y = Number(p.birthDate.slice(0, 4));
-    if (y < 1900 || y > 2100) return 'Năm sinh cần trong khoảng 1900–2100.';
+    const R = NT.calendar.SUPPORTED_RANGE;
+    if (y < R.from || y > R.to) return `Năm sinh cần trong khoảng ${R.from}–${R.to}.`;
     if (!Number.isFinite(p.lon) || p.lon < -180 || p.lon > 180) return 'Kinh độ không hợp lệ.';
     return null;
   }
@@ -122,6 +151,8 @@
       if (pl?.lon != null && Number.parseFloat($('#f-lon').value) !== pl.lon) sel.value = 'custom';
     });
     $('#f-unknown-time').addEventListener('change', (e) => { $('#f-time').disabled = e.target.checked; });
+    for (const id of ['#f-date', '#f-region', '#f-tz']) $(id).addEventListener('change', updateTzHint);
+    updateTzHint();
   }
 
   function initActivities() {
@@ -211,7 +242,7 @@
     const roleName = { dung: 'Dụng', hy: 'Hỷ', nhan: 'Nhàn', cuu: 'Cừu', ky: 'Kỵ' };
     const roleOfEl = (e) => Object.keys(c.roles).find((k) => c.roles[k] === e);
     const place = D.PLACES.find((x) => x.id === p.placeId);
-    $('#chart-meta').textContent = `${p.gender === 'female' ? 'Nữ' : 'Nam'} · ${p.birthDate.split('-').reverse().join('/')}${p.birthTime ? ' ' + p.birthTime : ''} · ${place?.lon != null ? place.name : 'Kinh độ ' + p.lon}`;
+    $('#chart-meta').textContent = `${p.gender === 'female' ? 'Nữ' : 'Nam'} · ${p.birthDate.split('-').reverse().join('/')}${p.birthTime ? ' ' + p.birthTime : ''} · ${place?.lon != null ? place.name : 'Kinh độ ' + p.lon} · ${REGION_LABEL[c.region] ?? REGION_LABEL.bac}`;
 
     const bars = c.pct.map((v, e) => {
       const r = roleOfEl(e);
@@ -230,6 +261,17 @@
     const pills = [];
     pills.push(`<span class="info-pill">Tuổi âm lịch: <b>${D.ganZhiVi(c.tuoi.gan, c.tuoi.zhi)}</b> (${D.ZHI_ANIMAL[c.tuoi.zhi]})</span>`);
     pills.push(`<span class="info-pill">Ngày sinh âm lịch: <b>${c.lunarVN.day}/${c.lunarVN.month}${c.lunarVN.leap ? ' nhuận' : ''}/${c.lunarVN.year}</b></span>`);
+    const fmtTz = NT.calendar.fmtTz;
+    pills.push(`<span class="info-pill">Giờ đồng hồ: <b>UTC+${fmtTz(c.tz)}</b> (${c.tzAuto ? 'tự động' : 'chọn tay'}) · dựng âm lịch theo UTC+${fmtTz(c.calTz)}</span>`);
+    if (c.flags?.includes('OUT_OF_VERIFIED_RANGE')) {
+      const R = NT.calendar.VERIFIED_RANGE;
+      pills.push(`<span class="info-pill warn">Ngoài vùng kiểm chứng ${R.from}–${R.to}: <b>âm lịch, can chi chỉ để tham khảo</b></span>`);
+    }
+    if (c.alternative) {
+      const a = c.alternative, ap = a.pillars;
+      const gz = (x) => (x ? D.ganZhiVi(x.g, x.z) : '?');
+      pills.push(`<span class="info-pill warn">Không rõ vùng — nếu sinh ở miền Nam (UTC+${fmtTz(a.tz)}): <b>${esc([gz(ap.year), gz(ap.month), gz(ap.day), gz(ap.hour)].join(' · '))}</b>, âm lịch <b>${a.lunarVN.day}/${a.lunarVN.month}${a.lunarVN.leap ? ' nhuận' : ''}/${a.lunarVN.year}</b></span>`);
+    }
     if (c.tstInfo.applied) pills.push(`<span class="info-pill">Giờ Mặt Trời thực: <b>${esc(c.tstInfo.text)}</b></span>`);
     if (c.pattern !== 'normal') pills.push(`<span class="info-pill warn">Cách đặc biệt: <b>${c.pattern === 'tong_vuong' ? 'Tòng vượng' : 'Tòng nhược'}</b></span>`);
     if (n) {
