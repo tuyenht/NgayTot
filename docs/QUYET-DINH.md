@@ -8,7 +8,7 @@ Bốn tài liệu nguồn (v3.0, Đặc tả, PRD-FENGSHUI, V5.1) do chủ dự 
 
 ## 16. Quyết định của chủ dự án
 
-QĐ-01 đến QĐ-04 được chủ dự án chốt ngày 2026-10-05 theo phương án khuyến nghị. QĐ-05 đến QĐ-08 phát sinh sau đó trong cùng ngày; cột "Quyết định" ghi rõ phần nào do chủ dự án nói trực tiếp, phần nào do bên soạn tài liệu chọn khi được giao. Muốn đổi thì sửa bảng này trước, rồi mới sửa các mục liên quan.
+QĐ-01 đến QĐ-04 được chủ dự án chốt ngày 2026-10-05 theo phương án khuyến nghị. QĐ-05 đến QĐ-09 phát sinh sau đó trong cùng ngày; cột "Quyết định" ghi rõ phần nào do chủ dự án nói trực tiếp, phần nào do bên soạn tài liệu chọn khi được giao. Muốn đổi thì sửa bảng này trước, rồi mới sửa các mục liên quan.
 
 | Mã | Câu hỏi | Quyết định | Hệ quả trong tài liệu |
 | --- | --- | --- | --- |
@@ -20,6 +20,7 @@ QĐ-01 đến QĐ-04 được chủ dự án chốt ngày 2026-10-05 theo phươ
 | QĐ-06 | Người dùng khai gì trước? | **Chọn việc trước**, rồi ứng dụng mới hỏi đúng các trường mà việc đó cần (chủ dự án yêu cầu ngày 2026-10-05) | PRD 9.5; 14.2 dòng 31, 34. Phương án không chọn: khai hồ sơ Bát tự trước như hiện tại — bắt người dùng khai cả những thứ việc của họ không cần, kể cả với lịch mổ |
 | QĐ-07 | Có lưu hồ sơ không? | **Không lưu gì.** Chủ dự án nói "không cần lưu lại"; khi được hỏi lại đã giao cho bên soạn tài liệu chọn. Chọn bỏ hẳn chức năng lưu vì: việc quyết định trường nào được hỏi nên một "hồ sơ" chung không còn khớp; ứng dụng không còn giữ dữ liệu cá nhân nào trên máy; bớt mã và bớt một lớp kiểm thử. Đánh đổi: gia đình xem nhiều việc cho cùng một người phải nhập lại ngày sinh mỗi lần mở trang | PRD 3.3; 14.2 dòng 32. Phương án không chọn: giữ nút Lưu tùy ý (trạng thái sau G0). Cùng câu trả lời này cũng được hiểu là không đưa bốn tài liệu nguồn vào kho mã |
 | QĐ-08 | Xét tuổi của ai? | **Do việc quy định.** Cưới hỏi: hạn năm xét tuổi nữ (cô dâu), cố định — chủ dự án xác nhận. Làm nhà: xét tuổi gia chủ, mặc định là nam; nhà không có nam gia chủ thì xét tuổi nữ gia chủ; có thêm phương án con trai trưởng và người được mượn tuổi — chọn sau khi tra cứu câu hỏi của chủ dự án "người không có chồng thì thế nào" | PRD 9.6; 14.2 dòng 33. Phương án không chọn: luôn bắt mượn tuổi một người nam (các bài đã tra không thống nhất: có bài nói xét luôn tuổi nữ gia chủ, có bài nói lấy tuổi con trai trưởng hoặc người nam trong họ — nên không lấy cách nào làm luật cứng); cho chọn giới tính tự do (trái tập tục mà chủ dự án muốn theo) |
+| QĐ-09 | Có giúp xếp giờ trong ngày cưới không? | **Có.** Chủ dự án yêu cầu ngày 2026-10-05: chọn một ngày tốt làm ngày chính, rồi chọn giờ đi đón dâu, giờ từ nhà gái về, giờ tổ chức; cân nhắc trường hợp ở gần, ở xa. Bên soạn tài liệu chọn cách làm: neo vào giờ vào nhà gái, tính dây chuyền các mốc còn lại, chỉ xếp trong khung 05:00–21:00, tối đa ba phương án, không điểm số | PRD 10.5, 8.6; 14.2 dòng 35. Phương án không chọn: (a) chỉ liệt kê giờ hoàng đạo để người dùng tự cộng trừ quãng đường — đó là trạng thái cũ, hay ra giờ nửa đêm; (b) tối ưu một "điểm lịch trình" — trái nguyên tắc không gộp điểm; (c) làm luôn lịch trình hai ngày — cần chuỗi nhiều bước của G4 |
 
 
 ## 17. Thay đổi so với các tài liệu nguồn

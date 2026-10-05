@@ -23,6 +23,9 @@ Kiểm thử engine: `node tests/run-tests.mjs`
   - Cưới hỏi xét tuổi cô dâu (chú rể tùy chọn); làm nhà hỏi "ai là gia chủ" (nam, nữ, con trai trưởng, người được mượn tuổi).
   - Lịch mổ, sinh mổ không hỏi dữ liệu cá nhân nào.
   - Không lưu hồ sơ: ứng dụng không ghi gì vào bộ nhớ trình duyệt.
+- **Lịch trình ngày cưới**
+  - Chọn một ngày làm ngày cưới, khai thời gian đi lại; ứng dụng xếp giờ xuất phát, giờ vào nhà gái, giờ về tới nhà trai theo giờ hoàng đạo, tránh giờ xung tuổi.
+  - Chỉ xếp trong khung 05:00–21:00; đường xa có gợi ý cách làm; xuất cả lịch trình ra `.ics`.
 
 - **Lá số Tứ trụ chính xác**
   - Trụ năm/tháng theo **thời điểm** tiết khí (múi giờ đồng hồ tự đề xuất theo thời kỳ và vùng: UTC+7, +8 hoặc +9; chọn tay được).

@@ -11,9 +11,9 @@ Tệp này ghi mã nguồn hiện đáp ứng `PRD-LICH-VIET-CORE-2026.md` tới
 | | |
 | --- | --- |
 | Ngày kiểm gần nhất | 2026-10-05 |
-| Nhánh, commit mã | `audit-g0`, mã ở `77d965f` |
-| Bộ kiểm thử của dự án | 88/88 đạt (`node tests/run-tests.mjs`) |
-| PRD đối chiếu | Bản 4.7 |
+| Nhánh, commit mã | `audit-g0`, mã ở `811c5a1` |
+| Bộ kiểm thử của dự án | 103/103 đạt (`node tests/run-tests.mjs`) |
+| PRD đối chiếu | Bản 4.8 |
 
 ## Giai đoạn
 
@@ -21,6 +21,7 @@ Tệp này ghi mã nguồn hiện đáp ứng `PRD-LICH-VIET-CORE-2026.md` tới
 | --- | --- | --- |
 | G0 — Vá lỗi đã kiểm chứng | Đã đóng tại commit `a0979cc` | Dòng 1–9, 11, 13, 15, 17, 18, 20, 23, 24, 26, 28, 29 của 14.2; dòng 10 và 12 ở phần không cần dữ liệu của G4. Phần lịch, việc y tế, tài nguyên bên thứ ba đã kiểm lại độc lập và thử trên trình duyệt |
 | G0b — Luồng nhập theo việc | Đã đóng tại commit `77d965f` | Dòng 31–34. Đã mở thử trên trình duyệt cả bốn luồng (cưới hỏi, làm nhà, lịch mổ, việc thường). Phần nhiều người đầy đủ (lá số riêng cho chú rể, tang chủ và người mất) vẫn thuộc G4 |
+| Lịch trình giờ trong ngày cưới (PRD 10.5) | Đã làm tại `811c5a1` | Dòng 35. Làm sớm hơn chuỗi cưới hỏi của G4 theo yêu cầu của chủ dự án |
 | G1 — Lõi thiên văn đóng băng | Chưa bắt đầu | Đầu vào đã làm rõ ở PRD mục 5 và 13.1 |
 | G2 — Lịch pháp Việt Nam | Chưa bắt đầu | Gồm dòng 14, 19, 27 |
 | G3 — Luật có nhãn và ngày cố định | Chưa bắt đầu | Gồm dòng 16 và phần đầu dòng 21 |
@@ -29,7 +30,7 @@ Tệp này ghi mã nguồn hiện đáp ứng `PRD-LICH-VIET-CORE-2026.md` tới
 
 ## 14. Hiện trạng mã nguồn so với đặc tả
 
-Kiểm ngày 2026-10-05 trên nhánh `audit-g0`. Bộ kiểm thử của dự án: 88/88 đạt. Cột "Kiểm lại độc lập" ghi kết quả của: lượt chạy riêng bằng script không thuộc bộ kiểm thử; lượt mở thử trên trình duyệt (máy tính và khung 375 px); một lượt phản biện do mô hình khác thực hiện trên commit đóng G0; và một lượt quét cuối chạy cả 20 loại việc cùng hai dạng việc tùy chỉnh với 6 hồ sơ khác nhau (nam, nữ, không rõ giờ sinh, sinh ở Sài Gòn 1970, không rõ vùng 1969, sinh 1920) — 468 lượt tìm ngày, không lượt nào ném lỗi, không dòng nào có giá trị rỗng hay còn chữ Hán chưa dịch.
+Kiểm ngày 2026-10-05 trên nhánh `audit-g0`. Bộ kiểm thử của dự án: 103/103 đạt. Cột "Kiểm lại độc lập" ghi kết quả của: lượt chạy riêng bằng script không thuộc bộ kiểm thử; lượt mở thử trên trình duyệt (máy tính và khung 375 px); một lượt phản biện do mô hình khác thực hiện trên commit đóng G0; và một lượt quét cuối chạy cả 20 loại việc cùng hai dạng việc tùy chỉnh với 6 hồ sơ khác nhau (nam, nữ, không rõ giờ sinh, sinh ở Sài Gòn 1970, không rõ vùng 1969, sinh 1920) — 468 lượt tìm ngày, không lượt nào ném lỗi, không dòng nào có giá trị rỗng hay còn chữ Hán chưa dịch.
 
 ### 14.1 Đã đáp ứng
 
@@ -43,6 +44,7 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`. Bộ kiểm thử của dự á
 - Tệp giấy phép MIT của thư viện lịch nằm ở `vendor/LICENSE-lunar-javascript.txt`.
 - Ứng dụng không lưu gì vào bộ nhớ trình duyệt; không có nút Lưu hay danh sách hồ sơ.
 - Chọn việc trước; người được xét và các trường được hỏi do việc quy định; lịch mổ, sinh mổ không hỏi dữ liệu cá nhân.
+- Việc cưới: chọn một ngày làm ngày chính rồi xếp lịch trình giờ theo quãng đường; giờ đề xuất nằm trong khung sinh hoạt.
 - 13 khung giờ, xuất `.ics`, sao chép tóm tắt.
 - Dùng lục xung (không phải "tứ hành xung") cho xung tuổi.
 
@@ -84,6 +86,7 @@ Kiểm ngày 2026-10-05 trên nhánh `audit-g0`. Bộ kiểm thử của dự á
 | 32 | Cao | Ứng dụng còn chức năng lưu hồ sơ | Đã sửa (G0b) | Đạt, đã mở thử: không còn nút Lưu, danh sách hồ sơ; sau khi dùng cả bốn luồng, `localStorage`, `sessionStorage` và cookie đều rỗng; khóa `ngaytot.*` đặt sẵn từ trước bị xóa khi tải lại trang |
 | 33 | Cao | Chủ thể xét tuổi chưa theo việc | Đã sửa (G0b) | Đạt, đã mở thử: cưới hỏi khóa giới nữ, tiêu đề "Cô dâu", kết quả ghi "xét tuổi cô dâu (Mậu Dần)"; khai chú rể 18 tuổi thì có biểu ngữ tuổi kết hôn, ngày xung tuổi chú rể thành kỵ nặng. Làm nhà có ô "Ai là gia chủ?" bốn phương án; chọn nữ gia chủ thì kết quả ghi "xét tuổi nữ gia chủ"; chỉ phương án mượn tuổi mới hiện ô giới tính. Giới hạn: chú rể mới dùng cho xung tuổi và tuổi kết hôn, chưa có lá số riêng (G4) |
 | 34 | Vừa | Lịch mổ, sinh mổ vẫn đòi lập lá số | Đã sửa (G0b) | Đạt, đã mở thử: chọn phẫu thuật thì thẻ "Người được xét" ẩn hẳn; để trống ngày sinh vẫn xem được thông tin lịch |
+| 35 | Vừa | Việc cưới: giờ "tốt nhất" hay rơi vào 00:00–00:59 hoặc 05:00–06:59 nên hầu hết thẻ ngày dính cảnh báo khung giờ nhạc; không có cách xếp giờ đón dâu theo quãng đường | Đã sửa tại `811c5a1` (QĐ-09) | Đạt, đã mở thử: thẻ ngày cưới chỉ đề xuất giờ 07:00–20:59, không còn nhãn pháp luật vì giờ; nút "Chọn làm ngày cưới và xếp lịch trình" mở bảng nhập, ra ba phương án kèm lưu ý; tệp `.ics` có 5 sự kiện; nhà xa 5 giờ có lời khuyên ba cách làm; 10 giờ mỗi lượt thì báo không xếp được. Kiểm thử vét cạn xác nhận phương án đầu đạt số mốc ưu tiên vững tối đa. Giới hạn: lịch trình hai ngày chưa có (G4); ba mốc D, A, H dựa trên bài phổ thông, chưa có nguồn sách |
 
 ## Số đo phi chức năng
 
