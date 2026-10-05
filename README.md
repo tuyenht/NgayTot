@@ -1,7 +1,7 @@
 # Ngày Tốt — Chọn ngày giờ tốt theo Bát tự cá nhân
 
 Ứng dụng web tĩnh, chạy hoàn toàn trên trình duyệt: không backend, không build, không cần `npm`.
-Dữ liệu cá nhân không rời khỏi máy (hồ sơ lưu ở `localStorage`).
+Dữ liệu cá nhân không rời khỏi máy và không được lưu lại: đóng hoặc tải lại trang là mất.
 
 ## Chạy
 
@@ -17,6 +17,12 @@ python -m http.server 5173 --bind 127.0.0.1
 Kiểm thử engine: `node tests/run-tests.mjs`
 
 ## Tính năng
+
+- **Chọn việc trước**
+  - Bước 1 là chọn việc; ứng dụng chỉ hỏi những thông tin mà việc đó cần.
+  - Cưới hỏi xét tuổi cô dâu (chú rể tùy chọn); làm nhà hỏi "ai là gia chủ" (nam, nữ, con trai trưởng, người được mượn tuổi).
+  - Lịch mổ, sinh mổ không hỏi dữ liệu cá nhân nào.
+  - Không lưu hồ sơ: ứng dụng không ghi gì vào bộ nhớ trình duyệt.
 
 - **Lá số Tứ trụ chính xác**
   - Trụ năm/tháng theo **thời điểm** tiết khí (múi giờ đồng hồ tự đề xuất theo thời kỳ và vùng: UTC+7, +8 hoặc +9; chọn tay được).

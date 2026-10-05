@@ -239,5 +239,20 @@
     };
   }
 
-  NT.activities = Object.freeze({ ACTIVITIES, COMMON_GOOD, COMMON_BAD, makeCustom, byId: (id) => ACTIVITIES.find((a) => a.id === id) });
+  /**
+   * Chủ thể xét tuổi do việc quy định (PRD §9.5, §9.6):
+   *  'none'   — lịch mổ, sinh mổ: không hỏi dữ liệu cá nhân;
+   *  'bride'  — cưới hỏi: xét tuổi cô dâu (nữ, cố định), chú rể tùy chọn;
+   *  'owner'  — làm nhà: xét tuổi gia chủ theo phương án người dùng chọn;
+   *  'person' — các việc khác: một người, giới tính chọn bình thường.
+   */
+  function subjectOf(act) {
+    if (!act) return 'person';
+    if (act.isMedical && act.fixedOnly) return 'none';
+    if (typeof act.id === 'string' && act.id.startsWith('wed_')) return 'bride';
+    if (typeof act.id === 'string' && act.id.startsWith('build_')) return 'owner';
+    return 'person';
+  }
+
+  NT.activities = Object.freeze({ ACTIVITIES, COMMON_GOOD, COMMON_BAD, makeCustom, subjectOf, byId: (id) => ACTIVITIES.find((a) => a.id === id) });
 })(globalThis.NT ??= {});

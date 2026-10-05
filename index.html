@@ -41,23 +41,57 @@
   <main class="layout">
     <!-- ===== Cột trái: nhập liệu ===== -->
     <div class="col col-left">
+      <section class="card" id="card-task" aria-labelledby="h-task">
+        <div class="card-head"><h2 id="h-task"><span class="step-no">1</span>Công việc cần làm</h2></div>
+        <p class="hint">Chọn việc trước; ứng dụng chỉ hỏi những thông tin mà việc đó cần.</p>
+        <div class="act-grid" id="act-grid" role="radiogroup" aria-label="Loại việc"></div>
+        <div class="custom-panel hidden" id="custom-panel">
+          <div class="grid-2">
+            <div class="field full">
+              <label for="c-name">Tên công việc</label>
+              <input class="input" id="c-name" maxlength="60" placeholder="Ví dụ: Ra mắt sách, khởi công dự án…">
+            </div>
+            <div class="field">
+              <label for="c-element">Ngũ hành của việc</label>
+              <select class="input" id="c-element">
+                <option value="">— Không xét —</option>
+                <option value="0">Mộc (giáo dục, cây cối, y dược, thời trang)</option>
+                <option value="1">Hỏa (điện, công nghệ, ăn uống, truyền thông)</option>
+                <option value="2">Thổ (bất động sản, xây dựng, nông nghiệp)</option>
+                <option value="3">Kim (tài chính, kim khí, máy móc, xe cộ)</option>
+                <option value="4">Thủy (vận tải, du lịch, thương mại, đồ uống)</option>
+              </select>
+            </div>
+            <div class="field">
+              <label for="c-base">Dùng quy tắc 宜/忌 của</label>
+              <select class="input" id="c-base"><option value="">— Chung (không xét 宜/忌) —</option></select>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section class="card" id="card-profile" aria-labelledby="h-profile">
         <div class="card-head">
-          <h2 id="h-profile"><span class="step-no">1</span>Hồ sơ Bát tự</h2>
+          <h2 id="h-profile"><span class="step-no">2</span><span id="h-profile-text">Người được xét</span></h2>
         </div>
-        <div class="profile-bar">
-          <label class="sr-only" for="profile-select">Hồ sơ đã lưu</label>
-          <select class="input" id="profile-select"><option value="">— Hồ sơ mới —</option></select>
-          <button type="button" class="btn btn-sm" id="btn-save-profile" title="Lưu hồ sơ">Lưu</button>
-          <button type="button" class="btn btn-sm btn-ghost" id="btn-delete-profile" title="Xóa hồ sơ">Xóa</button>
-        </div>
-        <p class="hint" id="privacy-hint">Hồ sơ chỉ được lưu trên trình duyệt này khi bạn bấm <b>Lưu</b>. <button type="button" class="link-btn" id="btn-clear-all">Xóa toàn bộ dữ liệu trên máy này</button></p>
+        <p class="hint" id="privacy-hint">Ứng dụng không lưu dữ liệu bạn nhập. Đóng hoặc tải lại trang là mất.</p>
+        <p class="hint" id="subject-note" aria-live="polite"></p>
         <form id="profile-form" class="grid-2" novalidate>
-          <div class="field full">
+          <div class="field full hidden" id="wrap-owner">
+            <label for="f-owner">Ai là gia chủ?</label>
+            <select class="input" id="f-owner">
+              <option value="male">Nam gia chủ</option>
+              <option value="female">Nữ gia chủ (nhà không có nam gia chủ, hoặc là người đứng tên)</option>
+              <option value="son">Con trai trưởng đã thành gia thất (dị bản ở một số nơi)</option>
+              <option value="borrowed">Người được mượn tuổi</option>
+            </select>
+            <span class="hint">Theo tập tục "làm nhà xem tuổi đàn ông". Nhà không có nam gia chủ thì các nơi làm khác nhau; ứng dụng xét tuổi người bạn chọn và ghi rõ trên kết quả.</span>
+          </div>
+          <div class="field full hidden" id="wrap-name">
             <label for="f-name">Họ và tên</label>
             <input class="input" id="f-name" name="name" autocomplete="name" maxlength="80" placeholder="Nguyễn Văn An">
           </div>
-          <div class="field full">
+          <div class="field full" id="wrap-gender">
             <span class="field-label">Giới tính</span>
             <div class="segmented" role="radiogroup" aria-label="Giới tính">
               <label><input type="radio" name="gender" value="male" id="f-gender-male" checked><span>Nam</span></label>
@@ -90,6 +124,11 @@
               <option value="unknown">Không rõ</option>
             </select>
           </div>
+          <div class="field full hidden" id="wrap-groom">
+            <label for="g-date">Ngày sinh chú rể (dương lịch, tùy chọn)</label>
+            <input class="input" type="date" id="g-date" min="1912-01-01" max="2100-12-31">
+            <span class="hint">Dùng để xét ngày xung tuổi chú rể và tuổi kết hôn. Hạn năm xét theo tuổi cô dâu.</span>
+          </div>
           <details class="advanced-opts full" id="advanced-opts">
             <summary class="advanced-summary"><span>⚙️ Tùy chọn nâng cao (Giờ Tý, Giờ Mặt Trời thực, Múi giờ tùy chỉnh)</span></summary>
             <div class="advanced-body">
@@ -116,34 +155,6 @@
         </form>
         <div style="margin-top:16px">
           <button type="button" class="btn btn-secondary" id="btn-build-chart">Lập lá số Bát tự</button>
-        </div>
-      </section>
-
-      <section class="card" id="card-task" aria-labelledby="h-task">
-        <div class="card-head"><h2 id="h-task"><span class="step-no">2</span>Công việc cần làm</h2></div>
-        <div class="act-grid" id="act-grid" role="radiogroup" aria-label="Loại việc"></div>
-        <div class="custom-panel hidden" id="custom-panel">
-          <div class="grid-2">
-            <div class="field full">
-              <label for="c-name">Tên công việc</label>
-              <input class="input" id="c-name" maxlength="60" placeholder="Ví dụ: Ra mắt sách, khởi công dự án…">
-            </div>
-            <div class="field">
-              <label for="c-element">Ngũ hành của việc</label>
-              <select class="input" id="c-element">
-                <option value="">— Không xét —</option>
-                <option value="0">Mộc (giáo dục, cây cối, y dược, thời trang)</option>
-                <option value="1">Hỏa (điện, công nghệ, ăn uống, truyền thông)</option>
-                <option value="2">Thổ (bất động sản, xây dựng, nông nghiệp)</option>
-                <option value="3">Kim (tài chính, kim khí, máy móc, xe cộ)</option>
-                <option value="4">Thủy (vận tải, du lịch, thương mại, đồ uống)</option>
-              </select>
-            </div>
-            <div class="field">
-              <label for="c-base">Dùng quy tắc 宜/忌 của</label>
-              <select class="input" id="c-base"><option value="">— Chung (không xét 宜/忌) —</option></select>
-            </div>
-          </div>
         </div>
       </section>
 

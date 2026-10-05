@@ -167,6 +167,10 @@
       add(-16, `Ngày ${dayName} xung tuổi ${D.ZHI_VI[tz]}`, 'bazi', true); // Chi ngày lục xung chi tuổi -> Kỵ nặng (CONSENSUS)
       if (D.isGanChong(dg, tg)) add(-6, `Thiên khắc địa xung với năm sinh ${D.ganZhiVi(tg, tz)}`, 'bazi');
     }
+    // Người khác cùng tham gia việc (vd chú rể): ngày lục xung chi tuổi của họ cũng là kỵ nặng (PRD §8.3, §9.6).
+    for (const o of options.others ?? []) {
+      if (Number.isInteger(o?.zhi) && D.isChong(dz, o.zhi)) add(-16, `Ngày ${dayName} xung tuổi ${o.role} (${D.ZHI_VI[o.zhi]})`, 'bazi', true);
+    }
     if (P.year.z !== tz && D.isChong(dz, P.year.z)) add(-8, `Xung trụ năm (Lập Xuân) ${D.ganZhiVi(P.year.g, P.year.z)}`, 'bazi');
     if (D.isChong(dz, P.day.z)) {
       add(-10, `Xung Nhật chi ${D.ZHI_VI[P.day.z]} (cung phu thê/bản thân)`, 'bazi');
@@ -321,7 +325,8 @@
    * @param {'best'|'fixed'} o.mode
    * @param {string} [o.fixedTime] 'HH:MM'
    * @param {boolean} [o.skipWeekend]
-   * @param {{yearlyAsSevere?:boolean, hideSevere?:boolean, useNameElement?:boolean}} [o.options]
+   * @param {{yearlyAsSevere?:boolean, hideSevere?:boolean, useNameElement?:boolean, others?:{role:string, zhi:number}[]}} [o.options]
+   * Với việc y tế cố định (isCalendarOnly) không cần o.chart.
    */
   const isCalendarOnly = (act) => !!(act?.isMedical && act?.fixedOnly);
 

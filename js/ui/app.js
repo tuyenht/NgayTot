@@ -1,6 +1,6 @@
 /**
  * NgayTot — UI controller.
- * Toàn bộ dữ liệu xử lý cục bộ; hồ sơ chỉ lưu localStorage khi người dùng bấm Lưu (PRD §3.3). Mọi chuỗi do người dùng nhập đều đi qua esc().
+ * Toàn bộ dữ liệu xử lý cục bộ; ứng dụng không lưu gì vào bộ nhớ trình duyệt (PRD §3.3, QĐ-07). Mọi chuỗi do người dùng nhập đều đi qua esc().
  */
 (function (NT) {
   'use strict';
@@ -13,10 +13,7 @@
   const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ESC_MAP[c]);
   const pad = (n) => String(n).padStart(2, '0');
   const EL_KEY = ['moc', 'hoa', 'tho', 'kim', 'thuy'];
-  const STORE_KEY = 'ngaytot.profiles.v1';
-  const LAST_ID_KEY = 'ngaytot.lastProfileId.v1'; // chỉ id của hồ sơ đã chủ động Lưu
-  const LEGACY_AUTOSAVE_KEY = 'ngaytot.last.v1';   // bản cũ tự lưu hồ sơ vừa nhập — xóa khi khởi động
-  const KEY_PREFIX = 'ngaytot.';
+  const KEY_PREFIX = 'ngaytot.'; // khóa do phiên bản cũ để lại — chỉ để xóa khi khởi động
   const TOP_N = 12;
   const CAT_LABEL = { cal: 'Hoàng lịch', folk: 'Ngày kỵ dân gian', bazi: 'Bát tự của bạn', name: 'Ngũ hành tên (hệ số phụ)', year: 'Hạn năm' };
   const REGIONS = ['bac', 'nam', 'unknown'];
@@ -26,7 +23,7 @@
   /** Câu miễn trừ bắt buộc trên mọi màn hình kết quả (PRD §3.4). */
   const DISCLAIMER = 'Trạch nhật là tri thức văn hóa truyền thống, chưa có kiểm chứng khoa học. Kết quả chỉ để tham khảo.';
 
-  const state = { chart: null, nameInfo: null, results: null, act: null, mode: 'best' };
+  const state = { chart: null, nameInfo: null, results: null, act: null, mode: 'best', subject: null, legalCtx: {} };
   /** Việc có ngày đã ấn định: không hiện chỉ số, xếp loại (PRD §3.1, §8.4 điều 4). */
   const noIndex = () => !!state.act?.fixedOnly;
   /** Lịch mổ, sinh mổ đã ấn định: chỉ thông tin lịch thuần, không dòng luật tốt xấu (PRD §3.1). */
@@ -57,22 +54,39 @@
   const gradeClass = (g) => `c-${g.key}`;
   const elSpan = (e, text) => `<span class="el-${EL_KEY[e]}">${esc(text)}</span>`;
 
-  /* ------------------------------ Lưu trữ ------------------------------ */
-  function loadProfiles() {
-    try {
-      const arr = JSON.parse(localStorage.getItem(STORE_KEY) ?? '[]');
-      return Array.isArray(arr) ? arr.filter((p) => p && typeof p.id === 'string' && typeof p.birthDate === 'string') : [];
-    } catch { return []; }
-  }
-  const saveProfiles = (list) => localStorage.setItem(STORE_KEY, JSON.stringify(list));
   const newId = () => (crypto.randomUUID?.() ?? `p${Date.now()}${Math.random().toString(16).slice(2)}`);
 
-  function refreshProfileSelect(selectedId = '') {
-    const sel = $('#profile-select');
-    const list = loadProfiles();
-    sel.innerHTML = '<option value="">— Hồ sơ mới —</option>' + list.map((p) =>
-      `<option value="${esc(p.id)}">${esc(p.name || 'Chưa đặt tên')} · ${esc(p.birthDate.split('-').reverse().join('/'))}</option>`).join('');
-    sel.value = list.some((p) => p.id === selectedId) ? selectedId : '';
+  /* ------------------------------ Chủ thể xét tuổi theo việc (PRD §9.5, §9.6) ------------------------------ */
+  const OWNER_OPTS = {
+    male: { gender: 'male', role: 'nam gia chủ' },
+    female: { gender: 'female', role: 'nữ gia chủ' },
+    son: { gender: 'male', role: 'con trai trưởng' },
+    borrowed: { gender: null, role: 'người được mượn tuổi' }, // giới tính do người dùng chọn
+  };
+  const currentActRaw = () => NT.activities.byId($('input[name="activity"]:checked')?.value) ?? null;
+  /** { kind, gender (null = chọn tay), role } cho việc đang chọn. */
+  function currentSubject() {
+    const act = currentActRaw();
+    const kind = NT.activities.subjectOf(act);
+    if (kind === 'none') return { kind, gender: null, role: '' };
+    if (kind === 'bride') return { kind, gender: 'female', role: 'cô dâu' };
+    if (kind === 'owner') return { kind, ...(OWNER_OPTS[$('#f-owner').value] ?? OWNER_OPTS.male) };
+    return { kind, gender: null, role: act?.id?.startsWith('funeral_') ? 'tang chủ' : 'người thực hiện' };
+  }
+  /** Chỉ hiện các trường mà việc đang chọn cần. */
+  function syncSubject() {
+    const sub = currentSubject();
+    $('#card-profile').classList.toggle('hidden', sub.kind === 'none');
+    $('#wrap-owner').classList.toggle('hidden', sub.kind !== 'owner');
+    $('#wrap-gender').classList.toggle('hidden', sub.gender !== null);
+    $('#wrap-groom').classList.toggle('hidden', sub.kind !== 'bride');
+    $('#wrap-name').classList.toggle('hidden', !$('#t-use-name').checked);
+    const title = { bride: 'Cô dâu', owner: 'Gia chủ', person: sub.role === 'tang chủ' ? 'Tang chủ' : 'Người thực hiện' }[sub.kind] ?? 'Người được xét';
+    $('#h-profile-text').textContent = title;
+    $('#subject-note').textContent = {
+      bride: 'Cưới hỏi xét tuổi cô dâu (tập tục "lấy vợ xem tuổi đàn bà"). Người xem là nam vẫn khai ngày sinh cô dâu ở đây.',
+      owner: `Đang xét tuổi: ${sub.role}.`,
+    }[sub.kind] ?? '';
   }
 
   /* ------------------------------ Form hồ sơ ------------------------------ */
@@ -84,10 +98,11 @@
     if (pl?.region && pl.region !== 'unknown' && $('#wrap-region')?.classList.contains('hidden')) {
       region = pl.region;
     }
+    const sub = currentSubject();
     return {
-      id: $('#profile-select').value || null,
-      name: $('#f-name').value.trim().slice(0, 80),
-      gender: $('input[name="gender"]:checked').value === 'female' ? 'female' : 'male',
+      role: sub.role,
+      name: $('#t-use-name').checked ? $('#f-name').value.trim().slice(0, 80) : '',
+      gender: sub.gender ?? ($('input[name="gender"]:checked').value === 'female' ? 'female' : 'male'),
       birthDate: $('#f-date').value,
       birthTime: unknown ? null : ($('#f-time').value || null),
       placeId,
@@ -97,25 +112,6 @@
       ziSect: Number($('#f-zi').value) === 2 ? 2 : 1,
       useTrueSolar: $('#f-tst').checked,
     };
-  }
-
-  function writeProfileForm(p) {
-    $('#f-name').value = p.name ?? '';
-    $(`input[name="gender"][value="${p.gender === 'female' ? 'female' : 'male'}"]`).checked = true;
-    $('#f-date').value = p.birthDate ?? '';
-    $('#f-unknown-time').checked = !p.birthTime;
-    $('#f-time').value = p.birthTime ?? '08:00';
-    $('#f-time').disabled = !p.birthTime;
-    $('#f-place').value = D.PLACES.some((x) => x.id === p.placeId) ? p.placeId : 'custom';
-    $('#f-lon').value = Number.isFinite(p.lon) ? p.lon : 105.85;
-    // Hồ sơ cũ (chưa có region) luôn lưu tz=7 mặc định → chuyển sang tự động; tz=8 là chủ động chọn → giữ.
-    const legacy = !REGIONS.includes(p.region);
-    $('#f-region').value = legacy ? 'bac' : p.region;
-    const tz = legacy && p.tz === 7 ? null : p.tz;
-    $('#f-tz').value = TZ_MANUAL.includes(tz) ? String(tz) : 'auto';
-    $('#f-zi').value = String(p.ziSect === 2 ? 2 : 1);
-    $('#f-tst').checked = p.useTrueSolar !== false;
-    syncBirthAndPlace();
   }
 
   /**
@@ -247,6 +243,7 @@
     grid.addEventListener('change', () => {
       $('#custom-panel').classList.toggle('hidden', $('input[name="activity"]:checked').value !== 'custom');
       syncFixedOnly();
+      syncSubject();
     });
     $('#c-base').innerHTML += NT.activities.ACTIVITIES.map((a) => `<option value="${a.id}">${esc(a.label)}</option>`).join('');
   }
@@ -291,7 +288,7 @@
     if (err) { if (!silent) toast(err, true); return null; }
     try {
       state.chart = NT.bazi.buildChart(p);
-      state.nameInfo = NT.nameElement.analyzeName(p.name);
+      state.nameInfo = p.name ? NT.nameElement.analyzeName(p.name) : null;
       renderChart();
       return state.chart;
     } catch (ex) {
@@ -322,7 +319,7 @@
     const roleName = { dung: 'Dụng', hy: 'Hỷ', nhan: 'Nhàn', cuu: 'Cừu', ky: 'Kỵ' };
     const roleOfEl = (e) => Object.keys(c.roles).find((k) => c.roles[k] === e);
     const place = D.PLACES.find((x) => x.id === p.placeId);
-    $('#chart-meta').textContent = `${p.gender === 'female' ? 'Nữ' : 'Nam'} · ${p.birthDate.split('-').reverse().join('/')}${p.birthTime ? ' ' + p.birthTime : ''} · ${place?.lon != null ? place.name : 'Kinh độ ' + p.lon} · ${REGION_LABEL[c.region] ?? REGION_LABEL.bac}`;
+    $('#chart-meta').textContent = `${p.role ? p.role[0].toUpperCase() + p.role.slice(1) + ' · ' : ''}${p.gender === 'female' ? 'Nữ' : 'Nam'} · ${p.birthDate.split('-').reverse().join('/')}${p.birthTime ? ' ' + p.birthTime : ''} · ${place?.lon != null ? place.name : 'Kinh độ ' + p.lon} · ${REGION_LABEL[c.region] ?? REGION_LABEL.bac}`;
 
     const bars = c.pct.map((v, e) => {
       const r = roleOfEl(e);
@@ -406,10 +403,35 @@
     });
   }
 
+  /** Chú rể (tùy chọn): chỉ cần ngày sinh, dùng cho xung tuổi và tuổi kết hôn. */
+  function readGroom() {
+    const iso = $('#g-date').value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
+    const y = Number(iso.slice(0, 4)), R = NT.calendar.SUPPORTED_RANGE;
+    if (y < R.from || y > R.to) return null;
+    const c = NT.bazi.buildChart({ gender: 'male', birthDate: iso, birthTime: null, lon: 105.85, region: 'bac', tz: null, ziSect: 1, useTrueSolar: false });
+    return { birthDate: iso, zhi: c.tuoi.zhi };
+  }
+
   function runFind() {
-    const chart = buildChartFromForm();
-    if (!chart) return;
     const act = getActivity();
+    const sub = currentSubject();
+    state.subject = sub;
+    state.legalCtx = {};
+    let chart = null, others = [];
+    if (sub.kind === 'none') {
+      state.chart = null; // lịch mổ, sinh mổ: không cần dữ liệu cá nhân (PRD §3.1, §9.5)
+    } else {
+      chart = buildChartFromForm();
+      if (!chart) return;
+      if (sub.kind === 'bride') {
+        const groom = readGroom();
+        if (groom) {
+          others = [{ role: 'chú rể', zhi: groom.zhi }];
+          state.legalCtx = { spouseBirthDate: groom.birthDate, spouseGender: 'male' };
+        }
+      }
+    }
     const fixedOnly = !!act.fixedOnly;
     const from = $('#t-from').value, to = fixedOnly ? from : $('#t-to').value;
     if (!from || !to) return toast('Chọn khoảng ngày cần tìm.', true);
@@ -423,12 +445,13 @@
     setTimeout(() => {
       try {
         state.results = S.findDays({
-          chart, act, nameInfo: state.nameInfo, from, to, mode, fixedTime,
+          chart, act, nameInfo: chart ? state.nameInfo : null, from, to, mode, fixedTime,
           skipWeekend: !fixedOnly && $('#t-skip-weekend').checked,
           options: {
             yearlyAsSevere: $('#t-yearly-severe')?.checked,
             hideSevere: $('#t-hide-severe')?.checked,
             useNameElement: $('#t-use-name')?.checked,
+            others,
           },
         });
         state.results.fixedTime = fixedTime;
@@ -470,7 +493,7 @@
     const why = fixed
       ? r.day.items.slice(0, 5).map((i) => `<li>${esc(neutral(i.text))}</li>`)
       : [...pos, ...neg].map((i) => `<li><b class="pts ${i.pts > 0 ? 'pos' : 'neg'}">${i.pts > 0 ? '+' : ''}${i.pts}</b> ${esc(i.text)}</li>`);
-    const legalFlags = NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5)) : [];
+    const legalFlags = NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5), state.legalCtx) : [];
     const legalTag = legalFlags.length ? `<span class="flag-legal" title="${esc(legalFlags[0].message)}">⚖️ Lưu ý pháp luật</span>` : '';
     return `<article class="day-card" role="button" tabindex="0" aria-label="Xem chi tiết ngày ${fmtDate(r.ctx)}" data-key="${r.key}" id="day-card-${r.key}" style="animation-delay:${idx * 0.04}s">
       ${fixed ? '' : `<span class="rank">#${idx + 1}</span>`}
@@ -496,7 +519,9 @@
     const res = state.results;
     const fixedOnly = noIndex();
     $('#card-results').classList.remove('hidden');
-    $('#h-results').textContent = fixedOnly ? `Thông tin ngày giờ đã định: ${state.act.label}` : `Ngày tốt cho: ${state.act.label}`;
+    const who = state.chart && state.subject?.role
+      ? ` — xét tuổi ${state.subject.role} (${D.ganZhiVi(state.chart.tuoi.gan, state.chart.tuoi.zhi)})` : '';
+    $('#h-results').textContent = (fixedOnly ? `Thông tin ngày giờ đã định: ${state.act.label}` : `Ngày tốt cho: ${state.act.label}`) + who;
     for (const id of ['#heatmap-title', '#legend', '#heatmap']) $(id).classList.toggle('hidden', fixedOnly);
 
     if (fixedOnly) {
@@ -545,7 +570,7 @@
   }
 
   /** Giới hạn pháp luật của một ngày kết quả (PRD §3.2). */
-  const legalFlagsOf = (r) => (NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5)) : []);
+  const legalFlagsOf = (r) => (NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5), state.legalCtx) : []);
   /** Câu chữ của các cảnh báo cứng — phải có cả trong bản sao chép và tệp .ics. */
   const hardWarningTexts = (r) => legalFlagsOf(r).filter((f) => f.severity === 'hard_warning').map((f) => `${f.message} (Căn cứ: ${f.rule.doc}; chưa đối chiếu văn bản gốc.)`);
   /** Biểu ngữ cảnh báo cứng ở đầu kết quả, không tắt được. */
@@ -630,7 +655,7 @@
 
     const list = (arr) => arr.length ? arr.map((x) => `<span class="tag">${esc(x)}</span>`).join(' ') : '<span class="hint">—</span>';
     const note = fixed ? `<p class="disclaimer" style="margin-top:0">${esc(state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE)}</p>` : '';
-    const legalFlags = NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5)) : [];
+    const legalFlags = NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5), state.legalCtx) : [];
     const legalAlert = legalFlags.length
       ? `<div class="legal-alert" style="margin-bottom:14px;padding:10px 14px;border-radius:8px;background:rgba(220,38,38,0.15);border:1px solid rgba(220,38,38,0.4);color:#fca5a5">
           ${legalFlags.map((f) => `<div style="margin-bottom:6px"><b>⚖️ ${esc(f.rule.name)}</b>: ${esc(f.message)}<small style="display:block;opacity:0.8;margin-top:2px">Căn cứ: ${esc(f.rule.doc)} (chưa đối chiếu văn bản gốc)</small></div>`).join('')}
@@ -749,54 +774,15 @@
     toast('Đã sao chép tóm tắt');
   }
 
-  /* ------------------------------ Hồ sơ: lưu/xóa ------------------------------ */
-  function saveCurrentProfile() {
-    const p = readProfileForm();
-    const err = validateProfile(p);
-    if (err) return toast(err, true);
-    const list = loadProfiles();
-    const id = p.id ?? newId();
-    const rec = { ...p, id };
-    const idx = list.findIndex((x) => x.id === id);
-    if (idx >= 0) list[idx] = rec; else list.push(rec);
-    saveProfiles(list);
-    localStorage.setItem(LAST_ID_KEY, id);
-    refreshProfileSelect(id);
-    toast(`Đã lưu hồ sơ ${p.name || ''}`.trim());
-  }
-
-  function deleteCurrentProfile() {
-    const id = $('#profile-select').value;
-    if (!id) return toast('Chưa chọn hồ sơ để xóa.', true);
-    saveProfiles(loadProfiles().filter((x) => x.id !== id));
-    if (localStorage.getItem(LAST_ID_KEY) === id) localStorage.removeItem(LAST_ID_KEY);
-    refreshProfileSelect('');
-    toast('Đã xóa hồ sơ');
-  }
-
-  /** Xóa mọi khóa của ứng dụng trong localStorage (PRD §3.3). */
-  function clearAllData() {
-    if (!confirm('Xóa toàn bộ hồ sơ và dữ liệu của Ngày Tốt trên trình duyệt này?')) return;
-    Object.keys(localStorage).filter((k) => k.startsWith(KEY_PREFIX)).forEach((k) => localStorage.removeItem(k));
-    location.reload();
-  }
-
   /* ------------------------------ Wiring ------------------------------ */
   function init() {
     if (!globalThis.Solar) { toast('Không tải được thư viện lịch (vendor/lunar.js).', true); return; }
     initPlaces();
     initActivities();
     initRange();
-    refreshProfileSelect();
-
-    $('#profile-select').addEventListener('change', (e) => {
-      const p = loadProfiles().find((x) => x.id === e.target.value);
-      if (p) { localStorage.setItem(LAST_ID_KEY, p.id); writeProfileForm(p); buildChartFromForm(); }
-      else localStorage.removeItem(LAST_ID_KEY);
-    });
-    $('#btn-save-profile').addEventListener('click', saveCurrentProfile);
-    $('#btn-delete-profile').addEventListener('click', deleteCurrentProfile);
-    $('#btn-clear-all').addEventListener('click', clearAllData);
+    syncSubject();
+    $('#f-owner').addEventListener('change', syncSubject);
+    $('#t-use-name').addEventListener('change', syncSubject);
     $('#btn-build-chart').addEventListener('click', () => {
       if (buildChartFromForm()) $('#card-chart').scrollIntoView({ behavior: 'smooth', block: 'start' });
     });
@@ -813,15 +799,10 @@
     $('#dlg-close').addEventListener('click', () => dlg.close());
     dlg.addEventListener('click', (e) => { if (e.target === dlg) dlg.close(); });
 
-    // Bản cũ tự lưu hồ sơ vừa nhập mà người dùng không bấm Lưu → xóa (PRD §3.3).
-    localStorage.removeItem(LEGACY_AUTOSAVE_KEY);
-    const lastId = localStorage.getItem(LAST_ID_KEY);
-    const last = lastId ? loadProfiles().find((x) => x.id === lastId) : null;
-    if (last) {
-      writeProfileForm(last);
-      refreshProfileSelect(last.id);
-      buildChartFromForm({ silent: true });
-    }
+    // Ứng dụng không lưu gì (PRD §3.3, QĐ-07): dọn các khóa mà phiên bản cũ có thể đã để lại.
+    try {
+      Object.keys(localStorage).filter((k) => k.startsWith(KEY_PREFIX)).forEach((k) => localStorage.removeItem(k));
+    } catch { /* bộ nhớ trình duyệt bị chặn: không có gì để dọn */ }
   }
 
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();

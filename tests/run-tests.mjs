@@ -383,5 +383,46 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   eq('app.js đưa cảnh báo cứng vào biểu ngữ, .ics và bản sao chép', (app.match(/hardWarningTexts\(r\)/g) ?? []).length >= 2 && /legalBannerHTML\(res\.days\)/.test(app), true);
 }
 
+// ---------- G0b: chọn việc trước, chủ thể theo việc, không lưu hồ sơ (PRD §3.3, §9.5, §9.6) ----------
+{
+  const S = NT.scoring, A = NT.activities;
+  const kinds = {}; for (const a of A.ACTIVITIES) (kinds[A.subjectOf(a)] ??= []).push(a.id);
+  eq('Chủ thể theo việc: lịch mổ/sinh mổ không hỏi ai; cưới hỏi xét cô dâu; làm nhà xét gia chủ',
+    [kinds.none.sort(), kinds.bride.sort(), kinds.owner.sort()],
+    [['med_birth', 'med_surgery'], ['wed_bed', 'wed_engage', 'wed_main'], ['build_earth', 'build_in', 'build_open', 'build_roof']]);
+  eq('Việc khác (kể cả khám định kỳ, tùy chỉnh) là một người, giới tính chọn bình thường',
+    [A.subjectOf(A.byId('med_checkup')), A.subjectOf(A.byId('biz_open')), A.subjectOf(A.makeCustom({ name: 'x', element: null, baseId: null })), A.subjectOf(null)],
+    ['person', 'person', 'person', 'person']);
+
+  // Việc y tế cố định chạy được khi không có lá số nào
+  const noChart = S.findDays({ chart: null, act: A.byId('med_surgery'), nameInfo: null, from: '2026-10-12', to: '2026-10-12', mode: 'fixed', fixedTime: '08:30' });
+  eq('Lịch mổ: không cần dữ liệu cá nhân (chart = null) vẫn trả thông tin lịch', [noChart.days.length, noChart.days[0].day.items.length, noChart.days[0].chosen.ganZhi], [1, 0, 'Mậu Thìn']);
+
+  // Cưới hỏi: cô dâu là chủ thể, chú rể tùy chọn — ngày xung tuổi chú rể là kỵ nặng
+  const bride = NT.bazi.buildChart({ ...base, gender: 'female', birthDate: '1998-03-12', birthTime: '06:15' }); // tuổi Dần
+  const wed = A.byId('wed_main');
+  const range = { chart: bride, act: wed, nameInfo: null, from: '2026-11-01', to: '2027-01-31', mode: 'best' };
+  const alone = S.findDays(range);
+  const groomZhi = 4; // chú rể tuổi Thìn → ngày Tuất xung
+  const withGroom = S.findDays({ ...range, options: { others: [{ role: 'chú rể', zhi: groomZhi }] } });
+  const clash = withGroom.days.filter((d) => d.ctx.dayZ === 10);
+  eq('Ngày Tuất: có dòng "xung tuổi chú rể (Thìn)" mức kỵ nặng và bị loại khỏi đề xuất',
+    [clash.length > 0, clash.every((d) => d.day.items.some((i) => i.severe && /xung tuổi chú rể \(Thìn\)/.test(i.text))), clash.every((d) => !withGroom.ranked.includes(d))],
+    [true, true, true]);
+  const other = withGroom.days.filter((d) => d.ctx.dayZ !== 10);
+  eq('Ngày khác không bị ảnh hưởng bởi tuổi chú rể', other.every((d, i) => d.score === alone.days.filter((x) => x.ctx.dayZ !== 10)[i].score), true);
+  eq('Cô dâu là chủ thể: dòng Kim lâu (nếu có) nói về tuổi của chính cô dâu, không còn ghi chú "không áp dụng cho nam"',
+    alone.days.some((d) => d.day.items.some((i) => /không áp dụng/.test(i.text))), false);
+
+  // Giao diện: việc trước, không lưu
+  const html2 = readFileSync(path.join(root, 'index.html'), 'utf8'), app2 = readFileSync(path.join(root, 'js/ui/app.js'), 'utf8');
+  eq('index.html: thẻ chọn việc đứng trước thẻ người được xét; không còn nút Lưu, danh sách hồ sơ',
+    [html2.indexOf('id="card-task"') > 0 && html2.indexOf('id="card-task"') < html2.indexOf('id="card-profile"'), /profile-select|btn-save-profile|btn-delete-profile|btn-clear-all/.test(html2)],
+    [true, false]);
+  eq('index.html: "Ai là gia chủ?" có đủ 4 phương án cố định', [...html2.matchAll(/<select class="input" id="f-owner">([\s\S]*?)<\/select>/g)].flatMap((m) => [...m[1].matchAll(/value="(\w+)"/g)].map((x) => x[1])), ['male', 'female', 'son', 'borrowed']);
+  eq('app.js không ghi gì vào bộ nhớ trình duyệt', /localStorage\.setItem|sessionStorage|indexedDB|document\.cookie/.test(app2), false);
+  eq('Ô họ tên và ô chú rể ẩn mặc định', [/class="field full hidden" id="wrap-name"/.test(html2), /class="field full hidden" id="wrap-groom"/.test(html2)], [true, true]);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);
