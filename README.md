@@ -1,7 +1,7 @@
 # Ngày Tốt — Chọn ngày giờ tốt theo Bát tự cá nhân
 
 Ứng dụng web tĩnh, chạy hoàn toàn trên trình duyệt: không backend, không build, không cần `npm`.
-Dữ liệu cá nhân không rời khỏi máy. Phần chọn ngày không lưu gì: đóng hoặc tải lại trang là mất. Sổ giỗ và thông tin điền vào văn khấn (bản làm việc, chưa commit) lưu trong IndexedDB của trình duyệt trên máy người dùng — điều này trái QĐ-07 hiện hành và đang chờ quyết định (xem `docs/HIEN-TRANG.md` dòng 40).
+Dữ liệu cá nhân không rời khỏi máy. Phần chọn ngày không lưu gì: đóng hoặc tải lại trang là mất. Sổ giỗ và thông tin điền vào văn khấn lưu trong IndexedDB của trình duyệt trên máy người dùng. Theo QĐ-15, bản web sẽ không lưu dữ liệu cá nhân, bản mobile lưu trên máy (xem `docs/QUYET-DINH.md`).
 
 ## Chạy
 

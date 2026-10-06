@@ -3,8 +3,8 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.10 — giờ đề xuất của mọi việc nằm trong khung sinh hoạt (8.6, QĐ-11); làm rõ 10.5 sau lượt phản biện độc lập thứ tư |
-| Ngày cập nhật | 2026-10-05 |
+| Phiên bản | 4.11 — hai bản web và mobile dùng chung phần lõi (QĐ-12 đến QĐ-14); lưu dữ liệu theo từng bản (QĐ-15 thay QĐ-07); Lý Thuần Phong, Tài thần, hoàng đạo (QĐ-16); bỏ bảng chấm điểm của lịch tháng (QĐ-17); kho văn khấn có điều kiện (QĐ-18). Thân các mục 1, 4.1, 7, 8.3, 12 chưa viết lại theo các quyết định này: khi mâu thuẫn, `QUYET-DINH.md` thắng |
+| Ngày cập nhật | 2026-10-07 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
 
@@ -131,7 +131,7 @@ Giới hạn pháp luật là loại ràng buộc duy nhất được phép **lo
 
 - Mọi phép tính chạy trên thiết bị người dùng. Ứng dụng không gửi họ tên, ngày giờ sinh hay bất kỳ dữ liệu hồ sơ nào ra mạng.
 - Không tải tài nguyên từ máy chủ bên thứ ba (phông chữ, script, phân tích truy cập): mỗi yêu cầu như vậy để lộ địa chỉ IP và thời điểm dùng. Phông chữ phải tự lưu trữ cùng trang. Chính sách CSP chỉ cho phép nguồn `'self'`.
-- **Không lưu hồ sơ (QĐ-07).** Ứng dụng không ghi họ tên, ngày giờ sinh hay bất kỳ dữ liệu nhập nào vào bộ nhớ trình duyệt (`localStorage`, `sessionStorage`, IndexedDB, cookie); không có nút Lưu hay danh sách hồ sơ. Đóng hoặc tải lại trang là mất dữ liệu đã nhập. Khi khởi động, ứng dụng xóa các khóa `ngaytot.*` mà phiên bản cũ có thể đã để lại.
+- **Lưu dữ liệu theo từng bản (QĐ-15, thay QĐ-07).** Bản web không ghi họ tên, ngày giờ sinh hay bất kỳ dữ liệu nhập nào vào bộ nhớ trình duyệt (`localStorage`, `sessionStorage`, IndexedDB, cookie). Bản mobile lưu sổ giỗ và hồ sơ điền văn khấn trên chính máy người dùng, không tài khoản, không gửi đi đâu, có sao lưu và khôi phục bằng tệp. Phần chọn ngày ở cả hai bản không lưu gì: đóng hoặc tải lại là mất dữ liệu đã nhập. Giao diện phải nói đúng phần nào có lưu. Trạng thái chuyển tiếp của bản làm việc: xem `HIEN-TRANG.md` dòng 40.
 - Việc nào không cần dữ liệu cá nhân thì không hỏi (9.5). Lịch mổ, sinh mổ chỉ cần ngày giờ đã định.
 - Căn cứ pháp lý: Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 và Nghị định 356/2025/NĐ-CP, cùng có hiệu lực 01/01/2026; Nghị định 356 thay Nghị định 13/2023/NĐ-CP mà v3.0 dẫn **[KC — đã tra lại]**.
 
@@ -984,7 +984,7 @@ Giai đoạn nào đã đóng, tại commit nào, và việc nào còn mở: xem
 
 ## 16. Quyết định của chủ dự án
 
-Bảng quyết định QĐ-01 đến QĐ-11, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
+Bảng quyết định QĐ-01 đến QĐ-18, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
 
 | Mã | Quyết định |
 | --- | --- |
@@ -994,11 +994,18 @@ Bảng quyết định QĐ-01 đến QĐ-11, kèm phương án đã cân nhắc 
 | QĐ-04 | Tang lễ ở chế độ ngày cố định cho đến G4 |
 | QĐ-05 | Giao diện không nêu tên thư viện, nhưng ghi rõ dữ liệu chưa đối chiếu với sách gốc |
 | QĐ-06 | Chọn việc trước, rồi mới hỏi các trường mà việc đó cần (9.5) |
-| QĐ-07 | Ứng dụng không lưu hồ sơ (3.3) |
+| QĐ-07 | ~~Ứng dụng không lưu hồ sơ~~ — đã thay bằng QĐ-15 |
 | QĐ-08 | Chủ thể xét tuổi do việc quy định: cưới hỏi xét tuổi nữ; làm nhà xét tuổi gia chủ theo 9.6 |
 | QĐ-09 | Có lịch trình giờ trong ngày cưới: chọn ngày chính, xếp giờ xuất phát, vào nhà gái, về nhà trai (10.5) |
 | QĐ-10 | "Giờ tốt" phải ghi rõ là giờ để làm gì (8.6); bấm một canh giờ thì nhận giờ đề xuất cụ thể theo thời gian đã khai (10.5) |
 | QĐ-11 | Giờ đề xuất của mọi việc chỉ lấy trong khung sinh hoạt: 05:00–20:59, riêng việc có tiệc, nhạc 07:00–20:59 (8.6) |
+| QĐ-12 | Hai bản: web (tìm kiếm theo từ khóa) và mobile (ứng dụng đầy đủ), dùng chung một phần lõi tính toán; giao diện thiết kế sau khi chốt yêu cầu |
+| QĐ-13 | Bản mobile là chính ứng dụng web được đóng gói, thêm phần gốc cho thông báo và widget; phải chạy nguyên phần lõi |
+| QĐ-14 | Bản web là trang tĩnh sinh từ phần lõi, không máy chủ, bắt đầu hẹp; `backend/` gác lại; chuyện quảng cáo còn mở |
+| QĐ-15 | Web không lưu dữ liệu cá nhân; mobile lưu trên máy, không tài khoản, có sao lưu bằng tệp (3.3) |
+| QĐ-16 | Lý Thuần Phong theo thứ tự phổ biến ở Việt Nam, kèm nhãn "các nguồn không thống nhất"; hoàng đạo giữ theo tiết khí, ghi chú ngày hai cách tính khác nhau (8.3) |
+| QĐ-17 | Lịch tháng không tự chấm điểm; gỡ bảng "6 kịch bản" |
+| QĐ-18 | Có kho văn khấn với điều kiện về nguồn và câu chữ; lễ của các dân tộc chỉ giới thiệu; không viết lại nội dung của ứng dụng khác |
 
 ---
 
