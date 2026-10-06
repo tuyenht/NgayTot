@@ -1015,7 +1015,111 @@
     try {
       Object.keys(localStorage).filter((k) => k.startsWith(KEY_PREFIX)).forEach((k) => localStorage.removeItem(k));
     } catch { /* bộ nhớ trình duyệt bị chặn: không có gì để dọn */ }
+
+    // Chuyển đổi các Tab chính (Trạch cát, Sổ giỗ gia tiên, Kho văn khấn, Phương pháp)
+    $$('.topnav .tab-link, .topnav a').forEach((link) => {
+      link.addEventListener('click', (e) => {
+        const target = link.dataset.tab;
+        if (!target) return;
+        e.preventDefault();
+        $$('.topnav .tab-link, .topnav a').forEach((l) => l.classList.remove('active'));
+        link.classList.add('active');
+        $$('.tab-pane').forEach((p) => p.classList.remove('active'));
+        const targetPane = $('#' + target);
+        if (targetPane) {
+          targetPane.classList.add('active');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+      });
+    });
+
+    // Khởi tạo các module chuyên môn vệ tinh
+    NT.toast = toast;
+    if (NT.monthCalendarUI?.init) NT.monthCalendarUI.init();
+    if (NT.compassUI?.init) NT.compassUI.init();
+    if (NT.anniversaryUI?.init) NT.anniversaryUI.init();
+    if (NT.prayersUI?.init) NT.prayersUI.init();
+
+    // Khởi động ticker Canh Giờ Thời Gian Thực
+    startLiveCanhClock();
+
+    // Đăng ký Service Worker cho PWA Offline
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('./sw.js').catch((err) => {
+          console.warn('PWA ServiceWorker registration failed:', err);
+        });
+      });
+    }
+  }
+
+  function startLiveCanhClock() {
+    function updateClock() {
+      if (!NT.canhClock || !NT.calendar) return;
+      const now = new Date();
+      const status = NT.canhClock.getCurrentCanhStatus(now);
+
+      // Từ 23:00 là giờ Tý của ngày hôm sau: lấy can chi và ngày âm của hôm sau, như phần chọn ngày
+      const day = now.getHours() >= 23 ? new Date(now.getFullYear(), now.getMonth(), now.getDate() + 1) : now;
+      const lunar = NT.calendar.solarToLunar(day.getDate(), day.getMonth() + 1, day.getFullYear());
+      const gz = NT.calendar.solarToGanZhi(day.getDate(), day.getMonth() + 1, day.getFullYear());
+
+      const hoursDetails = NT.canhClock.getDayHoursDetails(gz.dChi, lunar.month, lunar.day);
+      const currHourDetail = hoursDetails[status.chiIndex];
+      const ltp = NT.canhClock.getLyThuanPhong(lunar.month, lunar.day, status.chiIndex);
+
+      const nameEl = $('#bar-chi-name');
+      const spanEl = $('#bar-chi-span');
+      const statusEl = $('#bar-canh-status');
+      const ltpEl = $('#bar-ltp-val');
+      const countEl = $('#bar-countdown');
+      const timeEl = $('#bar-clock-time');
+
+      if (nameEl) nameEl.textContent = `Canh ${status.chiName}`;
+      if (spanEl) spanEl.textContent = status.timeSpan;
+      if (statusEl && currHourDetail) {
+        statusEl.textContent = currHourDetail.isHuangDao 
+          ? `🟡 Hoàng Đạo (${currHourDetail.starName})` 
+          : `⚫ Hắc Đạo (${currHourDetail.starName})`;
+        statusEl.className = 'canh-status-tag ' + (currHourDetail.isHuangDao ? 'hd' : 'hei');
+      }
+      if (ltpEl && ltp) {
+        ltpEl.textContent = `${ltp.name} (${ltp.quality === 'good' ? 'Cát' : 'Hung/Thứ'})`;
+      }
+      if (countEl) {
+        countEl.innerHTML = `Còn <b>${status.remainingMinutes} phút</b> sang Canh ${status.nextChi}`;
+      }
+      if (timeEl) {
+        timeEl.textContent = status.currentTimeStr;
+      }
+
+      // Cập nhật bảng 12 giờ ở tab Compass nếu có
+      // Dựng lại khi sang canh khác hoặc sang ngày khác, để dấu canh hiện tại không đứng yên
+      const tbody = $('#canh-hours-tbody');
+      const tableKey = `${day.toDateString()}|${status.chiIndex}`;
+      if (tbody && tbody.dataset.key !== tableKey) {
+        tbody.dataset.key = tableKey;
+        NT.compassUI?.refreshDirections?.();
+        tbody.innerHTML = hoursDetails.map(h => {
+          const isCurr = h.chiIndex === status.chiIndex;
+          const isHD = h.isHuangDao;
+          return `
+            <tr class="${isCurr ? 'is-current-canh' : ''}">
+              <td><b>${h.chi}</b> ${isCurr ? '📍' : ''}</td>
+              <td>${h.chiIndex === 0 ? '00:00 – 00:59' : h.label}</td>
+              <td>${h.starName}</td>
+              <td><span class="badge-tag ${isHD ? 'cat' : 'taboo'}">${isHD ? 'Hoàng Đạo' : 'Hắc Đạo'}</span></td>
+              <td><span class="${h.lyThuanPhong.quality === 'good' ? 'text-gold' : ''}"><b>${h.lyThuanPhong.name}</b> — ${h.lyThuanPhong.meaning}</span></td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    updateClock();
+    setInterval(updateClock, 1000);
   }
 
   document.readyState === 'loading' ? document.addEventListener('DOMContentLoaded', init) : init();
 })(globalThis.NT ??= {});
+

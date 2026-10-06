@@ -253,8 +253,51 @@
     return { utcMs, tst: new Date(utcMs + offsetMin * 60e3), offsetMin: offsetMin - tzHours * 60 };
   }
 
+  /**
+   * Tính Can Chi cho Ngày, Tháng, Năm từ Dương Lịch.
+   */
+  function solarToGanZhi(d, m, y) {
+    if (typeof globalThis.Solar !== 'undefined' && globalThis.Solar.fromYmd) {
+      const lunar = globalThis.Solar.fromYmd(y, m, d).getLunar();
+      const dg = lunar.getDayGanIndex();
+      const dz = lunar.getDayZhiIndex();
+      const mg = lunar.getMonthGanIndex();
+      const mz = lunar.getMonthZhiIndex();
+      const yg = lunar.getYearGanIndex();
+      const yz = lunar.getYearZhiIndex();
+      const D = NT.data;
+
+      return {
+        dCan: D ? D.GAN_VI[dg] : '',
+        dChi: D ? D.ZHI_VI[dz] : '',
+        mCan: D ? D.GAN_VI[mg] : '',
+        mChi: D ? D.ZHI_VI[mz] : '',
+        yCan: D ? D.GAN_VI[yg] : '',
+        yChi: D ? D.ZHI_VI[yz] : '',
+        dCanIndex: dg,
+        dChiIndex: dz
+      };
+    }
+    // Fallback nếu Solar chưa khởi tạo
+    const jd = jdFromDate(d, m, y);
+    const dg = (jd + 9) % 10;
+    const dz = (jd + 1) % 12;
+    const D = NT.data;
+    return {
+      dCan: D ? D.GAN_VI[dg] : '',
+      dChi: D ? D.ZHI_VI[dz] : '',
+      mCan: '',
+      mChi: '',
+      yCan: '',
+      yChi: '',
+      dCanIndex: dg,
+      dChiIndex: dz
+    };
+  }
+
   NT.calendar = Object.freeze({
     TZ_VN, VERIFIED_RANGE, SUPPORTED_RANGE, jdFromDate, jdToDate, solarToLunar, solarToLunarVN, lunarToSolar,
     lunarYearZhi, lunarYearGan, equationOfTime, trueSolarTime, calendarTz, civilTz, civilTzNote, fmtTz, inVerifiedRange,
+    solarToGanZhi,
   });
 })(globalThis.NT ??= {});

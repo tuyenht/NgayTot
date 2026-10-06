@@ -545,5 +545,87 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
   eq('Việc tùy chỉnh dùng mô tả chung', A.hourMeaningOf(A.makeCustom({ name: 'x', element: null, baseId: null })), 'bắt đầu việc');
 }
 
+// ---------- Sổ giỗ, canh giờ, văn khấn ----------
+for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data', 'storage/idb-manager']) {
+  vm.runInThisContext(readFileSync(path.join(root, `js/${f}.js`), 'utf8'), { filename: `${f}.js` });
+}
+{
+  const AN = NT.anniversary;
+  const next = (d, m, from, leap = false) => AN.calculateAnniversaryReminders({ lunarDay: d, lunarMonth: m, isLeap: leap }, from);
+  eq('Giỗ 15/8 âm, hôm nay 06/10/2026 → lần tới 15/09/2027',
+    next(15, 8, new Date(2026, 9, 6)).nextSolarDate.solarDateStr, '2027-09-15');
+  const r = next(1, 12, new Date(2026, 0, 20));
+  eq('Giỗ 1/12 âm, hôm nay 20/01/2026 → 08/01/2027 (không nhảy sang cuối năm 2027)', [r.nextSolarDate.solarDateStr, r.daysLeft], ['2027-01-08', 353]);
+  eq('Đúng ngày giỗ thì còn 0 ngày', next(15, 8, new Date(2026, 8, 25, 22, 0)).daysLeft, 0);
+  eq('Năm 2027 có hai lần giỗ 1/12 âm (08/01 và 28/12)', AN.getAnniversaryOccurrences(1, 12, 2027).map((o) => o.solarDateStr), ['2027-01-08', '2027-12-28']);
+  // Lần giỗ tới không sớm hơn hôm nay và không bỏ sót lần nào ở giữa
+  let bad = 0;
+  for (let t = new Date(2025, 0, 1); t < new Date(2028, 0, 1); t.setDate(t.getDate() + 17)) {
+    for (let m = 1; m <= 12; m++) for (const d of [1, 15, 29, 30]) {
+      const occ = AN.nextAnniversaryOccurrence(d, m, t);
+      const from = `${t.getFullYear()}-${String(t.getMonth() + 1).padStart(2, '0')}-${String(t.getDate()).padStart(2, '0')}`;
+      const all = [t.getFullYear(), t.getFullYear() + 1].flatMap((y) => AN.getAnniversaryOccurrences(d, m, y)).map((o) => o.solarDateStr).filter((x) => x >= from).sort();
+      if (!occ || occ.solarDateStr !== all[0]) bad++;
+    }
+  }
+  eq('Lần giỗ tới luôn là lần sớm nhất kể từ hôm nay (vét 48 ngày âm × 65 ngày bắt đầu)', bad, 0);
+  eq('Ngày, tháng âm ngoài miền → null thay vì ném lỗi', [AN.getAnniversarySolarDate(31, 13, 2026), AN.getAnniversarySolarDate(0, 1, 2026)], [null, null]);
+
+  const ics = await NT.storage.generateIcsCalendar([{ id: 'a1', name: 'Ông A; B, C', relationship: 'Cụ', lunarDay: 1, lunarMonth: 12, remindDays: [7, 0],
+    note: 'dòng1\nEND:VEVENT\nBEGIN:VEVENT\nSUMMARY:giả' }], [2027]);
+  eq('.ics: ghi chú có xuống dòng không chèn được sự kiện giả; đủ hai lần giỗ của năm; hai mốc nhắc mỗi lần',
+    [(ics.match(/^BEGIN:VEVENT/gm) || []).length, (ics.match(/^BEGIN:VALARM/gm) || []).length, ics.includes('Ông A\\; B\\, C'), ics.endsWith('\r\n')],
+    [2, 4, true, true]);
+  eq('.ics: nhắc trước 7 ngày lúc 07:00 và đúng ngày lúc 07:00 (không nổ lúc nửa đêm)',
+    [ics.includes('TRIGGER:-PT9660M'), ics.includes('TRIGGER:PT420M')], [true, true]);
+  const icsCustom = await NT.storage.generateIcsCalendar([{ id: 'a2', name: 'B', lunarDay: 10, lunarMonth: 3, remindDays: [1], notifyTime: '20:30' },
+    { id: 'a3', name: 'C', lunarDay: 10, lunarMonth: 3, remindDays: [0], notifyTime: { gio: 8 } }], [2027]);
+  eq('.ics: giờ nhắc tùy chỉnh 20:30 trước 1 ngày = lùi 210 phút; giờ nhắc sai kiểu dùng 07:00, không ném lỗi',
+    [icsCustom.includes('TRIGGER:-PT210M'), icsCustom.includes('TRIGGER:PT420M')], [true, true]);
+  eq('.ics: không dòng nào dài quá 75 octet', ics.split('\r\n').every((l) => Buffer.byteLength(l, 'utf8') <= 75), true);
+  const imp = await NT.storage.importDataJSON(JSON.stringify({ anniversaries: [{ name: 'X', lunarDay: 31, lunarMonth: 13 }, { id: 'ok1', name: 'Y', lunarDay: 10, lunarMonth: 3 }] }));
+  const again = await NT.storage.importDataJSON(JSON.stringify({ anniversaries: [{ id: 'ok1', name: 'Y', lunarDay: 10, lunarMonth: 3 }] }));
+  eq('Nhập sao lưu: bỏ dòng sai miền, nhập lại cùng id không nhân đôi', [imp.count, imp.skipped, again.success, (await NT.storage.getAllAnniversaries()).length], [1, 1, true, 1]);
+  const prof = await NT.storage.saveUserProfile({ fullName: 'A', birthYear: '', culturalRegion: 'nam' });
+  eq('Hồ sơ: không tự điền năm sinh 1990; giữ vùng miền', [prof.birthYear, prof.culturalRegion], [null, 'nam']);
+
+  const C = NT.canhClock;
+  const hac = (g, z) => C.getDirections(NT.data.GAN_VI[g], NT.data.ZHI_VI[z]).hacThan;
+  eq('Hạc thần theo vòng 60 can chi: Kỷ Dậu, Giáp Dần → Đông Bắc; Ất Mão → Đông; Nhâm Thìn → Bắc; Quý Tỵ, Mậu Thân → trên trời',
+    [hac(5, 9), hac(0, 2), hac(1, 3), hac(8, 4), /trên trời/.test(hac(9, 5)), /trên trời/.test(hac(4, 8))],
+    ['Đông Bắc', 'Đông Bắc', 'Chính Đông', 'Chính Bắc', true, true]);
+  eq('Lý Thuần Phong: mùng 1 tháng giêng giờ Tý là Đại An; giờ Sửu là cung kế tiếp', [C.getLyThuanPhong(1, 1, 0).id, C.getLyThuanPhong(1, 1, 1).id === C.LY_THUAN_PHONG[1].id], ['dai_an', true]);
+  // Đáp án độc lập: 15/6 nhuận 2025 = 08/08/2025 nên 29/6 nhuận = 22/08/2025
+  eq('Giỗ 30/6 nhuận, năm 2025 tháng 6 nhuận chỉ 29 ngày → 29/6 nhuận (22/08/2025), không nhảy về tháng 6 thường',
+    [AN.getAnniversaryOccurrences(15, 6, 2025, true)[0].solarDateStr, AN.getAnniversaryOccurrences(30, 6, 2025, true)[0].solarDateStr], ['2025-08-08', '2025-08-22']);
+  let hourBad = 0;
+  for (let i = 0; i < 400; i++) {
+    const l = Solar.fromYmd(2026, 1, 1).next(i).getLunar();
+    const hd = C.getDayHoursDetails(NT.data.ZHI_VI[l.getDayZhiIndex()], Math.abs(l.getMonth()), l.getDay());
+    for (let h = 0; h < 12; h++) if ((LunarTime.fromYmdHms(l.getYear(), l.getMonth(), l.getDay(), h * 2, 30, 0).getTianShenType() === '黄道') !== hd[h].isHuangDao) hourBad++;
+  }
+  eq('Giờ hoàng đạo của đồng hồ canh khớp nguồn của phần chọn ngày (400 ngày × 12 canh, canh Tý lấy lúc 00:30)', hourBad, 0);
+
+  // Kho văn khấn sau lượt đối chiếu nguồn 2026-10-07
+  const allPrayers = NT.prayers.PRAYERS;
+  const intro = allPrayers.filter((p) => p.kind === 'gioi_thieu');
+  eq('55 mục: 47 bài khấn và 8 bài giới thiệu lễ của các dân tộc; bài giới thiệu không có lời khấn, không có biến điền',
+    [allPrayers.length, intro.length, intro.every((p) => p.category === 'dan_toc_thieu_so' && !/Nam mô|Con kính lạy|\{\{/.test(p.content)),
+      allPrayers.filter((p) => p.category === 'dan_toc_thieu_so' && p.kind !== 'gioi_thieu').length],
+    [55, 8, true, 0]);
+  const twice = allPrayers.filter((p) => p.kind !== 'gioi_thieu').filter((p) => {
+    const inv = p.content.split('\n').filter((l) => l.startsWith('Con kính lạy')).join(' ');
+    return [/Thổ [đĐ]ịa|Thổ Công/g, /Thành [hH]oàng/g, /Thái Tuế/g].some((re) => (inv.match(re) || []).length > 1);
+  }).map((p) => p.id);
+  eq('Không bài nào khấn trùng một vị (Thổ địa, Thành hoàng, Thái Tuế) hai lần', twice, []);
+  const blob = allPrayers.map((p) => [p.title, p.meaning, p.offerings, p.taboos, p.content].join(' | ')).join(' | ');
+  eq('Các danh xưng và khẳng định không có nguồn đã được gỡ',
+    ['Thiên cơ đại tiên chúa', 'Đức Chúa ngục', 'Tả Phủ Bắc Đẩu', 'Tam vị Đức Ông', 'Nguyệt Cung Thái Âm', 'duy nhất trong chùa', 'Then Mường', 'người có vận khí tốt'].filter((x) => blob.includes(x)), []);
+  eq('Văn khấn điền tên năm âm theo can chi, không phải số năm dương', /năm (Giáp|Ất|Bính|Đinh|Mậu|Kỷ|Canh|Tân|Nhâm|Quý) /.test(NT.prayers.renderPrayer('vk_tat_nien', {}, {}).renderedText), true);
+  const withAddr = NT.prayers.filterPrayers({}).map((p) => NT.prayers.getPrayerById(p.id)).find((p) => p.content.includes('{{GIA_CHU_ADDRESS}}'));
+  const out = NT.prayers.renderPrayer(withAddr.id, { fullName: 'A $& B', address: "Số 5 $& $` $' phố" }, {});
+  eq('Văn khấn: ký tự $ trong tên, địa chỉ được giữ nguyên văn', [out.renderedText.includes("Số 5 $& $` $' phố"), out.renderedText.includes('{{')], [true, false]);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);
