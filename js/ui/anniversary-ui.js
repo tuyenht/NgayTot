@@ -110,6 +110,7 @@
               <span class="label">Lần giỗ tới (dương lịch):</span>
               <span class="val text-gold">${solText} ${weekdayText ? `(${weekdayText})` : ''}</span>
             </div>
+            ${calc.boundaryNote ? `<p class="source-note">Lưu ý: ${esc(calc.boundaryNote)}</p>` : ''}
             ${item.deathYear ? `
               <div class="date-row">
                 <span class="label">Năm mất:</span>

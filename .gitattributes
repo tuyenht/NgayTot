@@ -1,2 +1,4 @@
 data/astro_events.json -text
 data/astro_events.sha256 -text
+js/core/lunar-months.js -text
+js/core/solar-terms.js -text

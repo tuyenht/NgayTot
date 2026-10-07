@@ -5,13 +5,13 @@ import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import vm from 'node:vm';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import path from 'node:path';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const require = createRequire(import.meta.url);
 Object.assign(globalThis, require(path.join(root, 'vendor/lunar.js')));
-for (const f of ['data', 'i18n-vi', 'calendar-vn', 'bazi', 'name-element', 'activities', 'legal', 'scoring', 'wedding-plan']) {
+for (const f of ['data', 'i18n-vi', 'lunar-months', 'solar-terms', 'calendar-vn', 'date-convert', 'bazi', 'name-element', 'activities', 'legal', 'scoring', 'wedding-plan']) {
   vm.runInThisContext(readFileSync(path.join(root, `js/core/${f}.js`), 'utf8'), { filename: `${f}.js` });
 }
 const { NT } = globalThis;
@@ -226,7 +226,19 @@ eq('Hoạt động mới career_fixed và med_checkup tồn tại', [!!NT.activi
     const cn = Solar.fromYmd(y, m, d).getLunar();
     if (l.day !== cn.getDay() || l.month !== Math.abs(cn.getMonth()) || l.leap !== cn.getMonth() < 0) { mism++; firstMism ??= iso(d, m, y); }
   }
-  eq('Golden UTC+8 so với 6tail 1929–2100: 0 ngày lệch', [mism, firstMism], [0, null]);
+  // Kỳ vọng đổi có chủ ý ngày 2026-10-07 (QĐ-34, ngoại lệ thứ ba ở PRD 13.4): từ khi lõi tra bảng tháng dựng từ bảng thiên văn đóng băng,
+  // UTC+8 lệch 6tail đúng một tháng — tháng 7 âm năm 2097, điểm sóc rơi 84 giây sau nửa đêm UTC+8 và hai bên ngoại suy ΔT
+  // lệch nhau khoảng 90 giây. Tháng đó mang cờ ranh giới trong bảng. Âm lịch Việt Nam không dùng UTC+8 sau 1975.
+  const risk8 = NT.lunarMonths.tables['8'].risk.map(([, s]) => s);
+  eq('Golden UTC+8 so với 6tail 1929–2100: chỉ lệch một tháng mang cờ ranh giới (30 ngày từ 07/08/2097, sóc cách nửa đêm 84 giây)',
+    [mism, firstMism, risk8.includes(84)], [30, '2097-08-07', true]);
+  let mism75 = 0;
+  for (let t = Date.UTC(1929, 0, 1); t <= Date.UTC(1975, 11, 31); t += 864e5) {
+    const dt = new Date(t); const [d, m, y] = [dt.getUTCDate(), dt.getUTCMonth() + 1, dt.getUTCFullYear()];
+    const l = C.solarToLunar(d, m, y, 8); const cn = Solar.fromYmd(y, m, d).getLunar();
+    if (l.day !== cn.getDay() || l.month !== Math.abs(cn.getMonth()) || l.leap !== cn.getMonth() < 0) mism75++;
+  }
+  eq('UTC+8 so với 6tail trong khoảng âm lịch Việt Nam thực dùng múi này (1929–1975): 0 ngày lệch', mism75, 0);
 
   // 6d. Tết bắt buộc & ca "mùng 0"
   eq('Tết Ất Hợi 1935 = 04/02', LV(4, 2, 1935, 'bac'), [1, 1, 1935, false]);
@@ -722,6 +734,168 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
     }
   }
   eq('astro_events: tiết khí 1929–2030 lệch thư viện lịch đang dùng không quá 5 giây (theo UTC+8)', [n > 2300, worst <= 5], [true, true]);
+}
+
+// Bảng tháng âm lịch (js/core/lunar-months.js) và bộ đổi ngày hai chiều (js/core/date-convert.js)
+{
+  const { generate } = await import(pathToFileURL(path.join(root, 'tools/astro/build_lunar_months.mjs')).href);
+  const { loadAstroEvents, buildLunarMonths, lookupLunar } = await import(pathToFileURL(path.join(root, 'tools/astro/lunar-from-astro.mjs')).href);
+  eq('lunar-months.js đúng là kết quả sinh lại từ bảng astro_events đã đóng băng',
+    readFileSync(path.join(root, 'js/core/lunar-months.js'), 'utf8').replace(/\r\n/g, '\n') === generate(), true);
+
+  const C = NT.calendar, D = NT.dateConvert;
+  const astro = loadAstroEvents();
+  const ref = new Map();
+  const refFor = (tz) => { if (!ref.has(tz)) ref.set(tz, buildLunarMonths(astro, tz)); return ref.get(tz); };
+  const from = C.jdFromDate(1, 1, 1912), to = C.jdFromDate(31, 12, 2100);
+  const GZ = (i, j) => `${NT.data.GAN_VI[i]} ${NT.data.ZHI_VI[j]}`;
+  let n = 0, coreBad = 0, tripBad = 0, ganzhiBad = 0, weekdayBad = 0, flagged = 0;
+  const WD = ['Chủ nhật', 'Thứ Hai', 'Thứ Ba', 'Thứ Tư', 'Thứ Năm', 'Thứ Sáu', 'Thứ Bảy'];
+  for (const region of ['bac', 'nam']) {
+    for (let jd = from; jd <= to; jd++) {
+      const [d, m, y] = C.jdToDate(jd);
+      const tz = C.calendarTz(y, m, d, region);
+      const want = lookupLunar(refFor(tz), jd);
+      const r = D.solarToLunar({ day: d, month: m, year: y }, { region });
+      n++;
+      if (!r.ok || !want || r.lunar.day !== want.day || r.lunar.month !== want.month || r.lunar.year !== want.year || r.lunar.leap !== want.leap || r.lunar.monthLength !== want.length) coreBad++;
+      const back = r.ok && D.lunarToSolar({ day: r.lunar.day, month: r.lunar.month, year: r.lunar.year, leap: r.lunar.leap }, { region });
+      // Ngày âm của tháng Chạp năm 2100 rơi sang 2101 là ngoài khoảng: không tính vào vòng đổi ngược
+      if (!back || !back.ok || back.solar.day !== d || back.solar.month !== m || back.solar.year !== y) tripBad++;
+      if (region === 'bac') {
+        const cn = Solar.fromYmd(y, m, d).getLunar();
+        if (r.canChi.day !== GZ(cn.getDayGanIndex(), cn.getDayZhiIndex())) ganzhiBad++;
+        if (r.solar.weekday !== WD[new Date(Date.UTC(y, m - 1, d)).getUTCDay()]) weekdayBad++;
+        if (r.flags.includes('BOUNDARY_RISK')) flagged++;
+      }
+    }
+  }
+  // Phép này chỉ chứng minh mã hóa, giải mã và tra bảng đúng (bảng và chuẩn so cùng sinh từ một hàm); bằng chứng độc lập ở hai phép kế tiếp
+  eq('Đổi dương → âm trùng lịch dựng thẳng từ bảng thiên văn, từng ngày 1912–2100, hai miền', [n, coreBad], [138064, 0]);
+
+  // Bằng chứng độc lập 1: thư viện lịch (6tail) cho 1912–1928 theo lịch Trung Quốc thời đó
+  let bjBad = 0, bjN = 0;
+  for (let jd = from; jd <= C.jdFromDate(31, 12, 1928); jd++) {
+    const [d, m, y] = C.jdToDate(jd);
+    const l = C.solarToLunar(d, m, y), cn = Solar.fromYmd(y, m, d).getLunar();
+    bjN++;
+    if (l.day !== cn.getDay() || l.month !== Math.abs(cn.getMonth()) || l.leap !== cn.getMonth() < 0) bjBad++;
+  }
+  eq('Âm lịch 1912–1928 trùng thư viện lịch ở mọi ngày (trước khi tra bảng: lệch 58 ngày ở 1917 và 1922)', [bjN, bjBad], [6210, 0]);
+
+  // Bằng chứng độc lập 2: công thức Hồ Ngọc Đức (nạp riêng, không có bảng) cho UTC+7, 1976–2100 —
+  // chỉ được khác bảng ở tháng có điểm sóc cách nửa đêm dưới 10 phút, nơi công thức xấp xỉ không phân giải được
+  const sandbox = vm.createContext({ Math, Object, Map, Number, Array, String, Date });
+  sandbox.globalThis = sandbox;
+  vm.runInContext(readFileSync(path.join(root, 'js/core/calendar-vn.js'), 'utf8'), sandbox);
+  const F = sandbox.NT.calendar;
+  let fN = 0, fDiff = 0, fDiffUnflagged = 0;
+  const fMonths = new Set();
+  for (let jd = C.jdFromDate(1, 1, 1976); jd <= to; jd++) {
+    const [d, m, y] = C.jdToDate(jd);
+    const a = C.solarToLunar(d, m, y, 7), b = F.solarToLunar(d, m, y, 7);
+    fN++;
+    if (a.day !== b.day || a.month !== b.month || a.year !== b.year || a.leap !== b.leap) {
+      fDiff++;
+      const info = C.lunarMonthInfo(d, m, y, 7);
+      fMonths.add(`${a.month}${a.leap ? 'N' : ''}/${a.year}`);
+      if (info.boundarySeconds === null && info.nextBoundarySeconds === null) fDiffUnflagged++;
+    }
+  }
+  eq('UTC+7, 1976–2100: bảng chỉ khác công thức Hồ Ngọc Đức ở tháng mang cờ ranh giới (tháng Ba nhuận 2031 và tháng Chín, Mười 2077)',
+    [fN, fDiff, fDiffUnflagged, [...fMonths].sort()], [45656, 60, 0, ['10/2077', '3N/2031', '9/2077'].sort()]);
+  eq('Đổi dương → âm → dương ra đúng ngày ban đầu, từng ngày 1912–2100, hai miền', tripBad, 0);
+  eq('Can chi ngày trùng thư viện lịch và thứ trong tuần đúng, từng ngày 1912–2100', [ganzhiBad, weekdayBad], [0, 0]);
+
+  const s2l = (d, m, y, region) => { const r = D.solarToLunar({ day: d, month: m, year: y }, { region }); return r.ok ? [r.lunar.day, r.lunar.month, r.lunar.year, r.lunar.leap, r.flags.join()] : r.error.code; };
+  const l2s = (d, m, y, leap, region) => { const r = D.lunarToSolar({ day: d, month: m, year: y, leap }, { region }); return r.ok ? `${r.solar.text} ${r.flags.join()}`.trim() : r.error.code; };
+  eq('Đổi âm → dương: Tết 1985 = 21/01, Tết 2007 = 17/02, Tết 2026 = 17/02, rằm tháng Bảy 2026 = 27/08',
+    [l2s(1, 1, 1985), l2s(1, 1, 2007), l2s(1, 1, 2026), l2s(15, 7, 2026)], ['21/01/1985', '17/02/2007', '17/02/2026', '27/08/2026']);
+  eq('Tết Mậu Thân 1968: miền Bắc 29/01, miền Nam 30/01; không rõ miền thì báo hai miền khác nhau',
+    [l2s(1, 1, 1968, false, 'bac'), l2s(1, 1, 1968, false, 'nam'), l2s(1, 1, 1968, false, 'unknown')],
+    ['29/01/1968', '30/01/1968', '29/01/1968 REGION_DIFFERS']);
+  // Hai tháng mà công thức xấp xỉ cũ đặt mùng Một lệch một ngày so với điểm sóc thật
+  eq('21/04/2031 là mùng 1 tháng Ba nhuận (sóc 23:57:06 giờ UTC+7), 16/11/2077 là mùng 1 tháng Mười (sóc 00:01:02); cả hai mang cờ ranh giới',
+    [s2l(21, 4, 2031), s2l(16, 11, 2077), s2l(15, 11, 2077)],
+    [[1, 3, 2031, true, 'BOUNDARY_RISK'], [1, 10, 2077, false, 'BOUNDARY_RISK'], [30, 9, 2077, false, 'BOUNDARY_RISK']]);
+  eq('Tháng nhuận 1917 và 1922 theo bảng: nhuận tháng Hai và nhuận tháng Năm (trước đây công thức cho tháng Ba và tháng Sáu)',
+    [D.lunarYearInfo(1917).leapMonth, D.lunarYearInfo(1922).leapMonth], [2, 5]);
+  eq('Năm âm lịch: 2025 nhuận tháng Sáu, 2026 không nhuận, 2033 nhuận tháng Mười một và có 384 ngày, 13 tháng',
+    [D.lunarYearInfo(2025).leapMonth, D.lunarYearInfo(2026).leapMonth, D.lunarYearInfo(2033).leapMonth, D.lunarYearInfo(2033).days, D.lunarYearInfo(2033).months.length],
+    [6, null, 11, 384, 13]);
+  const err = (r) => (r.ok ? 'ok' : `${r.error.code}: ${r.error.message}`);
+  eq('Ngày không tồn tại được nêu lý do bằng tiếng Việt', [
+    err(D.lunarToSolar({ day: 30, month: 2, year: 2026 })),
+    err(D.lunarToSolar({ day: 1, month: 5, year: 2025, leap: true })),
+    err(D.lunarToSolar({ day: 1, month: 3, year: 2026, leap: true })),
+    err(D.solarToLunar({ day: 29, month: 2, year: 2023 })),
+    err(D.solarToLunar({ day: 1, month: 1, year: 1911 })),
+    err(D.lunarToSolar({ day: 0, month: 1, year: 2026 })),
+    err(D.lunarToSolar({ day: 1, month: 13, year: 2026 })),
+    err(D.solarToLunar({ day: '7', month: 10, year: 2026 })),
+    err(D.lunarToSolar({ day: 15, month: 12, year: 2100 })),
+  ], [
+    'NO_SUCH_LUNAR_DAY: Tháng Hai năm âm lịch 2026 chỉ có 29 ngày.',
+    'NO_SUCH_LEAP_MONTH: Năm âm lịch 2025 không nhuận tháng Năm; năm đó nhuận tháng Sáu.',
+    'NO_SUCH_LEAP_MONTH: Năm âm lịch 2026 không có tháng nhuận.',
+    'NO_SUCH_SOLAR_DATE: Dương lịch không có ngày 29/2/2023.',
+    'OUT_OF_RANGE: Chỉ đổi được ngày dương lịch từ năm 1912 đến năm 2100.',
+    'INVALID_INPUT: Ngày âm lịch phải từ 1 đến 30.',
+    'INVALID_INPUT: Tháng âm lịch phải từ 1 đến 12.',
+    'INVALID_INPUT: Hãy nhập ngày, tháng, năm dương lịch bằng số.',
+    'OUT_OF_RANGE: Ngày này rơi vào năm dương lịch 2101, ngoài khoảng 1912–2100.',
+  ]);
+  eq('Đầu vào lạ không làm hỏng hàm: opts là null, tháng nhuận ghi bằng chuỗi, miền không rõ khi tra năm 1968',
+    [D.solarToLunar({ day: 7, month: 10, year: 2026 }, null).ok, D.lunarToSolar({ day: 1, month: 1, year: 2026 }, null).ok,
+      err(D.lunarToSolar({ day: 1, month: 6, year: 2025, leap: 'false' })), D.lunarYearInfo(1968, { region: 'unknown' }).flags, D.lunarYearInfo(2026, { region: 'unknown' }).flags],
+    [true, true, 'INVALID_INPUT: Mục "tháng nhuận" phải là đúng hoặc sai.', ['REGION_DIFFERS'], []]);
+  eq('Mùng Một có điểm sóc ngay trước nửa đêm: câu báo nói "ngày cuối của tháng trước", không nói ngày âm nhỏ hơn',
+    [/ngày cuối của tháng trước/.test(D.solarToLunar({ day: 21, month: 4, year: 2031 }).notes.join(' ')), /nhỏ hơn một ngày/.test(D.solarToLunar({ day: 22, month: 4, year: 2031 }).notes.join(' '))], [true, true]);
+  eq('Năm ngoài 1929–2100 mang cờ ngoài vùng đối chiếu; ngày trong vùng không mang cờ',
+    [D.solarToLunar({ day: 1, month: 6, year: 1920 }).flags.includes('OUT_OF_VERIFIED_RANGE'), D.solarToLunar({ day: 7, month: 10, year: 2026 }).flags.length], [true, 0]);
+  console.log(`ℹ️  Số ngày 1912–2100 (miền Bắc) mang cờ ranh giới: ${flagged}`);
+}
+
+// Bảng tiết khí (js/core/solar-terms.js): ngày chứa tiết khí theo giờ Việt Nam (14.2 dòng 14); cảnh báo trăng non sát nửa đêm
+{
+  const { generate } = await import(pathToFileURL(path.join(root, 'tools/astro/build_solar_terms.mjs')).href);
+  eq('solar-terms.js đúng là kết quả sinh lại từ bảng astro_events đã đóng băng',
+    readFileSync(path.join(root, 'js/core/solar-terms.js'), 'utf8').replace(/\r\n/g, '\n') === generate(), true);
+  const C = NT.calendar;
+  const iso = (d, m, y) => `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+  const scan = (tz, yFrom, yTo) => {
+    let terms = 0; const diff = []; const perYear = new Map();
+    for (let jd = C.jdFromDate(1, 1, yFrom); jd <= C.jdFromDate(31, 12, yTo); jd++) {
+      const [d, m, y] = C.jdToDate(jd);
+      const st = C.solarTermOn(d, m, y, tz);
+      const lib = Solar.fromYmd(y, m, d).getLunar().getJieQi();
+      if (st) { terms++; perYear.set(y, (perYear.get(y) || 0) + 1); }
+      if ((st ? st.key : '') !== lib) diff.push({ date: iso(d, m, y), st });
+    }
+    return { terms, diff, years: [...perYear.values()].every((v) => v === 24) };
+  };
+  // Đối chiếu độc lập: ở UTC+8 thư viện lịch phải cho cùng ngày, trừ Xuân phân 2084 (31 giây sau nửa đêm, hai bên ngoại suy ΔT khác nhau)
+  const at8 = scan(8, 1912, 2100);
+  eq('Ngày chứa tiết khí theo UTC+8 trùng thư viện lịch 1912–2100, trừ Xuân phân 2084 rơi 31 giây sau nửa đêm',
+    [at8.terms, at8.years, at8.diff.map((x) => x.date)], [4536, true, ['2084-03-19', '2084-03-20']]);
+  // Theo giờ Việt Nam: chỉ khác thư viện (giờ UTC+8) ở tiết khí rơi vào giờ cuối cùng của ngày
+  const at7 = scan(7, 1976, 2100);
+  const moved = at7.diff.filter((x) => x.st);
+  eq('Ngày chứa tiết khí theo giờ Việt Nam 1976–2100: đủ 24 tiết mỗi năm; 129 tiết khác ngày với thư viện, đều rơi trong giờ cuối của ngày',
+    [at7.terms, at7.years, at7.diff.length, moved.length, moved.every((x) => x.st.boundarySeconds < 0 && x.st.boundarySeconds >= -3600 - 95)],
+    [3000, true, 258, 129, true]);
+  eq('Lập hạ 2031 rơi 23:35 ngày 05/05 theo giờ Việt Nam: phần chọn ngày và bộ đổi ngày ghi tiết khí ở ngày 05/05, không ở 06/05',
+    [NT.scoring.describeDay(NT.scoring.dayContext(2031, 5, 5)).jieqi, NT.scoring.describeDay(NT.scoring.dayContext(2031, 5, 6)).jieqi,
+      NT.dateConvert.solarToLunar({ day: 5, month: 5, year: 2031 }).solarTerm.name, NT.dateConvert.solarToLunar({ day: 6, month: 5, year: 2031 }).solarTerm],
+    ['Lập Hạ', '', 'Lập Hạ', null]);
+  eq('Năm ngoài bảng tiết khí: hàm trả undefined để nơi gọi dùng nguồn khác', [C.solarTermOn(1, 1, 1900), C.solarTermOn(15, 6, 2026)], [undefined, null]);
+  // Sổ giỗ: lần giỗ tới rơi vào tháng có trăng non sát nửa đêm thì kèm ghi chú; tháng thường thì không
+  const AN = NT.anniversary;
+  const risky = AN.calculateAnniversaryReminders({ lunarDay: 10, lunarMonth: 10, deceasedName: 'A' }, new Date(2077, 10, 1));
+  const normal = AN.calculateAnniversaryReminders({ lunarDay: 10, lunarMonth: 10, deceasedName: 'A' }, new Date(2026, 9, 7));
+  eq('Sổ giỗ: giỗ 10 tháng Mười năm 2077 (trăng non 62 giây sau nửa đêm) có ghi chú; năm 2026 không có',
+    [`${risky.nextSolarDate.solarDay}/${risky.nextSolarDate.solarMonth}/${risky.nextSolarDate.solarYear}`, /^Trăng non mở đầu tháng âm này rơi sau nửa đêm chỉ 62 giây/.test(risky.boundaryNote), normal.boundaryNote],
+    ['25/11/2077', true, '']);
 }
 
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);

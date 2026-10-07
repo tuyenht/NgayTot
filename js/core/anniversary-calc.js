@@ -258,8 +258,16 @@
 
     const allChecklist = milestones.flatMap(m => m.checklist);
 
+    // Tháng âm có trăng non sát nửa đêm: lịch in có thể lệch một ngày (cờ BOUNDARY_RISK của bộ đổi ngày)
+    let boundaryNote = '';
+    if (NT.dateConvert) {
+      const conv = NT.dateConvert.solarToLunar({ day: sol.solarDay, month: sol.solarMonth, year: sol.solarYear });
+      if (conv.ok && conv.flags.includes('BOUNDARY_RISK')) boundaryNote = conv.notes.filter((n) => n.startsWith('Trăng non')).join(' ');
+    }
+
     return {
       nextSolarDate: sol,
+      boundaryNote,
       daysLeft,
       isToday: daysLeft === 0,
       isUpcoming: daysLeft > 0 && daysLeft <= 14,

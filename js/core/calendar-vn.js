@@ -1,6 +1,8 @@
 /**
- * NgayTot — Âm lịch Việt Nam theo thuật toán của Hồ Ngọc Đức
- * (dựa trên "Astronomical Algorithms" — Jean Meeus), múi giờ dựng lịch theo thời kỳ (PRD §6.3).
+ * NgayTot — Âm lịch Việt Nam, múi giờ dựng lịch theo thời kỳ (PRD §6.3).
+ * Ngày mùng Một và tháng nhuận tra từ bảng tháng đã tính trước (js/core/lunar-months.js, sinh từ bảng sóc và
+ * tiết khí đóng băng ở G1). Ngoài phạm vi của bảng, hoặc khi bảng chưa nạp, dùng thuật toán của Hồ Ngọc Đức
+ * (dựa trên "Astronomical Algorithms" — Jean Meeus): công thức xấp xỉ, có thể lệch một ngày khi điểm sóc sát nửa đêm.
  * Âm lịch VN có thể lệch lịch Trung Quốc (UTC+8) ở một số tháng, vd Tết 1985: VN 21/01, TQ 20/02.
  * Kèm hàm giờ Mặt Trời thực (chân thái dương thời) cho lá số Bát tự.
  *
@@ -146,6 +148,99 @@
 
   const cache = new Map();
 
+  // ── Bảng tháng đã tính trước ────────────────────────────────────────────────────────────────────
+  const CODE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+  const zoneKey = (tz) => (tz === 7 ? '7' : tz === 8 ? '8' : tz === BEIJING_LMT ? 'bj' : null);
+  const decoded = new Map();
+  /** Bảng tháng của một múi giờ dựng lịch, hoặc null nếu không có (múi giờ lạ, tệp bảng chưa nạp). */
+  function monthTable(tz) {
+    const key = zoneKey(tz);
+    const src = key && NT.lunarMonths && NT.lunarMonths.tables[key];
+    if (!src) return null;
+    let t = decoded.get(key);
+    if (t) return t;
+    const n = src.codes.length;
+    t = { starts: new Array(n), months: new Array(n), leaps: new Array(n), lengths: new Array(n), years: new Array(n), index: new Map(), risk: new Map(src.risk) };
+    let start = src.start, year = src.year;
+    for (let i = 0; i < n; i++) {
+      const v = CODE.indexOf(src.codes[i]);
+      const month = (v >> 2) + 1, leap = (v & 2) !== 0, length = 29 + (v & 1);
+      if (i > 0 && month === 1 && !leap) year++;
+      t.starts[i] = start; t.months[i] = month; t.leaps[i] = leap; t.lengths[i] = length; t.years[i] = year;
+      t.index.set(`${year}:${month}:${leap ? 1 : 0}`, i);
+      start += length;
+    }
+    t.end = start; // ngày đầu tiên nằm ngoài bảng
+    t.yearFrom = src.year; t.yearTo = year;
+    decoded.set(key, t);
+    return t;
+  }
+  /** Chỉ số tháng chứa ngày `jdn` trong bảng, hoặc -1 nếu ngày nằm ngoài bảng. */
+  function findMonth(t, jdn) {
+    if (jdn < t.starts[0] || jdn >= t.end) return -1;
+    let lo = 0, hi = t.starts.length - 1;
+    while (lo < hi) {
+      const mid = (lo + hi + 1) >> 1;
+      if (t.starts[mid] <= jdn) lo = mid; else hi = mid - 1;
+    }
+    return lo;
+  }
+  // ── Tiết khí đã tính trước (js/core/solar-terms.js) ─────────────────────────────────────────────
+  // Tên chữ Hán theo chỉ số (0 = Xuân phân) để dùng chung từ điển NT.vi.jieqi với thư viện lịch
+  const TERM_KEYS = ['春分', '清明', '谷雨', '立夏', '小满', '芒种', '夏至', '小暑', '大暑', '立秋', '处暑', '白露', '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至', '小寒', '大寒', '立春', '雨水', '惊蛰'];
+  const termCache = new Map();
+  /** Số giây UT1 (tính từ 00:00 ngày 1/1) của 24 tiết khí năm `yy`, hoặc null nếu năm nằm ngoài bảng hay bảng chưa nạp. */
+  function termSeconds(yy) {
+    const T = NT.solarTerms;
+    if (!T || yy < T.yearFrom || yy > T.yearTo) return null;
+    let row = termCache.get(yy);
+    if (!row) {
+      const at = (yy - T.yearFrom) * 120;
+      row = [];
+      for (let i = 0; i < 24; i++) row.push(parseInt(T.codes.substr(at + i * 5, 5), 36));
+      termCache.set(yy, row);
+    }
+    return row;
+  }
+  /**
+   * Tiết khí rơi vào ngày dương đã cho theo múi giờ dựng lịch (mặc định theo calendarTz, tức giờ Việt Nam từ 1968/1976).
+   * @returns {{index:number, key:string, boundarySeconds:number}|null|undefined}
+   *   null: ngày không chứa tiết khí; undefined: không có bảng cho năm này (nơi gọi tự dùng nguồn khác).
+   *   boundarySeconds: khoảng cách có dấu từ thời điểm tiết khí tới nửa đêm gần nhất (dương: ngay sau nửa đêm đầu ngày).
+   */
+  function solarTermOn(dd, mm, yy, tz = calendarTz(yy, mm, dd)) {
+    const row = termSeconds(yy);
+    if (!row) return undefined;
+    const dayIndex = jdFromDate(dd, mm, yy) - jdFromDate(1, 1, yy);
+    for (let i = 0; i < 24; i++) {
+      const local = row[i] + Math.round(tz * 3600);
+      if (floor(local / 86400) === dayIndex) {
+        const sec = ((local % 86400) + 86400) % 86400;
+        return Object.freeze({ index: i, key: TERM_KEYS[i], boundarySeconds: sec < 43200 ? sec : sec - 86400 });
+      }
+    }
+    return null;
+  }
+
+  /**
+   * Thông tin tháng âm chứa một ngày dương: ngày mùng Một (JDN), số ngày, và nếu điểm sóc mở đầu tháng cách nửa đêm
+   * dưới ngưỡng của bảng thì `boundarySeconds` là khoảng cách có dấu (dương: sóc ngay sau nửa đêm, lệch chút nữa thì
+   * mùng Một lùi về hôm trước; âm: sóc ngay trước nửa đêm, lệch chút nữa thì mùng Một sang hôm sau) — cờ BOUNDARY_RISK (PRD §5.3).
+   * Tháng kế tiếp có điểm sóc sát nửa đêm thì trả ở `nextBoundarySeconds` (ngày cuối tháng này có thể thuộc tháng sau).
+   * @returns {{start:number, length:number, boundarySeconds:number|null, nextBoundarySeconds:number|null, fromTable:boolean}|null}
+   */
+  function lunarMonthInfo(dd, mm, yy, tz = calendarTz(yy, mm, dd)) {
+    const t = monthTable(tz);
+    const jdn = jdFromDate(dd, mm, yy);
+    const i = t ? findMonth(t, jdn) : -1;
+    if (i < 0) return null;
+    return Object.freeze({
+      start: t.starts[i], length: t.lengths[i], fromTable: true,
+      boundarySeconds: t.risk.has(i) ? t.risk.get(i) : null,
+      nextBoundarySeconds: t.risk.has(i + 1) ? t.risk.get(i + 1) : null,
+    });
+  }
+
   /**
    * Dương lịch → Âm lịch VN. Mặc định dựng lịch theo calendarTz (phương án Bắc).
    * @returns {{day:number, month:number, year:number, leap:boolean}}
@@ -155,7 +250,15 @@
     const hit = cache.get(key);
     if (hit) return hit;
     const dayNumber = jdFromDate(dd, mm, yy);
-    // Ước lượng chỉ số kỳ sóc theo kỳ trung bình có thể lệch 1 so với sóc thật (gây "mùng 0" ở
+    const table = monthTable(tz);
+    const ti = table ? findMonth(table, dayNumber) : -1;
+    if (ti >= 0) {
+      const res = Object.freeze({ day: dayNumber - table.starts[ti] + 1, month: table.months[ti], year: table.years[ti], leap: table.leaps[ti] });
+      if (cache.size > 5000) cache.clear();
+      cache.set(key, res);
+      return res;
+    }
+    // Ngoài bảng: công thức xấp xỉ. Ước lượng chỉ số kỳ sóc theo kỳ trung bình có thể lệch 1 so với sóc thật (gây "mùng 0" ở
     // 07/05/2054, 09/04/2062) → dò lại đến khi sóc(k) ≤ ngày < sóc(k+1).
     let k = floor((dayNumber - 2415021.076998695) / 29.530588853);
     while (newMoonDay(k + 1, tz) <= dayNumber) k++;
@@ -199,6 +302,11 @@
    */
   function lunarToSolar(lDay, lMonth, lYear, lLeap = false, tz, region = 'bac') {
     const run = (z) => {
+      const table = monthTable(z);
+      if (table && lYear >= table.yearFrom && lYear <= table.yearTo) {
+        const i = table.index.get(`${lYear}:${lMonth}:${lLeap ? 1 : 0}`);
+        return i === undefined ? null : jdToDate(table.starts[i] + lDay - 1);
+      }
       let a11, b11;
       if (lMonth < 11) { a11 = lunarMonth11(lYear - 1, z); b11 = lunarMonth11(lYear, z); }
       else { a11 = lunarMonth11(lYear, z); b11 = lunarMonth11(lYear + 1, z); }
@@ -297,7 +405,7 @@
 
   NT.calendar = Object.freeze({
     TZ_VN, VERIFIED_RANGE, SUPPORTED_RANGE, jdFromDate, jdToDate, solarToLunar, solarToLunarVN, lunarToSolar,
-    lunarYearZhi, lunarYearGan, equationOfTime, trueSolarTime, calendarTz, civilTz, civilTzNote, fmtTz, inVerifiedRange,
+    lunarMonthInfo, solarTermOn, lunarYearZhi, lunarYearGan, equationOfTime, trueSolarTime, calendarTz, civilTz, civilTzNote, fmtTz, inVerifiedRange,
     solarToGanZhi,
   });
 })(globalThis.NT ??= {});

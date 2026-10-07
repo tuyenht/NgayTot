@@ -283,6 +283,10 @@
     const hdNoteHtml = hdCompare && hdCompare.differs
       ? `<p class="source-note" id="month-hd-diff-note">Lưu ý: ứng dụng tính ngày hoàng đạo theo tiết khí nên ghi ngày này là ${hdCompare.bySolarTerm ? 'hoàng đạo' : 'hắc đạo'}; nếu tra theo tháng âm thì ngày này là ${hdCompare.byLunarMonth ? 'hoàng đạo' : 'hắc đạo'}. Các nguồn không thống nhất.</p>`
       : '';
+    const conv = NT.dateConvert ? NT.dateConvert.solarToLunar({ day: d, month: m, year: y }) : null;
+    const boundaryNoteHtml = conv && conv.ok && conv.flags.includes('BOUNDARY_RISK')
+      ? `<p class="source-note" id="month-boundary-note">Lưu ý: ${esc(conv.notes.filter((n) => n.startsWith('Trăng non')).join(' '))}</p>`
+      : '';
     const calendarInfoHtml = `
       <ul class="why">
         <li>Thần nhật: <b>${esc(tianShenName || '—')}</b> (${isHuangDao ? 'hoàng đạo' : 'hắc đạo'})</li>
@@ -290,6 +294,7 @@
         <li>${esc(kystr)}</li>
       </ul>
       ${hdNoteHtml}
+      ${boundaryNoteHtml}
     `;
 
     // 12 Giờ hoàng đạo

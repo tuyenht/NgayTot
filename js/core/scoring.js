@@ -45,7 +45,9 @@
       jiShen: lunar.getDayJiShen(), xiongSha: lunar.getDayXiongSha(),
       zhixing: lunar.getZhiXing(), xiu: lunar.getXiu(), xiuLuck: lunar.getXiuLuck(),
       tianShen: lunar.getDayTianShen(), tianShenLuck: lunar.getDayTianShenLuck(),
-      jieqi: lunar.getJieQi(), nayin: lunar.getDayNaYin(),
+      // Ngày chứa tiết khí tính theo giờ Việt Nam từ bảng đã tính trước (14.2 dòng 14); thiếu bảng thì theo thư viện (giờ UTC+8)
+      jieqi: (() => { const st = NT.calendar.solarTermOn ? NT.calendar.solarTermOn(d, m, y) : undefined; return st === undefined ? lunar.getJieQi() : (st ? st.key : ''); })(),
+      nayin: lunar.getDayNaYin(),
       chongZhi: (lunar.getDayZhiIndex() + 6) % 12,
       sha: lunar.getDaySha(),
     });
