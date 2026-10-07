@@ -5,7 +5,7 @@
  * không mang mã phiên bản; nếu lấy từ bộ nhớ đệm trước thì người dùng cũ kẹt ở bản cũ sau mỗi lần cập nhật.
  * Đổi CACHE_NAME khi thay danh sách tệp để dọn bộ nhớ đệm cũ.
  */
-const CACHE_NAME = 'ngaytot-pwa-v4';
+const CACHE_NAME = 'ngaytot-pwa-v5';
 const NETWORK_TIMEOUT_MS = 4000;
 const FONT_FILES = [
   '400-0', '400-1', '400-2', '500-3', '500-4', '500-5', '600-6', '600-7', '600-8',

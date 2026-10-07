@@ -649,10 +649,13 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   // Kho văn khấn sau lượt đối chiếu nguồn 2026-10-07
   const allPrayers = NT.prayers.PRAYERS;
   const intro = allPrayers.filter((p) => p.kind === 'gioi_thieu');
-  eq('55 mục: 47 bài khấn và 8 bài giới thiệu lễ của các dân tộc; bài giới thiệu không có lời khấn, không có biến điền',
+  eq('53 mục: 45 bài khấn và 8 bài giới thiệu lễ của các dân tộc; bài giới thiệu không có lời khấn, không có biến điền',
     [allPrayers.length, intro.length, intro.every((p) => p.category === 'dan_toc_thieu_so' && !/Nam mô|Con kính lạy|\{\{/.test(p.content)),
       allPrayers.filter((p) => p.category === 'dan_toc_thieu_so' && p.kind !== 'gioi_thieu').length],
-    [55, 8, true, 0]);
+    [53, 8, true, 0]);
+  eq('Kho văn khấn không có nhóm hay bài dâng sao giải hạn (PRD 1.3, QĐ-24)',
+    [NT.prayers.CATEGORIES.some((c) => /sao/i.test(c.id)), allPrayers.filter((p) => /dâng sao|giải sao|giải hạn|Tinh Quân/i.test(p.title + ' ' + p.content)).map((p) => p.id)],
+    [false, []]);
   const twice = allPrayers.filter((p) => p.kind !== 'gioi_thieu').filter((p) => {
     const inv = p.content.split('\n').filter((l) => l.startsWith('Con kính lạy')).join(' ');
     return [/Thổ [đĐ]ịa|Thổ Công/g, /Thành [hH]oàng/g, /Thái Tuế/g].some((re) => (inv.match(re) || []).length > 1);

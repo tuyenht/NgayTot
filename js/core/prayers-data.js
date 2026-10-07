@@ -27,7 +27,6 @@
     { id: 'vong_doi', name: 'Nghi Lễ Vòng Đời', icon: '👶', desc: 'Cúng Mụ đầy tháng, thôi nôi, dạm ngõ, ăn hỏi, thành hôn, mừng thọ' },
     { id: 'nha_dat_kinh_doanh', name: 'Nhà Đất & Khởi Sự Kinh Doanh', icon: '🏗️', desc: 'Động thổ, cất nóc, nhập trạch, khai trương, bồi hoàn địa mạch' },
     { id: 'chua_den_mieu_phu', name: 'Chùa, Đình, Đền, Miếu, Phủ', icon: '🏛️', desc: 'Lễ Phật, Đức Ông, Thánh Mẫu Tam Tứ Phủ, Đức Thánh Trần, Thành Hoàng' },
-    { id: 'dang_sao_giai_han', name: 'Dâng Sao Giải Hạn', icon: '⭐', desc: 'Bài khấn chung và 9 sao Cửu Diệu: La Hầu, Kế Đô, Thái Bạch...' },
     { id: 'vung_mien_dac_thu', name: 'Đặc Thù Vùng Miền (Bắc - Trung - Nam)', icon: '🗺️', desc: 'Cúng Đất Đai Bác Tánh, Cúng Âm Hồn Huế, Bà Chúa Xứ, Vía Thần Tài, Kỳ Yên' },
     { id: 'dan_toc_thieu_so', name: 'Bản Sắc Dân Tộc Truyền Thống', icon: '🌾', desc: 'Mường, Tày, Nùng, Thái, Dao, Khmer Nam Bộ, Chăm' }
   ]);
@@ -1014,57 +1013,6 @@ Con kính lạy Tướng quân Yết Kiêu, Dã Tượng, các quan tướng Tr�
 Tín chủ con là: {{GIA_CHU_NAME}}, ngụ tại: {{GIA_CHU_ADDRESS}}.
 
 Hôm nay con thành kính dâng hương đăng hoa quả trước đền linh từ. Kính xin Đức Thánh Trần anh linh giáng trần khu trừ tà khí ám muội, trừ tai giải ách, hộ trì cho gia môn kiên cường vững chí, công danh hiển đạt, gia đạo thái hòa.
-
-Nam mô A Di Đà Phật! (3 lần, 3 lạy)`
-    },
-
-    // =========================================================================
-    // 8. DÂNG SAO GIẢI HẠN (CỬU DIỆU NIÊN HẠN)
-    // =========================================================================
-    {
-      id: 'vk_dang_sao_chung',
-      title: 'Văn khấn Dâng sao giải hạn Bản Mệnh (Đầu năm)',
-      category: 'dang_sao_giai_han',
-      region: 'toan_quoc',
-      ethnicity: 'kinh',
-      occasion: 'Tháng Giêng âm lịch (từ mùng 8 đến rằm tháng Giêng)',
-      meaning: 'Cầu xin Tinh Đẩu chư vị Tinh Quân che chở, hóa giải hung họa, nghênh đón cát lành cho các tuổi gặp sao xấu. Lưu ý: Giáo hội Phật giáo Việt Nam cho biết dâng sao giải hạn không phải nghi lễ Phật giáo; đây là tập tục dân gian.',
-      offerings: 'Đèn nến thắp theo số lượng sao quy định, bài vị màu sắc tương ứng với ngũ hành sao, mũ áo thần linh, hoa quả tươi, nước sạch, trầu cau, gạo muối.',
-      taboos: 'Hướng quay bàn lễ và số ngọn nến phải theo đúng quy cách của từng vị Tinh Quân.',
-      content: `Nam mô A Di Đà Phật! (3 lần, 3 lạy)
-
-Con kính lạy chín phương Trời, mười phương Chư Phật, Chư Phật mười phương.
-Con kính lạy ngài Tả Nam Tào Lục Ty Duyên Thọ Tinh Quân, ngài Hữu Bắc Đẩu Cửu Hàm Giải Ách Tinh Quân.
-Con kính lạy chư vị Tinh Quân cai quản bản mệnh niên hạn năm {{NAM_AM}}.
-
-Tín chủ con là: {{GIA_CHU_NAME}}, sinh năm {{GIA_CHU_AGE}}.
-Ngụ tại: {{GIA_CHU_ADDRESS}}.
-
-Đầu xuân năm mới, xét thấy trần gian bản mệnh con năm nay gặp niên vận Tinh Quân chiếu mệnh. Con xin thành tâm thiết lập hương án hoa đăng kính dâng chư vị Thần linh.
-Cúi xin Tinh Quân giáng lâm án tiền chấp kỳ lễ vật: Hóa giải sao xấu hung tinh, tăng thêm cát lành phước đức, giúp con một năm bình an mạnh khỏe, tai qua nạn khỏi, vạn sự hanh thông.
-
-Nam mô A Di Đà Phật! (3 lần, 3 lạy)`
-    },
-    {
-      id: 'vk_sao_thai_bach',
-      title: 'Văn khấn Cúng giải sao Thái Bạch (Tây Phương Kim Tinh)',
-      category: 'dang_sao_giai_han',
-      region: 'toan_quoc',
-      ethnicity: 'kinh',
-      occasion: 'Tối ngày 15 âm lịch hàng tháng (đặc biệt rằm tháng Giêng), thắp 8 ngọn nến hướng Tây',
-      meaning: '"Thái Bạch quét sạch cửa nhà", cúng giải trừ hao tài tán của, kiện tụng thị phi cho người gặp sao Thái Bạch. Lưu ý: đây là tập tục dân gian, không phải nghi lễ Phật giáo.',
-      offerings: '8 ngọn nến, bài vị giấy trắng ghi dòng chữ: "Tây Phương Canh Tân Kim Đức Thái Bạch Tinh Quân", hoa quả màu trắng, bánh kẹo trắng, nước trong, trầu cau.',
-      taboos: 'Đây là tập tục dân gian; không có căn cứ để coi năm gặp sao này là năm xấu.',
-      content: `Nam mô A Di Đà Phật! (3 lần, 3 lạy)
-
-Con kính lạy ngài Tả Nam Tào Lục Ty Duyên Thọ Tinh Quân, ngài Hữu Bắc Đẩu Cửu Hàm Giải Ách Tinh Quân.
-Con kính lạy Tây Phương Canh Tân Kim Đức Thái Bạch Tinh Quân vị tiền.
-
-Tín chủ con là: {{GIA_CHU_NAME}}, sinh năm {{GIA_CHU_AGE}}.
-Ngụ tại: {{GIA_CHU_ADDRESS}}.
-
-Hôm nay ngày 15 âm lịch, con thiết lập đàn lễ hướng về chính Tây, thắp 8 ngọn đèn nến tinh tươm, dâng phẩm vật kính bái Tinh Quân.
-Cúi xin Thái Bạch Tinh Quân phù hộ: Tiêu trừ vận hạn hao tài, giải tán thị phi oan trái, ban cho gia đạo bình yên, tiền tài tích tụ, sở cầu như ý.
 
 Nam mô A Di Đà Phật! (3 lần, 3 lạy)`
     },
