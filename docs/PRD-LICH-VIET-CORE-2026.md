@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.13 — thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
+| Phiên bản | 4.14 — thêm QĐ-33 đến QĐ-36 (lõi tra bảng tháng âm lịch dựng từ bảng thiên văn; ngoại lệ thứ ba ở 13.4; 4.2 và 4.3 ghi theo hiện trạng mới). Bản 4.13: thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
 | Ngày cập nhật | 2026-10-07 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
@@ -210,14 +210,19 @@ Bỏ khỏi v3.0: endpoint `POST /api/v3/fengshui/evaluate`, `x-api-key`, giới
 
 ### 4.2 Trạng thái chuyển tiếp
 
-Cho đến khi có bảng đóng băng (giai đoạn G1–G2, mục 15), tầng A và B tiếp tục dùng thuật toán đang có trong `js/core/calendar-vn.js` (Hồ Ngọc Đức, công thức xấp xỉ Meeus) và `vendor/lunar.js` (6tail, tính theo UTC+8). Các lỗi đã biết của hai thuật toán này đã vá ở G0; phần còn lại ghi ở 13.3 và 14.2 (dòng 14, 27).
+Trước ngày 2026-10-07, tầng A và B dùng thuật toán trong `js/core/calendar-vn.js` (Hồ Ngọc Đức, công thức xấp xỉ Meeus) và `vendor/lunar.js` (6tail, tính theo UTC+8). Các lỗi đã biết của hai thuật toán này đã vá ở G0; phần còn lại ghi ở 13.3 và 14.2 (dòng 14, 27).
+
+**Từ 2026-10-07 (QĐ-33):** ngày mùng Một, tháng nhuận và ngày chứa tiết khí được tra từ hai bảng sinh từ `data/astro_events.json` (`js/core/lunar-months.js`, `js/core/solar-terms.js`); thuật toán trong `calendar-vn.js` chỉ còn dùng khi ngày nằm ngoài bảng. Nghi/kỵ, thần sát, Trực, Tú và can chi tháng theo tiết khí vẫn lấy từ `vendor/lunar.js` (UTC+8) cho đến khi có `day_facts`.
 
 ### 4.3 Thành phần mã hiện có
 
 | Tệp | Vai trò |
 | --- | --- |
 | `vendor/lunar.js` | lunar-javascript v1.7.7 (MIT): nghi/kỵ, thần sát, Trực, Tú, tiết khí theo UTC+8 |
-| `js/core/calendar-vn.js` | Âm lịch Việt Nam, giờ Mặt Trời thực |
+| `js/core/calendar-vn.js` | Âm lịch Việt Nam (tra bảng; công thức xấp xỉ làm dự phòng), giờ Mặt Trời thực |
+| `js/core/lunar-months.js`, `js/core/solar-terms.js` | Bảng tháng âm lịch và thời điểm 24 tiết khí, sinh tự động từ `data/astro_events.json`; không sửa tay |
+| `js/core/date-convert.js` | Đổi ngày hai chiều dương ↔ âm dùng chung cho hai bản, kèm cờ và lý do khi ngày không tồn tại |
+| `data/astro_events.json`, `tools/astro/` | Bảng sóc và tiết khí đóng băng (G1) và các công cụ sinh, đối chiếu bảng; chạy trên máy phát triển |
 | `js/core/bazi.js` | Lá số, vượng suy, Dụng thần |
 | `js/core/activities.js` | Hồ sơ việc |
 | `js/core/scoring.js` | Chấm ngày giờ, tìm ngày |
@@ -982,10 +987,11 @@ Kết quả hiện tại của từng ca nằm ở `HIEN-TRANG.md`, mục "Ca ki
 
 ### 13.4 Kỳ vọng kiểm thử phải đổi có chủ ý
 
-Hai kỳ vọng trong `tests/run-tests.mjs` mã hóa hành vi mà tài liệu này bãi bỏ. Đổi chúng không vi phạm nguyên tắc 6 ở mục 2. Cả hai đã được đổi ở G0:
+Các kỳ vọng dưới đây trong `tests/run-tests.mjs` mã hóa hành vi mà tài liệu này bãi bỏ hoặc thay nguồn tính. Đổi chúng không vi phạm nguyên tắc 6 ở mục 2. Hai kỳ vọng đầu đã đổi ở G0, kỳ vọng thứ ba đổi ngày 2026-10-07 (QĐ-34):
 
 - "Động thổ năm phạm Kim lâu → không đề xuất ngày nào": bỏ, thay bằng kỳ vọng Kim lâu chỉ là dòng thông tin (bảng 8.3).
 - "Phẫu thuật … có hướng Hỷ thần/Tài thần": bỏ, thay bằng kỳ vọng việc y tế không trả dòng đánh giá nào (3.1).
+- "Golden UTC+8 so với 6tail 1929–2100: 0 ngày lệch": thay bằng "chỉ lệch một tháng mang cờ ranh giới (30 ngày từ 07/08/2097, điểm sóc 84 giây sau nửa đêm UTC+8)" kèm kỳ vọng mới "1929–1975 lệch 0 ngày". Lý do: từ QĐ-33 lõi tra bảng dựng từ bảng thiên văn; ở tháng đó hai bên ngoại suy ΔT lệch nhau khoảng 90 giây; âm lịch Việt Nam không dùng UTC+8 sau 1975.
 
 ### 13.5 Quy tắc vận hành
 
@@ -1039,7 +1045,7 @@ G1 làm trước W1 và M1 (QĐ-31, giữ QĐ-03). Thứ tự giữa W1, M1 và 
 
 ## 16. Quyết định của chủ dự án
 
-Bảng quyết định QĐ-01 đến QĐ-32, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
+Bảng quyết định QĐ-01 đến QĐ-36, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
 
 | Mã | Quyết định |
 | --- | --- |
@@ -1075,6 +1081,10 @@ Bảng quyết định QĐ-01 đến QĐ-32, kèm phương án đã cân nhắc 
 | QĐ-30 | Bảng ngày lễ có ở cả mobile; bài khấn trên web cho điền tên tạm thời, không lưu; mobile có sự kiện âm lịch ngoài giỗ (1.5) |
 | QĐ-31 | Thêm giai đoạn W1 (bản web đợt đầu) và M1 (đóng gói bản mobile); G1 làm trước (15.1) |
 | QĐ-32 | `backend/` và các tệp liên quan ứng dụng khác chuyển ra ngoài thư mục dự án |
+| QĐ-33 | Cả ứng dụng tra bảng tháng âm lịch dựng từ bảng thiên văn đóng băng; công thức xấp xỉ chỉ là dự phòng (4.2) |
+| QĐ-34 | Đổi kỳ vọng của phép kiểm so với thư viện lịch ở UTC+8: ngoại lệ thứ ba ở 13.4 |
+| QĐ-35 | Tìm nguồn in chính thức của Việt Nam để đối chiếu các tháng có trăng non sát nửa đêm (2031, 2072, 2077) |
+| QĐ-36 | Lịch tháng và sổ giỗ hiện cảnh báo trăng non sát nửa đêm; ngày chứa tiết khí theo giờ Việt Nam |
 
 ---
 
