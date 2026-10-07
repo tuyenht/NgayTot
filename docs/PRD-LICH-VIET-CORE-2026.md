@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.11 — hai bản web và mobile dùng chung phần lõi (QĐ-12 đến QĐ-14); lưu dữ liệu theo từng bản (QĐ-15 thay QĐ-07); Lý Thuần Phong, Tài thần, hoàng đạo (QĐ-16); bỏ bảng chấm điểm của lịch tháng (QĐ-17); kho văn khấn có điều kiện (QĐ-18). Thân các mục 1, 4.1, 7, 8.3, 12 chưa viết lại theo các quyết định này: khi mâu thuẫn, `QUYET-DINH.md` thắng |
+| Phiên bản | 4.13 — thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
 | Ngày cập nhật | 2026-10-07 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
@@ -33,7 +33,9 @@ Khi các tài liệu mâu thuẫn, bản này chọn theo thứ tự: an toàn v
 
 ### 1.1 Sản phẩm
 
-Ứng dụng web tĩnh giúp người Việt xem thông tin âm lịch và chọn ngày giờ cho một việc, cá nhân hóa theo lá số Tứ trụ (Bát tự) của người làm việc đó. Mọi kết luận hiển thị được lý do, nguồn và mức tin cậy; người dùng tự quyết.
+Sản phẩm giúp người Việt xem thông tin âm lịch và chọn ngày giờ cho một việc, cá nhân hóa theo lá số Tứ trụ (Bát tự) của người làm việc đó. Mọi kết luận hiển thị được lý do, nguồn và mức tin cậy; người dùng tự quyết.
+
+Sản phẩm có **hai bản dùng chung một phần lõi tính toán** (`js/core`, QĐ-12): **bản web** là các trang tĩnh phục vụ tìm kiếm theo từ khóa, không lưu dữ liệu cá nhân, không quảng cáo (QĐ-14, QĐ-27); **bản mobile** là ứng dụng đầy đủ, là chính ứng dụng web được đóng gói, lưu dữ liệu trên máy người dùng (QĐ-13, QĐ-15). Mọi con số về ngày, giờ chỉ được tính ở phần lõi. Không máy chủ, không tài khoản. Giao diện của cả hai bản thiết kế sau khi chốt yêu cầu; tính năng nào thuộc bản nào: mục 1.5.
 
 ### 1.2 Trong phạm vi
 
@@ -42,13 +44,21 @@ Khi các tài liệu mâu thuẫn, bản này chọn theo thứ tự: an toàn v
 - Chọn ngày cho việc đơn lẻ (mục 9) và chuỗi nghi lễ nhiều bước: cưới hỏi, làm nhà, tang lễ và giỗ, Tết (mục 10).
 - Xem thông tin cho ngày đã bị ấn định (thi cử, phỏng vấn, lịch hỏa táng).
 - Xuất tệp `.ics`, sao chép tóm tắt.
+- Lịch tháng và thẻ chi tiết ngày; bảng 24 tiết khí; bảng ngày lễ (QĐ-21).
+- Đồng hồ canh giờ; giờ xuất hành Lý Thuần Phong và hướng Tài thần kèm nhãn "tập tục dân gian, các nguồn không thống nhất" (QĐ-16); hướng Hỷ thần, Hạc thần; la bàn theo cảm biến của máy.
+- Kho văn khấn theo các điều kiện ở 7.8 (QĐ-18, QĐ-20, QĐ-24).
+- Chỉ ở bản mobile: sổ giỗ và sự kiện âm lịch, nhắc lịch bằng thông báo trên máy, sao lưu và khôi phục bằng tệp, widget (QĐ-15, QĐ-22, QĐ-23, QĐ-26).
 
 ### 1.3 Ngoài phạm vi
 
-- Luận đoán vận mệnh, tử vi, bói toán; "hóa giải" hạn; dâng sao giải hạn.
+- Luận đoán vận mệnh, tử vi, bói toán; "hóa giải" hạn; dâng sao giải hạn và tra sao Cửu Diệu; gieo quẻ, xin xăm; xem hợp tuổi cặp đôi, đối tác; chỉ số vận may hằng ngày (QĐ-24, QĐ-25).
 - Chọn giờ sinh mổ; xem ngày tốt xấu cho lịch mổ, lịch điều trị; gợi ý dời ngày điều trị.
-- Văn khấn, danh mục đồ cúng, màu xe hợp mệnh, tuổi mở hàng, khai quang vật phẩm, long mạch: không có nguồn kiểm chứng được.
-- Máy chủ ứng dụng, tài khoản người dùng, API công khai (xem 4.1).
+- Danh mục đồ cúng theo gói, màu xe hợp mệnh, tuổi mở hàng, khai quang vật phẩm, long mạch: không có nguồn kiểm chứng được. (Văn khấn đã vào phạm vi theo QĐ-18, điều kiện ở 7.8.)
+- Đặt tên con; chọn năm sinh con; trắc nghiệm cung phi; thước Lỗ Ban; soi hướng nhà (QĐ-25). Luật "ngũ hành tên" và dòng thông tin cung phi ở bảng 8.3 giữ nguyên mức đã ghi ở đó.
+- Dưỡng sinh, ăn uống, bài thuốc theo tiết khí: là nội dung y tế (3.1).
+- Quảng cáo trên bản web (QĐ-27); thông báo viết theo lối câu khách (QĐ-25).
+- Nội dung chép hoặc viết lại từ ứng dụng khác (QĐ-18, QĐ-25).
+- Máy chủ ứng dụng, tài khoản người dùng, API công khai, lưu dữ liệu người dùng trên máy chủ (xem 4.1).
 - Mô hình ngôn ngữ (AI) không tham gia bất kỳ phép tính nào và không được sinh hay sửa bảng tra.
 
 ### 1.4 Phạm vi năm
@@ -58,6 +68,29 @@ Khi các tài liệu mâu thuẫn, bản này chọn theo thứ tự: an toàn v
 | 1929–2100 | Vùng cam kết chính xác, có dữ liệu chính thức để đối chiếu | Lập được |
 | 1912–1928, 2101–2199 | Tính được, gắn cờ `OUT_OF_VERIFIED_RANGE` | Lập được, kèm cờ |
 | Trước 1912 | Không tính; chỉ hiển thị nếu có bảng lịch cổ nhập vào | Không hỗ trợ: ô ngày sinh và khoảng tìm ngày giới hạn 1912–2100. Có thể mở lại sau G2 nếu có nhu cầu **[SL]** |
+
+### 1.5 Tính năng theo từng bản
+
+Bảng này ghi ở mức nhóm, theo quyết định ở cột Căn cứ. "Sau" nghĩa là chưa thuộc đợt đầu của bản đó. Cột "Dữ liệu lưu" mô tả bản làm việc hiện tại, không phải yêu cầu mới.
+
+| Nhóm tính năng | Bản web | Bản mobile | Dữ liệu lưu | Căn cứ |
+| --- | --- | --- | --- | --- |
+| Đổi ngày âm ↔ dương | Đợt đầu | Có | Không | QĐ-19 |
+| Giờ hoàng đạo, canh giờ hiện tại | Đợt đầu | Có | Không | QĐ-19 |
+| Lịch tháng và thẻ chi tiết ngày | Đợt đầu: năm hiện tại và hai năm kề, giữ ghi chú hoàng đạo hai cách tra; thẻ ngày không có hướng xuất hành và Lý Thuần Phong | Có | Không | QĐ-14, QĐ-16, QĐ-17, QĐ-19, QĐ-28 |
+| Bảng 24 tiết khí | Đợt đầu: chỉ ghi ngày, không ghi giờ | Có | Không | QĐ-19 |
+| Bảng ngày lễ | Sau đợt đầu (hạng mục làm mới) | Có (hạng mục làm mới) | Không | QĐ-21, QĐ-30 |
+| Kho văn khấn | Sau khi có người đọc duyệt với sách in | Có, kèm câu ghi mức đã đối chiếu | Mobile: hồ sơ điền bài khấn (họ tên, năm sinh, địa chỉ, vùng miền, dân tộc). Web: cho điền tên tạm thời, không lưu | QĐ-18, QĐ-20, QĐ-24, QĐ-30 |
+| Chọn ngày theo việc, lá số, ngày cố định, lịch trình ngày cưới, xuất `.ics` | Không ở đợt đầu; mở rộng chỉ sau khi đo | Có | Không ở cả hai bản | QĐ-15, QĐ-19 |
+| Chuỗi nghi lễ; việc thêm mới (xông đất, sửa nhà, sửa mộ, cải táng) | Không | Có (G4) | Chưa quyết (QĐ-15 hiện ghi phần chọn ngày không lưu gì) | QĐ-19; mục 9, 10 |
+| Lý Thuần Phong; hướng Hỷ thần, Tài thần, Hạc thần | Không, kể cả trong thẻ chi tiết ngày của lịch tháng | Có; Lý Thuần Phong và Tài thần kèm nhãn | Không | QĐ-16, QĐ-28 |
+| La bàn theo cảm biến | Không | Có | Không | QĐ-28 |
+| Sổ giỗ | Không | Có | Tên người mất, ngày tháng âm, ghi chú, mốc nhắc | QĐ-15, QĐ-22 |
+| Sự kiện âm lịch ngoài giỗ (sinh nhật âm, rằm, mùng một) | Không | Có | Chưa quyết | QĐ-30 |
+| Mốc sau tang (10.3) | Không | Có (G4) | Chưa quyết | Mục 10.3 |
+| Nhắc lịch bằng thông báo trên máy | Không | Có | Giờ nhắc, mốc nhắc | QĐ-13 |
+| Sao lưu, khôi phục bằng tệp; công tắc sao lưu đám mây của máy | Không | Có; đám mây mặc định tắt | Tệp sao lưu | QĐ-15, QĐ-23 |
+| Widget | Không | Có: ngày âm trước, giỗ sắp tới sau và mặc định tắt | Bảng ngày do lõi sinh sẵn | QĐ-26 |
 
 ---
 
@@ -132,6 +165,9 @@ Giới hạn pháp luật là loại ràng buộc duy nhất được phép **lo
 - Mọi phép tính chạy trên thiết bị người dùng. Ứng dụng không gửi họ tên, ngày giờ sinh hay bất kỳ dữ liệu hồ sơ nào ra mạng.
 - Không tải tài nguyên từ máy chủ bên thứ ba (phông chữ, script, phân tích truy cập): mỗi yêu cầu như vậy để lộ địa chỉ IP và thời điểm dùng. Phông chữ phải tự lưu trữ cùng trang. Chính sách CSP chỉ cho phép nguồn `'self'`.
 - **Lưu dữ liệu theo từng bản (QĐ-15, thay QĐ-07).** Bản web không ghi họ tên, ngày giờ sinh hay bất kỳ dữ liệu nhập nào vào bộ nhớ trình duyệt (`localStorage`, `sessionStorage`, IndexedDB, cookie). Bản mobile lưu sổ giỗ và hồ sơ điền văn khấn trên chính máy người dùng, không tài khoản, không gửi đi đâu, có sao lưu và khôi phục bằng tệp. Phần chọn ngày ở cả hai bản không lưu gì: đóng hoặc tải lại là mất dữ liệu đã nhập. Giao diện phải nói đúng phần nào có lưu. Trạng thái chuyển tiếp của bản làm việc: xem `HIEN-TRANG.md` dòng 40.
+- **Bản mobile giữ dữ liệu ở nơi bền (QĐ-22).** Sổ giỗ và hồ sơ điền văn khấn phải nằm ở nơi hệ điều hành không tự xóa khi máy đầy; không dựa vào bộ nhớ của trình duyệt nhúng.
+- **Bản sao lưu đám mây của điện thoại (QĐ-23).** Mặc định dữ liệu của ứng dụng không nằm trong bản sao lưu iCloud, Google của máy. Người dùng tự bật bằng một công tắc có câu nói rõ dữ liệu khi đó nằm trong bản sao lưu của chính họ và chủ ứng dụng không nhận được gì. Ứng dụng nhắc sao lưu bằng tệp sau khi thêm giỗ.
+- **Không quảng cáo (QĐ-27).** Bản web không đặt quảng cáo; không bản nào tải mã của mạng quảng cáo hay công cụ theo dõi.
 - Việc nào không cần dữ liệu cá nhân thì không hỏi (9.5). Lịch mổ, sinh mổ chỉ cần ngày giờ đã định.
 - Căn cứ pháp lý: Luật Bảo vệ dữ liệu cá nhân số 91/2025/QH15 và Nghị định 356/2025/NĐ-CP, cùng có hiệu lực 01/01/2026; Nghị định 356 thay Nghị định 13/2023/NĐ-CP mà v3.0 dẫn **[KC — đã tra lại]**.
 
@@ -150,7 +186,12 @@ Bỏ khỏi v3.0: yêu cầu "xử lý dạng chuỗi băm trong RAM cache". Kh�
 
 ### 4.1 Hình thái triển khai
 
-Web tĩnh: không máy chủ ứng dụng, không bước build bắt buộc, chạy được ngoại tuyến sau lần tải đầu (cần service worker — hiện chưa có).
+Hai bản, một phần lõi (QĐ-12 đến QĐ-14), không máy chủ ứng dụng:
+
+- **Phần lõi `js/core`**: mọi phép tính ngày, giờ. Giao diện, bộ sinh trang và widget chỉ đọc kết quả của lõi, không tự tính lại.
+- **Bản web**: các trang tĩnh sinh từ chính phần lõi bằng một bộ sinh trang chạy trên máy phát triển; phạm vi đợt đầu ở 1.5 (QĐ-19); không lưu dữ liệu cá nhân; không quảng cáo. Thư mục `backend/` không phát triển và đã chuyển ra ngoài thư mục dự án (QĐ-32).
+- **Bản mobile**: chính ứng dụng web được đóng gói, chạy nguyên phần lõi, thêm phần gốc của nền tảng cho thông báo nhắc lịch, kho lưu trữ bền (QĐ-22) và widget. Widget đọc bảng ngày do lõi sinh sẵn lúc đóng gói, mang số phiên bản của lõi (QĐ-26). Công cụ đóng gói chọn khi làm giao diện.
+- **Bản làm việc hiện tại** là một ứng dụng web duy nhất, chạy ngoại tuyến sau lần tải đầu nhờ `sw.js`; chưa có bộ sinh trang và chưa đóng gói (xem `HIEN-TRANG.md`).
 
 ```
 Công cụ ngoại tuyến (máy của người phát triển)        Trình duyệt người dùng
@@ -451,6 +492,15 @@ Không dùng bài viết trên mạng không dẫn được về sách hoặc v�
 - Bói toán mang danh Gia Cát Lượng (Khổng Minh): Lục Nhâm bấm quẻ, Gia Cát thần toán 384 quẻ — ngoài phạm vi theo 1.3.
 - Lịch xuất hành Khổng Minh (Đường Phong, Kim Thổ…): là tục truyền khẩu, xử lý theo dòng riêng ở bảng 8.3; không bao giờ là kỵ nặng hay góp chỉ số.
 
+### 7.8 Kho văn khấn (QĐ-18, QĐ-20, QĐ-24)
+
+- Bài khấn là bản rút gọn do ứng dụng soạn. Danh xưng, ngày lễ, lễ vật phải đối chiếu với nhiều nguồn; mỗi bài ghi rõ mức đã đối chiếu.
+- Không có lời hứa hẹn tài lộc; không câu kiêng kỵ tuyệt đối hóa thiếu căn cứ; không có bài dâng sao giải hạn.
+- Lễ do chức sắc của một cộng đồng cử hành (các dân tộc Mường, Tày, Nùng, Thái, Dao, Khmer, Chăm): chỉ giới thiệu, không soạn lời khấn.
+- Không dùng nội dung chép hoặc viết lại từ ứng dụng khác; kho của ứng dụng khác chỉ để so.
+- Phần sắm lễ chỉ mô tả; không bán, không gói đồ cúng.
+- Bài khấn chỉ lên bản web sau khi một người am hiểu nghi lễ đọc duyệt với sách in; trước đó chỉ có ở bản mobile kèm câu ghi mức đã đối chiếu.
+
 ---
 
 ## 8. Đánh giá ngày giờ
@@ -499,7 +549,7 @@ Giữ nguyên engine hiện có: trụ năm và tháng theo thời điểm tiế
 | Sách ghi kỵ đích danh việc đang xem; "mọi việc không nên" | `UNVERIFIED` cho đến khi kiểm sách | Kỵ nặng | Có | Tắt bộ lọc |
 | Lục hợp, tam hợp, tương hình, lục hại giữa chi ngày và chi tuổi, chi ngày sinh | `CONSENSUS` | Thông tin | Có | — |
 | Giờ hoàng đạo, hắc đạo theo chi ngày | `CONSENSUS` | Thông tin | Có | — |
-| 12 thần trực nhật (ngày hoàng đạo, hắc đạo) | `SCHOOL_SPLIT` **[KC]** | Thông tin; hiện hai dòng khi hai phái khác nhau | Có (theo phái mặc định) | Đổi phái |
+| 12 thần trực nhật (ngày hoàng đạo, hắc đạo) | `SCHOOL_SPLIT` **[KC]** | Thông tin; hiện hai dòng khi hai phái khác nhau. Lịch tháng ghi chú ở những ngày cách tra theo tháng âm cho kết quả khác; việc có bỏ cộng trừ điểm ở các ngày đó hay không quyết ở G3 (QĐ-16) | Có (theo phái mặc định) | Đổi phái |
 | Thập nhị trực | `SCHOOL_SPLIT` **[CK]** | Thông tin | Có | — |
 | Sinh khắc nạp âm ngày với nạp âm năm sinh | `SCHOOL_SPLIT` **[CK]** | Thông tin | Có | — |
 | Nghi/kỵ việc liên quan; cát thần, hung sát theo ngày (gồm Thụ tử, Đại hao, Vãng vong) | `UNVERIFIED` | Thông tin | Có | — |
@@ -510,7 +560,7 @@ Giữ nguyên engine hiện có: trụ năm và tháng theo thời điểm tiế
 | Dương công kỵ nhật (13 ngày mỗi năm): tục dân gian gốc Trung Hoa, không thấy trong Hiệp Kỷ **[CK]**; bảng ngày trong `data.js` chưa ghi nguồn | `UNVERIFIED` | Thông tin | Không, cho đến khi có nguồn | Tắt |
 | Kim lâu, Hoang ốc, Tam tai, cung phi bát trạch | `DISPUTED` | Thông tin: một thẻ theo năm, kèm dị bản | Không | Bật "Tôi muốn kiêng": khi đó thành Kỵ nặng do người dùng tự chọn |
 | Trùng tang, trùng phục, hướng huyệt | `DISPUTED` | **Ẩn** | Không | Bật để hiện như Thông tin |
-| Phương vị Hỷ thần, Tài thần; giờ xuất hành Lý Thuần Phong | Chưa xếp loại **[CK]** | **Ẩn** cho đến khi đối chiếu ít nhất hai sách | Không | — |
+| Phương vị Hỷ thần, Tài thần; giờ xuất hành Lý Thuần Phong | Chưa xếp loại **[CK]** | Theo QĐ-16: Lý Thuần Phong xếp Đại An → Tốc Hỷ → Lưu Niên → Xích Khẩu → Tiểu Cát → Không Vong, không nằm trên thanh đầu trang; Lý Thuần Phong và hướng Tài thần hiện kèm câu "tập tục dân gian, các nguồn không thống nhất". Bản web không hiện (QĐ-28). Trong kết quả chọn ngày vẫn **ẩn** cho đến khi đối chiếu ít nhất hai sách (9.4) | Không | — |
 | Bất tương; sao tốt xấu theo tháng chưa có trang sách | Chờ nguồn | **Ẩn** | Không | — |
 | Lịch xuất hành Khổng Minh (Đường Phong, Kim Thổ…) | `VN_FOLK` **[CK — chưa có bảng có nguồn]** | **Ẩn**; khi bật hiện kèm câu: "Đây là phương pháp truyền khẩu dân gian, không thuộc hệ thống sách chọn ngày" | Không | Bật để hiện |
 | Sát chủ; năm không có Lập xuân; năm chẵn lẻ; Kim xà thiết tỏa; Không vong, Băng tiêu (V5.1 nêu nhưng không dẫn nguồn) | Không đưa vào | — | — | — |
@@ -873,10 +923,11 @@ Số đo hiện tại của từng hạng mục nằm ở `HIEN-TRANG.md`, mục
 | --- | --- |
 | Hiệu năng | Quét 1 năm cho một việc: ≤ 1 giây trên máy tính, ≤ 3 giây trên điện thoại tầm trung |
 | Kích thước tải đầu | ≤ 800 KB |
-| Ngoại tuyến | Sau lần tải đầu, mọi tính năng chạy không cần mạng |
-| Tái lập | Mỗi kết quả mang `engine_version` và `data_hash` |
+| Ngoại tuyến | Sau lần tải đầu, mọi tính năng chạy không cần mạng. Áp cho bản làm việc và bản mobile; với các trang tĩnh của bản web: chưa quyết |
+| Lưu trữ (bản mobile) | Dữ liệu người dùng nằm ở nơi hệ điều hành không tự xóa (QĐ-22); sao lưu, khôi phục bằng tệp; sao lưu đám mây của máy mặc định tắt (QĐ-23) |
+| Tái lập | Mỗi kết quả mang `engine_version` và `data_hash`; bảng ngày của widget và các trang của bản web mang số phiên bản của phần lõi đã sinh ra chúng (QĐ-26) |
 | Tiếp cận | Điều hướng được bằng bàn phím; màu không là kênh thông tin duy nhất của lịch nhiệt |
-| Bảo mật | CSP chỉ cho nguồn `'self'`; mọi chuỗi người dùng nhập đều được thoát ký tự trước khi chèn vào trang |
+| Bảo mật | CSP chỉ cho nguồn `'self'`; không mã quảng cáo, không công cụ theo dõi (QĐ-27); mọi chuỗi người dùng nhập đều được thoát ký tự trước khi chèn vào trang |
 | Tương thích | Hai phiên bản mới nhất của Chrome, Edge, Safari, Firefox |
 
 ---
@@ -965,8 +1016,12 @@ Cổng kiểm thử giữa các giai đoạn chính là tiêu chí nghiệm thu.
 | **G3 — Luật có nhãn và ngày cố định** | Dòng kết quả theo 8.2 (dòng 16); chế độ không chỉ số; use case đi thi đầy đủ (9.4) | Lớp 7, 8 |
 | **G4 — Chuỗi nghi lễ** | Cưới hỏi, làm nhà, tang lễ và giỗ, Tết; `legal_limits` theo tỉnh; nhiều người | Kiểm thử chuỗi và giới hạn pháp luật |
 | **G5 — Luật từ sách gốc (tùy chọn)** | Thay dần dữ liệu `UNVERIFIED` bằng bảng đã kiểm với Hán văn | Lớp 6 |
+| **W1 — Bản web đợt đầu** | Bộ sinh trang tĩnh chạy trên máy phát triển, sinh từ chính phần lõi; các trang của QĐ-19: đổi ngày âm ↔ dương, giờ hoàng đạo, lịch tháng của năm hiện tại và hai năm kề, bảng 24 tiết khí chỉ ghi ngày; thẻ ngày không có hướng xuất hành và Lý Thuần Phong (QĐ-28) | Mọi con số trên các trang đã sinh trùng kết quả của phần lõi cho toàn bộ ngày được sinh; trang không ghi gì vào bộ nhớ trình duyệt; không yêu cầu mạng nào tới tên miền khác, không quảng cáo (QĐ-27); đạt mục 12 **[SL]** |
+| **M1 — Đóng gói bản mobile** | Đóng gói chính ứng dụng web, chạy nguyên phần lõi (QĐ-13); kho lưu trữ bền (QĐ-22); sao lưu, khôi phục bằng tệp và công tắc sao lưu đám mây mặc định tắt (QĐ-23); thông báo nhắc lịch trên máy; widget đọc bảng ngày do lõi sinh sẵn (QĐ-26) | Bộ kiểm thử của phần lõi đạt trong bản đóng gói; sổ giỗ còn nguyên sau khi tắt mở ứng dụng và sau khi khôi phục từ tệp; bảng ngày của widget trùng kết quả của phần lõi; đã thử trên điện thoại thật Android và iOS **[SL]** |
 
 Giai đoạn nào đã đóng, tại commit nào, và việc nào còn mở: xem `HIEN-TRANG.md`, mục "Giai đoạn". G0b độc lập với G1–G2 nên có thể làm trước hoặc song song.
+
+G1 làm trước W1 và M1 (QĐ-31, giữ QĐ-03). Thứ tự giữa W1, M1 và G2–G5 chưa quyết. Giao diện của hai bản thiết kế sau khi chốt yêu cầu (QĐ-12), trước khi nghiệm thu W1 và M1. Cổng của W1, M1 do bên soạn tài liệu soạn từ các quyết định đã nêu; chủ dự án chỉnh được.
 
 ### 15.2 Rủi ro còn lại
 
@@ -984,7 +1039,7 @@ Giai đoạn nào đã đóng, tại commit nào, và việc nào còn mở: xem
 
 ## 16. Quyết định của chủ dự án
 
-Bảng quyết định QĐ-01 đến QĐ-18, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
+Bảng quyết định QĐ-01 đến QĐ-32, kèm phương án đã cân nhắc và lý do, nằm ở `QUYET-DINH.md`, mục 16. Tóm tắt để đọc PRD không phải mở tệp khác:
 
 | Mã | Quyết định |
 | --- | --- |
@@ -1001,11 +1056,25 @@ Bảng quyết định QĐ-01 đến QĐ-18, kèm phương án đã cân nhắc 
 | QĐ-11 | Giờ đề xuất của mọi việc chỉ lấy trong khung sinh hoạt: 05:00–20:59, riêng việc có tiệc, nhạc 07:00–20:59 (8.6) |
 | QĐ-12 | Hai bản: web (tìm kiếm theo từ khóa) và mobile (ứng dụng đầy đủ), dùng chung một phần lõi tính toán; giao diện thiết kế sau khi chốt yêu cầu |
 | QĐ-13 | Bản mobile là chính ứng dụng web được đóng gói, thêm phần gốc cho thông báo và widget; phải chạy nguyên phần lõi |
-| QĐ-14 | Bản web là trang tĩnh sinh từ phần lõi, không máy chủ, bắt đầu hẹp; `backend/` gác lại; chuyện quảng cáo còn mở |
+| QĐ-14 | Bản web là trang tĩnh sinh từ phần lõi, không máy chủ, bắt đầu hẹp; `backend/` gác lại; không quảng cáo (QĐ-27) |
 | QĐ-15 | Web không lưu dữ liệu cá nhân; mobile lưu trên máy, không tài khoản, có sao lưu bằng tệp (3.3) |
 | QĐ-16 | Lý Thuần Phong theo thứ tự phổ biến ở Việt Nam, kèm nhãn "các nguồn không thống nhất"; hoàng đạo giữ theo tiết khí, ghi chú ngày hai cách tính khác nhau (8.3) |
 | QĐ-17 | Lịch tháng không tự chấm điểm; gỡ bảng "6 kịch bản" |
 | QĐ-18 | Có kho văn khấn với điều kiện về nguồn và câu chữ; lễ của các dân tộc chỉ giới thiệu; không viết lại nội dung của ứng dụng khác |
+| QĐ-19 | Web đợt đầu: đổi ngày âm ↔ dương, giờ hoàng đạo, lịch tháng, 24 tiết khí chỉ ghi ngày; chọn ngày theo việc chỉ có ở mobile (1.5) |
+| QĐ-20 | Văn khấn chỉ lên web sau khi có người am hiểu đọc duyệt với sách in (7.8) |
+| QĐ-21 | Bảng ngày lễ là hạng mục làm mới, dữ liệu đặt trong lõi, tách khỏi bài khấn |
+| QĐ-22 | Bản mobile giữ sổ giỗ và hồ sơ khấn ở nơi hệ điều hành không tự xóa (3.3) |
+| QĐ-23 | Sao lưu đám mây của điện thoại mặc định tắt, người dùng tự bật (3.3) |
+| QĐ-24 | Gỡ hai bài dâng sao giải hạn; kho còn 45 bài khấn và 8 bài giới thiệu |
+| QĐ-25 | `PRODUCT_BLUEPRINT.md` hết hiệu lực; danh sách không làm ở 1.3 |
+| QĐ-26 | Widget chỉ đọc bảng ngày do phần lõi sinh sẵn lúc đóng gói (4.1) |
+| QĐ-27 | Bản web không đặt quảng cáo |
+| QĐ-28 | Bản web không hiện Lý Thuần Phong, hướng xuất hành, la bàn; các mục này chỉ có ở mobile (1.5) |
+| QĐ-29 | Giữ yêu cầu tải đầu ≤ 800 KB; khoảng cách hiện tại xử lý khi làm giao diện (12) |
+| QĐ-30 | Bảng ngày lễ có ở cả mobile; bài khấn trên web cho điền tên tạm thời, không lưu; mobile có sự kiện âm lịch ngoài giỗ (1.5) |
+| QĐ-31 | Thêm giai đoạn W1 (bản web đợt đầu) và M1 (đóng gói bản mobile); G1 làm trước (15.1) |
+| QĐ-32 | `backend/` và các tệp liên quan ứng dụng khác chuyển ra ngoài thư mục dự án |
 
 ---
 
