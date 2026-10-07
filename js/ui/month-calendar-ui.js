@@ -10,7 +10,8 @@
  *      5. Bottom-Left: Tuần tiết Sóc Vọng (🌕 Rằm 15 / 🌑 Mùng một)
  *      6. Bottom-Right: Ngày Giỗ Gia Tiên (🕯️) từ Sổ Giỗ
  *  - Bảng chú giải trực quan (Legend) giúp phân biệt rõ ràng không bao giờ nhầm lẫn.
- *  - Panel chi tiết ngày: 3 Trụ Can Chi, 6 Giờ Hoàng Đạo (với icon linh vật), Quẻ xuất hành Lý Thuần Phong, Hướng Hỷ/Tài Thần.
+ *  - Panel chi tiết ngày: chỉ thông tin lịch (3 Trụ Can Chi, thần nhật, sao, tục kiêng, 6 Giờ Hoàng Đạo, Hướng Hỷ/Tài Thần).
+ *    Không chấm điểm, không xếp loại ngày (QĐ-17): điểm chỉ có ở kết quả chọn ngày.
  */
 (function (NT) {
   'use strict';
@@ -197,7 +198,7 @@
         <!-- Vị trí 2 (Top-Right): Sao Cát (⭐) / Sao Xấu (★) / Bách Kỵ Hung Sát (⚠️) -->
         <div class="pos-top-right">
           ${isBachKy 
-            ? '<span class="indicator-bad" title="Ngày Bách Kỵ (Tam Nương/Nguyệt Kỵ) — Đại Kỵ Bất Khả Dụng">⚠️</span>' 
+            ? '<span class="indicator-bad" title="Ngày Tam Nương hoặc Nguyệt Kỵ (tục kiêng dân gian)">⚠️</span>'
             : (isStarGood 
               ? `<span class="indicator-good" title="Sao ${starName || 'Cát'} (Nhị Thập Bát Tú Cát Tinh)">⭐</span>` 
               : `<span class="indicator-bad-star" title="Sao ${starName || 'Hung'} (Nhị Thập Bát Tú Hung Tinh)">★</span>`)}
@@ -273,119 +274,25 @@
     const isNguyetKy = [5, 14, 23].includes(lunar.day);
 
     let kystr = '';
-    if (isTamNuong) kystr = 'Tam Nương (ngày 3, 7, 13, 18, 22, 27 âm lịch) : Trăm sự đều kỵ, chánh kỵ xuất hành, khởi công, giá thú';
-    else if (isNguyetKy) kystr = 'Nguyệt Kỵ (ngày 5, 14, 23 âm lịch) : "Mùng năm mười bốn hai ba - Đi chơi cũng thiệt nữa là đi buôn"';
-    else kystr = 'Không phạm bách kỵ lớn trong dân gian';
+    if (isTamNuong) kystr = 'Ngày Tam Nương (mùng 3, 7, 13, 18, 22, 27 âm lịch): dân gian thường kiêng khởi việc lớn';
+    else if (isNguyetKy) kystr = 'Ngày Nguyệt Kỵ (mùng 5, 14, 23 âm lịch): dân gian thường kiêng xuất hành, khởi việc lớn';
+    else kystr = 'Không rơi vào ngày Tam Nương, Nguyệt Kỵ';
 
-    // Đánh giá ma trận phối hợp 6 Kịch Bản giữa Thần Nhật (Hoàng/Hắc Đạo), Nhị Thập Bát Tú (Sao Cát/Hung) và Bách Kỵ
-    const isBachKy = isTamNuong || isNguyetKy;
-    let scenario = {};
-    if (isHuangDao && isBachKy) {
-      scenario = {
-        num: '5 / 6',
-        badgeCls: 'bad',
-        cardCls: 'bad-bg',
-        scoreCls: 'bad',
-        scoreText: 'Đại Kỵ (Ghi Đè) · 0đ',
-        name: 'Hoàng Đạo Phùng Bách Kỵ',
-        symbols: `🟡 Hoàng Đạo (${tianShenName}) + ⚠️ ${isTamNuong ? 'Tam Nương' : 'Nguyệt Kỵ'}`,
-        desc: `Dù ngày có Thần Hoàng Đạo (${tianShenName}) chiếu sáng nhưng lại phạm vào <b>${esc(kystr)}</b>. Theo tục xưa: <i>"Thần lành không bằng ngày kỵ"</i>, cơ chế Bách Kỵ Gatekeeper ghi đè toàn bộ điểm số về mức Cấm Kỵ.`,
-        dos: 'Tế tự nội bộ, đọc sách, lễ Phật sám hối, làm việc thiện nguyện.',
-        donts: 'Khởi công xây dựng, cất nóc, cưới hỏi, xuất hành xa, khai trương cửa hàng.'
-      };
-    } else if (!isHuangDao && isBachKy) {
-      scenario = {
-        num: '6 / 6',
-        badgeCls: 'dark',
-        cardCls: 'dark-bg',
-        scoreCls: 'bad',
-        scoreText: 'Cực Hung · 0đ',
-        name: 'Hắc Đạo Phùng Bách Kỵ',
-        symbols: `⚫ Hắc Đạo (${tianShenName}) + ⚠️ ${isTamNuong ? 'Tam Nương' : 'Nguyệt Kỵ'}`,
-        desc: `Ngày Hắc Đạo đồng thời phạm vào <b>${esc(kystr)}</b>. Đây là ngày sát khí hội tụ mạnh nhất trong tháng, năng lượng trường khí bất ổn định.`,
-        dos: 'An phận thủ thường tại gia, giữ tâm tĩnh lặng, giữ hòa khí gia đình.',
-        donts: 'Trăm việc đại sự đều kiêng cữ tuyệt đối. Tránh đi xa, tranh chấp, ký kết quan trọng.'
-      };
-    } else if (isHuangDao && isStarGood) {
-      scenario = {
-        num: '1 / 6',
-        badgeCls: 'good',
-        cardCls: 'good-bg',
-        scoreCls: 'good',
-        scoreText: 'Đại Cát · 90–100đ',
-        name: 'Song Cát Toàn Bích',
-        symbols: `🟡 Hoàng Đạo (${tianShenName}) + ⭐ Sao ${starName} (Cát Tinh 28 Tú)`,
-        desc: `Hội tụ trọn vẹn: Vừa là ngày Hoàng Đạo (${tianShenName} cát thần soi chiếu) vừa gặp Sao ${starName} là Cát Tinh trong Nhị Thập Bát Tú, lại không vướng Bách Kỵ. Trường khí cực kỳ cát tường, vạn sự hanh thông.`,
-        dos: 'Khởi công, động thổ, cất nóc, cưới hỏi rước dâu, khai trương, ký hợp đồng lớn, xuất hành cát lợi, nhập trạch.',
-        donts: 'Hầu như không kiêng kỵ việc gì, chỉ cần tránh các khung giờ xung với tuổi gia chủ.'
-      };
-    } else if (isHuangDao && !isStarGood) {
-      scenario = {
-        num: '2 / 6',
-        badgeCls: 'warn',
-        cardCls: 'warn-bg',
-        scoreCls: 'warn',
-        scoreText: 'Thứ Cát / Phân Hóa · 50–65đ',
-        name: 'Hoàng Đạo Đới Hung',
-        symbols: `🟡 Hoàng Đạo (${tianShenName}) + ★ Sao ${starName} (Hung Tinh 28 Tú)`,
-        desc: `Ngày có khí tiết thanh sáng nhờ Thần Hoàng Đạo (${tianShenName}), nhưng lại bị Sao ${starName} là Tú Hung trong Nhị Thập Bát Tú chiếu mệnh. Cần phân định rõ việc nào nên làm và việc nào bắt buộc phải tránh.`,
-        dos: 'Tế tự gia tiên, lễ Phật, cầu an giải hạn, họp mặt gia tộc, làm công đức, tu sửa nội thất nhẹ.',
-        donts: '<b>ĐẠI KỴ CẤT NÓC, ĐỘNG THỔ, CƯỚI HỎI, XUẤT HÀNH XA</b>. Nếu bắt buộc làm phải chọn giờ Hoàng Đạo cát nhất để chế hóa.'
-      };
-    } else if (!isHuangDao && isStarGood) {
-      scenario = {
-        num: '3 / 6',
-        badgeCls: 'info',
-        cardCls: 'info-bg',
-        scoreCls: 'info',
-        scoreText: 'Bình Hòa / Cứu Giải · 45–55đ',
-        name: 'Hắc Đạo Cát Diệu',
-        symbols: `⚫ Hắc Đạo (${tianShenName}) + ⭐ Sao ${starName} (Cát Tinh Cứu Giải)`,
-        desc: `Nhật thần tuy thuộc Hắc Đạo (${tianShenName}) nhưng lại được Sao ${starName} là Cát Tinh trong Nhị Thập Bát Tú soi chiếu hộ trì (*"Cát tinh đắc thời, hóa giải hung thần"*). Trường khí bình hòa, không gây họa hại.`,
-        dos: 'Giao dịch nội bộ, ký kết hợp đồng quy mô nhỏ, tạ lễ, an vị đồ thờ, mua sắm đồ dùng thường nhật.',
-        donts: 'Khởi công công trình đại quy mô, phá thổ san nền, khai trương rầm rộ, xuất hành đường trường.'
-      };
-    } else {
-      scenario = {
-        num: '4 / 6',
-        badgeCls: 'dark',
-        cardCls: 'dark-bg',
-        scoreCls: 'dark',
-        scoreText: 'Đại Hung · 20–35đ',
-        name: 'Trùng Hung Đại Bại',
-        symbols: `⚫ Hắc Đạo (${tianShenName}) + ★ Sao ${starName} (Hung Tinh 28 Tú)`,
-        desc: `Cả Thần Nhật (${tianShenName}) lẫn Nhị Thập Bát Tú (Sao ${starName}) đều là hung sát song hành, không có sao lành cứu giải. Khí trường u ám bất lợi cho mọi sự khởi đầu.`,
-        dos: 'Nghỉ ngơi, tĩnh dưỡng, giải quyết công việc thường nhật, dọn dẹp nhà cửa.',
-        donts: '<b>TUYỆT ĐỐI TRÁNH KHỞI SỰ ĐẠI SỰ</b>: Động thổ, xây nhà, cưới gả, khai trương, xuất hành lớn.'
-      };
-    }
-
-    const starAnalysisHtml = `
-      <div class="star-analysis-box ${scenario.cardCls}">
-        <div class="star-scenario-header">
-          <span class="star-scenario-badge ${scenario.badgeCls}">Kịch Bản ${scenario.num}</span>
-          <span class="star-scenario-score ${scenario.scoreCls}">${scenario.scoreText}</span>
-        </div>
-        <h4 class="star-scenario-title">${scenario.name}</h4>
-        <div class="star-scenario-symbols">${scenario.symbols}</div>
-        <p class="star-scenario-desc">${scenario.desc}</p>
-        <div class="star-action-grid">
-          <div class="star-col dos">
-            <div class="col-lbl">✅ NÊN LÀM:</div>
-            <div>${scenario.dos}</div>
-          </div>
-          <div class="star-col donts">
-            <div class="col-lbl">⛔ KIÊNG KỴ:</div>
-            <div>${scenario.donts}</div>
-          </div>
-        </div>
-        <button type="button" class="btn btn-sm btn-view-matrix-full btn-open-matrix-dialog">
-          📊 Đối chiếu toàn bộ 6 Kịch Bản Giao Thoa
-        </button>
-      </div>
+    // Thẻ chi tiết ngày chỉ nêu thông tin lịch, không chấm điểm, không xếp loại (QĐ-17)
+    const hdCompare = NT.canhClock?.compareDayHoangDao ? NT.canhClock.compareDayHoangDao(d, m, y) : null;
+    const hdNoteHtml = hdCompare && hdCompare.differs
+      ? `<p class="source-note" id="month-hd-diff-note">Lưu ý: ứng dụng tính ngày hoàng đạo theo tiết khí nên ghi ngày này là ${hdCompare.bySolarTerm ? 'hoàng đạo' : 'hắc đạo'}; nếu tra theo tháng âm thì ngày này là ${hdCompare.byLunarMonth ? 'hoàng đạo' : 'hắc đạo'}. Các nguồn không thống nhất.</p>`
+      : '';
+    const calendarInfoHtml = `
+      <ul class="why">
+        <li>Thần nhật: <b>${esc(tianShenName || '—')}</b> (${isHuangDao ? 'hoàng đạo' : 'hắc đạo'})</li>
+        <li>Sao (nhị thập bát tú): <b>${esc(starName || '—')}</b>${starName ? ` (${isStarGood ? 'sao tốt' : 'sao xấu'})` : ''}</li>
+        <li>${esc(kystr)}</li>
+      </ul>
+      ${hdNoteHtml}
     `;
 
-    // 12 Giờ hoàng đạo & Lý Thuần Phong
+    // 12 Giờ hoàng đạo
     let hoursDetails = [];
     if (NT.canhClock && NT.canhClock.getDayHoursDetails) {
       hoursDetails = NT.canhClock.getDayHoursDetails(gz.dChi, lunar.month, lunar.day);
@@ -432,10 +339,10 @@
           </div>
         </div>
 
-        <!-- Phân Tích Phối Hợp: Hoàng/Hắc Đạo & Nhị Thập Bát Tú / Bách Kỵ -->
+        <!-- Thông tin lịch của ngày: thần nhật, sao, tục kiêng (không điểm số) -->
         <div class="detail-section">
-          <h4 class="section-title">PHÂN TÍCH THẦN SÁT &amp; SAO CHIẾU MỆNH</h4>
-          ${starAnalysisHtml}
+          <h4 class="section-title">THÔNG TIN LỊCH CỦA NGÀY</h4>
+          ${calendarInfoHtml}
         </div>
 
         <!-- Giờ Hoàng Đạo trong ngày với Icon linh vật -->
@@ -456,6 +363,7 @@
         <!-- Hướng xuất hành -->
         <div class="detail-section">
           <h4 class="section-title">HƯỚNG XUẤT HÀNH CÁT LỢI</h4>
+          <p class="source-note">Hướng Tài thần là tập tục dân gian, các nguồn không thống nhất (lệch nhau ở ngày Mậu, Nhâm, Quý).</p>
           <div class="directions-pill-row">
             <span class="pill-dir hy">Hỷ Thần: <b>${directions.hyThan}</b></span>
             <span class="pill-dir tai">Tài Thần: <b>${directions.taiThan}</b></span>
@@ -560,152 +468,6 @@
       currentMonth = now.getMonth() + 1;
       selectedDate = now;
       renderMonthView(currentYear, currentMonth);
-    });
-
-    // Modal Ma Trận 6 Kịch Bản
-    const matrixDlg = $('#matrix-guide-dialog');
-    const openMatrix = (scenarioNum = null) => {
-      if (!matrixDlg) return;
-      if (!matrixDlg.open) {
-        matrixDlg.showModal();
-      }
-      if (scenarioNum) {
-        selectScenario(String(scenarioNum));
-      }
-    };
-    const closeMatrix = () => {
-      if (matrixDlg && matrixDlg.open) {
-        matrixDlg.close();
-      }
-    };
-
-    $('#btn-open-matrix-guide')?.addEventListener('click', () => openMatrix());
-    $('#matrix-dlg-close')?.addEventListener('click', (e) => {
-      e.preventDefault();
-      e.stopPropagation();
-      closeMatrix();
-    });
-    matrixDlg?.addEventListener('click', (e) => {
-      if (e.target === matrixDlg) closeMatrix();
-    });
-
-    // Delegation bảo đảm nút đóng luôn hoạt động
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('#matrix-dlg-close') || e.target.closest('.matrix-close-btn')) {
-        e.preventDefault();
-        e.stopPropagation();
-        closeMatrix();
-      }
-    });
-
-    // Nút mở Ma Trận bên trong thẻ chi tiết ngày
-    document.addEventListener('click', (e) => {
-      const btn = e.target.closest('.btn-open-matrix-dialog');
-      if (btn) {
-        const targetScen = btn.dataset.scenario || null;
-        openMatrix(targetScen);
-      }
-    });
-
-    // Hàm chọn Kịch bản Master-Detail
-    function selectScenario(scenId) {
-      const navItems = $$('.matrix-nav-item');
-      const cards = $$('#matrix-detail-stage .matrix-card');
-
-      navItems.forEach(item => {
-        const isMatch = item.dataset.scenario === scenId;
-        item.classList.toggle('active', isMatch);
-        if (isMatch) item.scrollIntoView?.({ block: 'nearest', behavior: 'smooth' });
-      });
-
-      cards.forEach(card => {
-        const isMatch = card.dataset.scenario === scenId;
-        card.style.display = isMatch ? '' : 'none';
-        card.classList.toggle('active', isMatch);
-      });
-    }
-
-    // Click chọn kịch bản ở Sidebar
-    $$('.matrix-nav-item').forEach(item => {
-      item.addEventListener('click', () => {
-        const scenId = item.dataset.scenario;
-        if (scenId) selectScenario(scenId);
-      });
-    });
-
-    // Chuyển đổi chế độ xem: Chi tiết vs Bảng đối chiếu
-    const btnViewCards = $('#btn-view-cards');
-    const btnViewTable = $('#btn-view-table');
-    const splitView = $('#matrix-split-view');
-    const tableView = $('#matrix-table-view');
-
-    function switchView(mode) {
-      if (mode === 'cards') {
-        btnViewCards?.classList.add('active');
-        btnViewCards?.setAttribute('aria-selected', 'true');
-        btnViewTable?.classList.remove('active');
-        btnViewTable?.setAttribute('aria-selected', 'false');
-        if (splitView) splitView.style.display = '';
-        if (tableView) tableView.style.display = 'none';
-      } else {
-        btnViewTable?.classList.add('active');
-        btnViewTable?.setAttribute('aria-selected', 'true');
-        btnViewCards?.classList.remove('active');
-        btnViewCards?.setAttribute('aria-selected', 'false');
-        if (splitView) splitView.style.display = 'none';
-        if (tableView) tableView.style.display = '';
-      }
-    }
-
-    btnViewCards?.addEventListener('click', () => switchView('cards'));
-    btnViewTable?.addEventListener('click', () => switchView('table'));
-
-    // Nút "Xem" từ hàng bảng đối chiếu
-    $$('.btn-table-view-detail').forEach(btn => {
-      btn.addEventListener('click', () => {
-        const scenId = btn.dataset.scenario;
-        switchView('cards');
-        if (scenId) selectScenario(scenId);
-      });
-    });
-
-    // Bộ lọc kịch bản bên trong Modal
-    $$('.matrix-filter-chip').forEach(chip => {
-      chip.addEventListener('click', () => {
-        $$('.matrix-filter-chip').forEach(c => c.classList.remove('active'));
-        chip.classList.add('active');
-        const filter = chip.dataset.filter;
-
-        // 1. Lọc Sidebar items
-        let firstVisibleScen = null;
-        let activeStillVisible = false;
-
-        $$('.matrix-nav-item').forEach(item => {
-          const match = (filter === 'all' || item.dataset.cat === filter);
-          item.style.display = match ? '' : 'none';
-          if (match) {
-            if (!firstVisibleScen) firstVisibleScen = item.dataset.scenario;
-            if (item.classList.contains('active')) activeStillVisible = true;
-          }
-        });
-
-        // Nếu kịch bản đang chọn bị ẩn bởi bộ lọc -> tự động kích hoạt kịch bản khả dụng đầu tiên
-        if (!activeStillVisible && firstVisibleScen) {
-          selectScenario(firstVisibleScen);
-        }
-
-        // 2. Lọc thẻ kịch bản & gán class .hidden chuẩn xác cho E2E
-        $$('.matrix-card').forEach(card => {
-          const match = (filter === 'all' || card.dataset.cat === filter);
-          card.classList.toggle('hidden', !match);
-        });
-
-        // 3. Lọc hàng trong bảng đối chiếu
-        $$('.matrix-overview-table .tbl-row').forEach(row => {
-          const match = (filter === 'all' || row.dataset.cat === filter);
-          row.style.display = match ? '' : 'none';
-        });
-      });
     });
   }
 

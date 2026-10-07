@@ -33,7 +33,6 @@
     <div class="canh-bar-inner">
       <span class="canh-badge">⏳ <span id="bar-chi-name">Canh Tuất</span> (<span id="bar-chi-span">19:00 – 20:59</span>)</span>
       <span class="canh-status-tag" id="bar-canh-status">🟡 Hoàng Đạo</span>
-      <span class="canh-lythuanphong" id="bar-canh-ltp">Lý Thuần Phong: <b id="bar-ltp-val">Tốc Hỷ (Cát)</b></span>
       <span class="canh-countdown" id="bar-countdown">Còn <b>-- phút</b></span>
       <span class="canh-clock-time" id="bar-clock-time">--:--:--</span>
     </div>
@@ -275,15 +274,12 @@
             <button type="button" class="btn btn-ghost btn-sm" id="btn-month-today">Hôm nay</button>
           </div>
           
-          <!-- Legend: Bảng giải thích 6 vị trí chỉ báo & Phím mở Ma Trận 6 Kịch Bản -->
+          <!-- Legend: Bảng giải thích 6 vị trí chỉ báo -->
           <div class="month-indicators-legend">
             <div class="legend-item" title="Góc trên cùng bên trái"><span class="legend-sym">🟡 / ⚫</span> <span>Góc trên-trái: Hoàng/Hắc Đạo</span></div>
             <div class="legend-item" title="Góc trên cùng bên phải"><span class="legend-sym">⭐ / ★ / ⚠️</span> <span>Góc trên-phải: Sao Cát (vàng) / Sao Xấu (xám) / Bách Kỵ</span></div>
             <div class="legend-item" title="Góc dưới cùng bên trái"><span class="legend-sym">🌕 / 🌑</span> <span>Góc dưới-trái: Rằm / Mùng một</span></div>
             <div class="legend-item" title="Góc dưới cùng bên phải"><span class="legend-sym">🕯️</span> <span>Góc dưới-phải: Giỗ Gia Tiên</span></div>
-            <button type="button" class="btn btn-sm btn-ghost btn-open-matrix-guide" id="btn-open-matrix-guide" title="Xem bảng đối chiếu & hướng dẫn hành sự chi tiết 6 kịch bản giao thoa giữa Thần Nhật, Tinh Tú và Bách Kỵ">
-              📊 Tra Cứu 6 Kịch Bản
-            </button>
           </div>
         </div>
 
@@ -439,6 +435,7 @@
                   <div class="god-meta">
                     <span class="god-title">Tài Thần (Kinh doanh, Đầu tư, Khai trương)</span>
                     <span class="god-val" id="compass-tai-than">Chính Tây</span>
+                    <span class="source-note" id="compass-tai-than-note">Tập tục dân gian, các nguồn không thống nhất: hướng Tài thần của ngày Mậu, Nhâm, Quý mỗi nguồn ghi một khác.</span>
                   </div>
                 </div>
                 <div class="god-dir-item hac">
@@ -455,6 +452,7 @@
             <div class="today-hours-table-card">
               <h3 class="card-subtitle">⏱️ 12 GIỜ HOÀNG ĐẠO &amp; LÝ THUẦN PHONG HÔM NAY</h3>
               <p class="hint">Từ 23:00 là giờ Tý của ngày hôm sau: bảng và phương vị chuyển sang ngày mới từ lúc đó.</p>
+              <p class="source-note" id="canh-ltp-note">Cột Lý Thuần Phong là tập tục dân gian, các nguồn không thống nhất về thứ tự sáu cung; bảng này xếp theo thứ tự phổ biến ở Việt Nam (Đại An, Tốc Hỷ, Lưu Niên, Xích Khẩu, Tiểu Cát, Không Vong).</p>
               <div class="table-scroller">
                 <table class="canh-table" id="canh-hours-table">
                   <thead>
@@ -469,6 +467,11 @@
                   <tbody id="canh-hours-tbody"></tbody>
                 </table>
               </div>
+              <details class="ltp-full" id="ltp-full">
+                <summary>Xem lời truyền khẩu đầy đủ của sáu cung</summary>
+                <p class="source-note">Lời truyền khẩu dân gian, chưa đối chiếu sách; các nguồn không thống nhất.</p>
+                <ul class="why" id="ltp-full-list"></ul>
+              </details>
             </div>
           </div>
         </div>
@@ -678,449 +681,6 @@
         <div class="countdown-number" id="countdown-sec-number">5</div>
         <p class="countdown-sub">Bắt đầu tự động cuộn bài khấn sau vài giây</p>
         <button type="button" class="btn btn-sm btn-ghost" id="btn-cancel-countdown">✕ Hủy bỏ</button>
-      </div>
-    </div>
-  </dialog>
-
-  <!-- Dialog Ma Trận 6 Kịch Bản Giao Thoa Hoàng Đạo × Nhị Thập Bát Tú × Bách Kỵ -->
-  <dialog class="sheet matrix-guide-dialog" id="matrix-guide-dialog" aria-labelledby="matrix-dlg-title">
-    <div class="sheet-head matrix-sheet-head">
-      <div class="matrix-head-main">
-        <span class="matrix-head-icon" aria-hidden="true">🧭</span>
-        <div>
-          <h2 class="sheet-title" id="matrix-dlg-title">Ma Trận Luận Giải 6 Kịch Bản Giao Thoa</h2>
-          <p class="matrix-head-sub">Đối chiếu Hoàng Đạo / Hắc Đạo × Nhị Thập Bát Tú × Bách Kỵ — Chuẩn mực trạch cát Á Đông</p>
-        </div>
-      </div>
-      <div class="matrix-head-right">
-        <!-- Chuyển chế độ xem: Chi tiết vs Bảng đối chiếu -->
-        <div class="matrix-view-toggle" role="tablist" aria-label="Chế độ hiển thị">
-          <button type="button" class="view-toggle-btn active" id="btn-view-cards" role="tab" aria-selected="true" title="Xem chi tiết từng kịch bản">
-            <span class="vt-icon">📑</span>
-            <span class="vt-text">Chi Tiết</span>
-          </button>
-          <button type="button" class="view-toggle-btn" id="btn-view-table" role="tab" aria-selected="false" title="Xem bảng đối chiếu ma trận toàn cảnh">
-            <span class="vt-icon">📊</span>
-            <span class="vt-text">Bảng Đối Chiếu</span>
-          </button>
-        </div>
-        <button type="button" class="btn btn-sm btn-ghost matrix-close-btn" id="matrix-dlg-close" aria-label="Đóng ma trận">✕</button>
-      </div>
-    </div>
-
-    <!-- Thanh lọc nhanh & Hướng dẫn -->
-    <div class="matrix-filter-bar">
-      <div class="matrix-filter-chips" role="group" aria-label="Lọc nhóm kịch bản">
-        <button type="button" class="chip-btn matrix-filter-chip active" data-filter="all">Tất cả 6 Kịch bản</button>
-        <button type="button" class="chip-btn matrix-filter-chip" data-filter="cat">🌟 Cát Lợi (KB 1, 3)</button>
-        <button type="button" class="chip-btn matrix-filter-chip" data-filter="hung">⚠️ Cảnh Báo &amp; Hung Sát (KB 2, 4, 5, 6)</button>
-      </div>
-      <div class="matrix-live-hint">
-        <span class="pulse-indicator"></span> Bấm chọn kịch bản để xem luận giải tức thì
-      </div>
-    </div>
-
-    <!-- Nội dung chính: Master-Detail Layout (Zero Nested Scroll) -->
-    <div class="sheet-body matrix-body-container">
-      <!-- 1. Master-Detail View (Mặc định) -->
-      <div class="matrix-split-view" id="matrix-split-view">
-        <!-- Sidebar Navigation: 6 thẻ kịch bản mini -->
-        <nav class="matrix-sidebar" aria-label="Danh sách 6 kịch bản">
-          <!-- Item 1 -->
-          <button type="button" class="matrix-nav-item active s1" data-scenario="1" data-cat="cat">
-            <div class="mn-top">
-              <span class="mn-badge good">Kịch Bản 1</span>
-              <span class="mn-score good">90–100đ</span>
-            </div>
-            <div class="mn-name">Song Cát Toàn Bích</div>
-            <div class="mn-sub">
-              <span class="mn-tag gold">🟡 Hoàng Đạo</span>
-              <span class="mn-sep">+</span>
-              <span class="mn-tag gold">⭐ Sao Cát</span>
-            </div>
-            <span class="mn-arrow" aria-hidden="true">›</span>
-          </button>
-
-          <!-- Item 2 -->
-          <button type="button" class="matrix-nav-item s2" data-scenario="2" data-cat="hung">
-            <div class="mn-top">
-              <span class="mn-badge warn">Kịch Bản 2</span>
-              <span class="mn-score warn">50–65đ</span>
-            </div>
-            <div class="mn-name">Hoàng Đạo Đới Hung</div>
-            <div class="mn-sub">
-              <span class="mn-tag gold">🟡 Hoàng Đạo</span>
-              <span class="mn-sep">+</span>
-              <span class="mn-tag gray">★ Sao Hung</span>
-            </div>
-            <span class="mn-arrow" aria-hidden="true">›</span>
-          </button>
-
-          <!-- Item 3 -->
-          <button type="button" class="matrix-nav-item s3" data-scenario="3" data-cat="cat">
-            <div class="mn-top">
-              <span class="mn-badge info">Kịch Bản 3</span>
-              <span class="mn-score info">45–55đ</span>
-            </div>
-            <div class="mn-name">Hắc Đạo Cát Diệu</div>
-            <div class="mn-sub">
-              <span class="mn-tag dark">⚫ Hắc Đạo</span>
-              <span class="mn-sep">+</span>
-              <span class="mn-tag gold">⭐ Sao Cát</span>
-            </div>
-            <span class="mn-arrow" aria-hidden="true">›</span>
-          </button>
-
-          <!-- Item 4 -->
-          <button type="button" class="matrix-nav-item s4" data-scenario="4" data-cat="hung">
-            <div class="mn-top">
-              <span class="mn-badge dark">Kịch Bản 4</span>
-              <span class="mn-score dark">20–35đ</span>
-            </div>
-            <div class="mn-name">Trùng Hung Đại Bại</div>
-            <div class="mn-sub">
-              <span class="mn-tag dark">⚫ Hắc Đạo</span>
-              <span class="mn-sep">+</span>
-              <span class="mn-tag gray">★ Sao Hung</span>
-            </div>
-            <span class="mn-arrow" aria-hidden="true">›</span>
-          </button>
-
-          <!-- Item 5 -->
-          <button type="button" class="matrix-nav-item s5" data-scenario="5" data-cat="hung">
-            <div class="mn-top">
-              <span class="mn-badge bad">Kịch Bản 5</span>
-              <span class="mn-score bad">0đ Ghi đè</span>
-            </div>
-            <div class="mn-name">Hoàng Đạo Phùng Bách Kỵ</div>
-            <div class="mn-sub">
-              <span class="mn-tag gold">🟡 Hoàng Đạo</span>
-              <span class="mn-sep">+</span>
-              <span class="mn-tag red">⚠️ Bách Kỵ</span>
-            </div>
-            <span class="mn-arrow" aria-hidden="true">›</span>
-          </button>
-
-          <!-- Item 6 -->
-          <button type="button" class="matrix-nav-item s6" data-scenario="6" data-cat="hung">
-            <div class="mn-top">
-              <span class="mn-badge bad">Kịch Bản 6</span>
-              <span class="mn-score bad">0đ Cực hung</span>
-            </div>
-            <div class="mn-name">Hắc Đạo Phùng Bách Kỵ</div>
-            <div class="mn-sub">
-              <span class="mn-tag dark">⚫ Hắc Đạo</span>
-              <span class="mn-sep">+</span>
-              <span class="mn-tag red">⚠️ Bách Kỵ</span>
-            </div>
-            <span class="mn-arrow" aria-hidden="true">›</span>
-          </button>
-        </nav>
-
-        <!-- Detail Stage: Panel hiển thị chi tiết của kịch bản active -->
-        <main class="matrix-detail-stage" id="matrix-detail-stage">
-          <!-- Kịch bản 1 -->
-          <article class="matrix-card scenario-1 active" data-scenario="1" data-cat="cat">
-            <div class="matrix-card-header">
-              <div class="mch-title-wrap">
-                <span class="scenario-badge good">Kịch Bản 1 / 6</span>
-                <h3 class="scenario-name">Song Cát Toàn Bích</h3>
-              </div>
-              <div class="mch-meta-wrap">
-                <div class="scenario-symbols">
-                  <span class="sym-badge yellow">🟡 Hoàng Đạo</span>
-                  <span class="sym-sep">+</span>
-                  <span class="sym-badge gold">⭐ Sao Cát (28 Tú)</span>
-                </div>
-                <span class="score-pill good">Đại Cát · 90–100đ</span>
-              </div>
-            </div>
-            <p class="scenario-desc">Thần Nhật Hoàng Đạo kết hợp cùng Tú Tinh Cát Lợi trong Nhị Thập Bát Tú, không phạm Bách Kỵ. Trường khí dương hòa rực rỡ, thiên thời địa lợi nhân hòa hội tụ.</p>
-            <div class="scenario-actions-box">
-              <div class="action-col dos">
-                <div class="action-header"><span class="ah-icon">✅</span> NÊN LÀM (CÁT SỰ ĐẠI LỢI)</div>
-                <ul>
-                  <li>Khởi công xây nhà, đào móng, động thổ, cất nóc.</li>
-                  <li>Cưới hỏi, nghinh hôn, ăn hỏi, đăng ký kết hôn.</li>
-                  <li>Khai trương cửa hàng, mở công ty, ký kết hợp đồng lớn.</li>
-                  <li>Nhập trạch về nhà mới, an vị bàn thờ gia tiên.</li>
-                  <li>Xuất hành đi xa, cầu tài, du ngoạn, mở rộng làm ăn.</li>
-                </ul>
-              </div>
-              <div class="action-col donts">
-                <div class="action-header"><span class="ah-icon">🛡️</span> LƯU Ý HÀNH SỰ</div>
-                <ul>
-                  <li>Hầu như không có kiêng kỵ lớn trong ngày này.</li>
-                  <li>Chỉ cần tránh khung giờ có Địa Chi lục xung với tuổi của gia chủ.</li>
-                  <li>Nên ưu tiên hành sự vào buổi sáng đón ánh dương khí vượng thịnh.</li>
-                </ul>
-              </div>
-            </div>
-          </article>
-
-          <!-- Kịch bản 2 -->
-          <article class="matrix-card scenario-2" data-scenario="2" data-cat="hung" style="display: none;">
-            <div class="matrix-card-header">
-              <div class="mch-title-wrap">
-                <span class="scenario-badge warn">Kịch Bản 2 / 6</span>
-                <h3 class="scenario-name">Hoàng Đạo Đới Hung</h3>
-              </div>
-              <div class="mch-meta-wrap">
-                <div class="scenario-symbols">
-                  <span class="sym-badge yellow">🟡 Hoàng Đạo</span>
-                  <span class="sym-sep">+</span>
-                  <span class="sym-badge gray">★ Sao Hung (28 Tú)</span>
-                </div>
-                <span class="score-pill warn">Thứ Cát / Phân Hóa · 50–65đ</span>
-              </div>
-            </div>
-            <p class="scenario-desc">Khí tiết ngày sáng sủa nhờ Thần Hoàng Đạo nhưng lại bị Hung Tú trong Nhị Thập Bát Tú (Quỷ, Liễu, Tâm, Cang...) chiếu mệnh. Phải phân định rạch ròi việc hợp và việc kỵ.</p>
-            <div class="scenario-actions-box">
-              <div class="action-col dos">
-                <div class="action-header"><span class="ah-icon">✅</span> VIỆC CÓ THỂ LÀM</div>
-                <ul>
-                  <li>Tế tự gia tiên, lễ Phật, dâng hương cầu an bản mệnh.</li>
-                  <li>Họp mặt gia đình dòng họ, làm công đức, từ thiện.</li>
-                  <li>Tu bổ, sơn sửa nội thất nhẹ nhàng, chăm sóc vườn tược.</li>
-                </ul>
-              </div>
-              <div class="action-col donts">
-                <div class="action-header"><span class="ah-icon">⛔</span> TUYỆT ĐỐI KIÊNG CỮ</div>
-                <ul>
-                  <li><b>CẤM KỴ CẤT NÓC &amp; ĐỘNG THỔ:</b> Hung tinh tác động vào nóc nhà và địa mạch.</li>
-                  <li>Cưới hỏi, rước dâu (dễ sinh trắc trở hòa khí).</li>
-                  <li>Xuất hành đi xa đường thủy, đường núi hiểm trở.</li>
-                </ul>
-              </div>
-            </div>
-            <div class="scenario-folk-tip">
-              💡 <b>Mẹo Hóa Giải Dân Gian:</b> Nếu bắt buộc phải khởi sự, phải chọn Khung Giờ Hoàng Đạo có Cát Thần (Thiên Đức, Nguyệt Đức, Thiên Hỷ) để chế áp hung tinh của ngày.
-            </div>
-          </article>
-
-          <!-- Kịch bản 3 -->
-          <article class="matrix-card scenario-3" data-scenario="3" data-cat="cat" style="display: none;">
-            <div class="matrix-card-header">
-              <div class="mch-title-wrap">
-                <span class="scenario-badge info">Kịch Bản 3 / 6</span>
-                <h3 class="scenario-name">Hắc Đạo Cát Diệu</h3>
-              </div>
-              <div class="mch-meta-wrap">
-                <div class="scenario-symbols">
-                  <span class="sym-badge dark">⚫ Hắc Đạo</span>
-                  <span class="sym-sep">+</span>
-                  <span class="sym-badge gold">⭐ Sao Cát (28 Tú)</span>
-                </div>
-                <span class="score-pill info">Bình Hòa / Cứu Giải · 45–55đ</span>
-              </div>
-            </div>
-            <p class="scenario-desc">Nhật thần tuy thuộc Hắc Đạo nhưng lại được Cát Tinh trong Nhị Thập Bát Tú soi chiếu hộ trì. Sách xưa có câu: <i>"Cát tinh đắc thời, hóa giải bách sát"</i>, trường khí ôn hòa.</p>
-            <div class="scenario-actions-box">
-              <div class="action-col dos">
-                <div class="action-header"><span class="ah-icon">✅</span> VIỆC PHÙ HỢP</div>
-                <ul>
-                  <li>Giao dịch dân sự nội bộ, ký kết hợp đồng quy mô nhỏ vừa.</li>
-                  <li>Tạ lễ, an vị đồ thờ, mua sắm đồ dùng gia đình.</li>
-                  <li>Nhập học, bắt đầu học nghề, nhận việc mới.</li>
-                  <li>Các sinh hoạt lao động sản xuất thường nhật.</li>
-                </ul>
-              </div>
-              <div class="action-col donts">
-                <div class="action-header"><span class="ah-icon">⛔</span> NÊN HẠN CHẾ</div>
-                <ul>
-                  <li>Khởi công dự án đại quy mô, phá thổ san nền.</li>
-                  <li>Tổ chức lễ khai trương rầm rộ phô trương.</li>
-                  <li>Tránh các việc đòi hỏi khí vượng tuyệt đối.</li>
-                </ul>
-              </div>
-            </div>
-          </article>
-
-          <!-- Kịch bản 4 -->
-          <article class="matrix-card scenario-4" data-scenario="4" data-cat="hung" style="display: none;">
-            <div class="matrix-card-header">
-              <div class="mch-title-wrap">
-                <span class="scenario-badge dark">Kịch Bản 4 / 6</span>
-                <h3 class="scenario-name">Trùng Hung Đại Bại</h3>
-              </div>
-              <div class="mch-meta-wrap">
-                <div class="scenario-symbols">
-                  <span class="sym-badge dark">⚫ Hắc Đạo</span>
-                  <span class="sym-sep">+</span>
-                  <span class="sym-badge gray">★ Sao Hung (28 Tú)</span>
-                </div>
-                <span class="score-pill dark">Đại Hung · 20–35đ</span>
-              </div>
-            </div>
-            <p class="scenario-desc">Cả Thần Nhật (Hắc Đạo) lẫn Tinh Tú (Hung Tinh) đều là sát khí song hành, không có sao cát cứu giải. Năng lượng vũ trụ bất lợi cho mọi sự khởi đầu.</p>
-            <div class="scenario-actions-box">
-              <div class="action-col dos">
-                <div class="action-header"><span class="ah-icon">✅</span> NÊN LÀM</div>
-                <ul>
-                  <li>Tĩnh dưỡng nghỉ ngơi, giữ gìn sức khỏe.</li>
-                  <li>Giải quyết các công việc hành chính thường vụ đã có sẵn quy trình.</li>
-                  <li>Dọn dẹp nhà cửa, thanh lọc không gian sống.</li>
-                </ul>
-              </div>
-              <div class="action-col donts">
-                <div class="action-header"><span class="ah-icon">⛔</span> TUYỆT ĐỐI KHÔNG KHỞI SỰ</div>
-                <ul>
-                  <li>Trăm sự đại sự đều kiêng cữ: Cưới hỏi, xây nhà, mở cửa hàng.</li>
-                  <li>Không đi xa, không ký hợp đồng cam kết tài chính lớn.</li>
-                  <li>Tránh tranh chấp khẩu thiệt, cãi cọ, kiện tụng.</li>
-                </ul>
-              </div>
-            </div>
-          </article>
-
-          <!-- Kịch bản 5 -->
-          <article class="matrix-card scenario-5" data-scenario="5" data-cat="hung" style="display: none;">
-            <div class="matrix-card-header">
-              <div class="mch-title-wrap">
-                <span class="scenario-badge bad">Kịch Bản 5 / 6</span>
-                <h3 class="scenario-name">Hoàng Đạo Phùng Bách Kỵ</h3>
-              </div>
-              <div class="mch-meta-wrap">
-                <div class="scenario-symbols">
-                  <span class="sym-badge yellow">🟡 Hoàng Đạo</span>
-                  <span class="sym-sep">+</span>
-                  <span class="sym-badge red">⚠️ Bách Kỵ Dân Gian</span>
-                </div>
-                <span class="score-pill bad">Đại Kỵ (Ghi Đè) · 0đ</span>
-              </div>
-            </div>
-            <p class="scenario-desc">Dù ngày có Thần Hoàng Đạo tốt nhưng lại trúng ngày Tam Nương (mùng 3, 7, 13, 18, 22, 27) hoặc Nguyệt Kỵ (mùng 5, 14, 23 âm lịch). Dân gian đúc kết: <i>"Thần lành không bằng ngày kỵ"</i>.</p>
-            <div class="scenario-actions-box">
-              <div class="action-col dos">
-                <div class="action-header"><span class="ah-icon">✅</span> NÊN LÀM</div>
-                <ul>
-                  <li>Đi chùa lễ Phật sám hối, phóng sinh tạo phúc.</li>
-                  <li>Đọc sách, nghiên cứu học thuật, thiền định.</li>
-                  <li>Học tập, tu dưỡng nội tâm, sinh hoạt nhẹ nhàng.</li>
-                </ul>
-              </div>
-              <div class="action-col donts">
-                <div class="action-header"><span class="ah-icon">⛔</span> ĐẠI KỴ DÂN GIAN GHI ĐÈ</div>
-                <ul>
-                  <li><b>CẤM KỴ CƯỚI HỎI, XUẤT HÀNH, KHAI TRƯƠNG, ĐỘNG THỔ.</b></li>
-                  <li><i>"Mùng năm mười bốn hai ba - Đi chơi cũng thiệt nữa là đi buôn"</i>.</li>
-                  <li>Cơ chế Bách Kỵ Gatekeeper ghi đè toàn bộ điểm số về 0đ.</li>
-                </ul>
-              </div>
-            </div>
-          </article>
-
-          <!-- Kịch bản 6 -->
-          <article class="matrix-card scenario-6" data-scenario="6" data-cat="hung" style="display: none;">
-            <div class="matrix-card-header">
-              <div class="mch-title-wrap">
-                <span class="scenario-badge bad">Kịch Bản 6 / 6</span>
-                <h3 class="scenario-name">Hắc Đạo Phùng Bách Kỵ</h3>
-              </div>
-              <div class="mch-meta-wrap">
-                <div class="scenario-symbols">
-                  <span class="sym-badge dark">⚫ Hắc Đạo</span>
-                  <span class="sym-sep">+</span>
-                  <span class="sym-badge red">⚠️ Bách Kỵ Dân Gian</span>
-                </div>
-                <span class="score-pill bad">Cực Hung · 0đ</span>
-              </div>
-            </div>
-            <p class="scenario-desc">Trùng lặp giữa ngày Hắc Đạo và ngày Bách Kỵ (Tam Nương / Nguyệt Kỵ / Dương Công Kỵ). Đây là ngày sát khí cực thịnh, thời vận trắc trở nhất trong tháng.</p>
-            <div class="scenario-actions-box">
-              <div class="action-col dos">
-                <div class="action-header"><span class="ah-icon">✅</span> NÊN LÀM</div>
-                <ul>
-                  <li>An phận thủ thường tại gia, giữ tâm tĩnh lặng.</li>
-                  <li>Chăm sóc gia đình, dưỡng sinh, tránh xa chỗ đông người ồn ào.</li>
-                </ul>
-              </div>
-              <div class="action-col donts">
-                <div class="action-header"><span class="ah-icon">⛔</span> BẤT KHẢ DỤNG CHO MỌI ĐẠI SỰ</div>
-                <ul>
-                  <li>Tuyệt đối không bắt đầu bất kỳ công việc mới nào.</li>
-                  <li>Tránh đi lại sông nước, đèo dốc hiểm trở, lái xe đường dài.</li>
-                  <li>Tránh vay mượn, cho vay tiền bạc, đầu tư rủi ro.</li>
-                </ul>
-              </div>
-            </div>
-          </article>
-        </main>
-      </div>
-
-      <!-- 2. Table View (Toàn cảnh ma trận đối chiếu 6 hàng phẳng, không cuộn) -->
-      <div class="matrix-table-view" id="matrix-table-view" style="display: none;">
-        <div class="matrix-table-wrap">
-          <table class="matrix-overview-table">
-            <thead>
-              <tr>
-                <th style="width: 140px;">Kịch Bản</th>
-                <th style="width: 120px;">Thần Nhật</th>
-                <th style="width: 130px;">28 Tú (Tinh Tú)</th>
-                <th style="width: 130px;">Bách Kỵ</th>
-                <th style="width: 130px;">Điểm &amp; Cấp</th>
-                <th>Cát Sự Trọng Điểm &amp; Kiêng Cữ</th>
-                <th style="width: 80px; text-align: center;">Chi Tiết</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr class="tbl-row s1" data-scenario="1" data-cat="cat">
-                <td><span class="tbl-badge good">Kịch bản 1</span><div class="tbl-name">Song Cát Toàn Bích</div></td>
-                <td><span class="sym-badge yellow">🟡 Hoàng Đạo</span></td>
-                <td><span class="sym-badge gold">⭐ Sao Cát</span></td>
-                <td><span class="sym-badge green">🛡️ Không phạm</span></td>
-                <td><span class="score-pill good">90–100đ · Đại Cát</span></td>
-                <td><div class="tbl-dos"><b>Nên:</b> Khởi công, cưới hỏi, khai trương, nhập trạch, xuất hành</div><div class="tbl-donts"><b>Kỵ:</b> Tránh giờ xung tuổi gia chủ</div></td>
-                <td style="text-align: center;"><button type="button" class="btn btn-xs btn-outline btn-table-view-detail" data-scenario="1">Xem</button></td>
-              </tr>
-              <tr class="tbl-row s2" data-scenario="2" data-cat="hung">
-                <td><span class="tbl-badge warn">Kịch bản 2</span><div class="tbl-name">Hoàng Đạo Đới Hung</div></td>
-                <td><span class="sym-badge yellow">🟡 Hoàng Đạo</span></td>
-                <td><span class="sym-badge gray">★ Sao Hung</span></td>
-                <td><span class="sym-badge green">🛡️ Không phạm</span></td>
-                <td><span class="score-pill warn">50–65đ · Thứ Cát</span></td>
-                <td><div class="tbl-dos"><b>Nên:</b> Cầu an, tế tự, làm việc họ hàng, từ thiện</div><div class="tbl-donts"><b>Kỵ:</b> Cấm cất nóc, động thổ, cưới hỏi, đi xa hiểm trở</div></td>
-                <td style="text-align: center;"><button type="button" class="btn btn-xs btn-outline btn-table-view-detail" data-scenario="2">Xem</button></td>
-              </tr>
-              <tr class="tbl-row s3" data-scenario="3" data-cat="cat">
-                <td><span class="tbl-badge info">Kịch bản 3</span><div class="tbl-name">Hắc Đạo Cát Diệu</div></td>
-                <td><span class="sym-badge dark">⚫ Hắc Đạo</span></td>
-                <td><span class="sym-badge gold">⭐ Sao Cát</span></td>
-                <td><span class="sym-badge green">🛡️ Không phạm</span></td>
-                <td><span class="score-pill info">45–55đ · Bình Hòa</span></td>
-                <td><div class="tbl-dos"><b>Nên:</b> Giao dịch vừa nhỏ, tạ lễ, an vị đồ thờ, việc thường nhật</div><div class="tbl-donts"><b>Kỵ:</b> Dự án đại quy mô, khai trương phô trương</div></td>
-                <td style="text-align: center;"><button type="button" class="btn btn-xs btn-outline btn-table-view-detail" data-scenario="3">Xem</button></td>
-              </tr>
-              <tr class="tbl-row s4" data-scenario="4" data-cat="hung">
-                <td><span class="tbl-badge dark">Kịch bản 4</span><div class="tbl-name">Trùng Hung Đại Bại</div></td>
-                <td><span class="sym-badge dark">⚫ Hắc Đạo</span></td>
-                <td><span class="sym-badge gray">★ Sao Hung</span></td>
-                <td><span class="sym-badge green">🛡️ Không phạm</span></td>
-                <td><span class="score-pill dark">20–35đ · Đại Hung</span></td>
-                <td><div class="tbl-dos"><b>Nên:</b> Tĩnh dưỡng, nghỉ ngơi, xử lý việc hành chính thường vụ</div><div class="tbl-donts"><b>Kỵ:</b> Tuyệt đối không khởi sự cưới hỏi, xây nhà, đi xa</div></td>
-                <td style="text-align: center;"><button type="button" class="btn btn-xs btn-outline btn-table-view-detail" data-scenario="4">Xem</button></td>
-              </tr>
-              <tr class="tbl-row s5" data-scenario="5" data-cat="hung">
-                <td><span class="tbl-badge bad">Kịch bản 5</span><div class="tbl-name">Hoàng Đạo Phùng Bách Kỵ</div></td>
-                <td><span class="sym-badge yellow">🟡 Hoàng Đạo</span></td>
-                <td><span class="sym-badge dark">Tùy Tinh Tú</span></td>
-                <td><span class="sym-badge red">⚠️ Tam Nương / Nguyệt Kỵ</span></td>
-                <td><span class="score-pill bad">0đ · Đại Kỵ</span></td>
-                <td><div class="tbl-dos"><b>Nên:</b> Đi chùa, phóng sinh, đọc sách, nghiên cứu</div><div class="tbl-donts"><b>Kỵ:</b> Cấm kỵ cưới hỏi, xuất hành, khai trương, động thổ (Ghi đè 0đ)</div></td>
-                <td style="text-align: center;"><button type="button" class="btn btn-xs btn-outline btn-table-view-detail" data-scenario="5">Xem</button></td>
-              </tr>
-              <tr class="tbl-row s6" data-scenario="6" data-cat="hung">
-                <td><span class="tbl-badge bad">Kịch bản 6</span><div class="tbl-name">Hắc Đạo Phùng Bách Kỵ</div></td>
-                <td><span class="sym-badge dark">⚫ Hắc Đạo</span></td>
-                <td><span class="sym-badge gray">★ Sao Hung</span></td>
-                <td><span class="sym-badge red">⚠️ Tam Nương / Nguyệt Kỵ</span></td>
-                <td><span class="score-pill bad">0đ · Cực Hung</span></td>
-                <td><div class="tbl-dos"><b>Nên:</b> An phận thủ thường tại gia, giữ tâm tĩnh lặng</div><div class="tbl-donts"><b>Kỵ:</b> Bất khả dụng cho mọi đại sự, tránh sông nước đèo dốc</div></td>
-                <td style="text-align: center;"><button type="button" class="btn btn-xs btn-outline btn-table-view-detail" data-scenario="6">Xem</button></td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
       </div>
     </div>
   </dialog>

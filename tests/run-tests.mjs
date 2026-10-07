@@ -594,7 +594,47 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   eq('Hạc thần theo vòng 60 can chi: Kỷ Dậu, Giáp Dần → Đông Bắc; Ất Mão → Đông; Nhâm Thìn → Bắc; Quý Tỵ, Mậu Thân → trên trời',
     [hac(5, 9), hac(0, 2), hac(1, 3), hac(8, 4), /trên trời/.test(hac(9, 5)), /trên trời/.test(hac(4, 8))],
     ['Đông Bắc', 'Đông Bắc', 'Chính Đông', 'Chính Bắc', true, true]);
-  eq('Lý Thuần Phong: mùng 1 tháng giêng giờ Tý là Đại An; giờ Sửu là cung kế tiếp', [C.getLyThuanPhong(1, 1, 0).id, C.getLyThuanPhong(1, 1, 1).id === C.LY_THUAN_PHONG[1].id], ['dai_an', true]);
+  // Đáp án độc lập với bảng của mã (QĐ-16): k = số thứ tự giờ (Tý = 1); số dư của (ngày + tháng + k − 2) chia 6
+  // là 1 Đại An, 2 Tốc Hỷ, 3 Lưu Niên, 4 Xích Khẩu, 5 Tiểu Cát, 0 Không Vong.
+  const LTP_BY_REMAINDER = ['Không Vong', 'Đại An', 'Tốc Hỷ', 'Lưu Niên', 'Xích Khẩu', 'Tiểu Cát'];
+  const ltpBad = [];
+  for (let mo = 1; mo <= 12; mo++) for (let dy = 1; dy <= 30; dy++) for (let k = 1; k <= 12; k++) {
+    if (C.getLyThuanPhong(mo, dy, k - 1).name !== LTP_BY_REMAINDER[(dy + mo + k - 2) % 6]) ltpBad.push([mo, dy, k]);
+  }
+  eq('Lý Thuần Phong: 12 tháng × 30 ngày × 12 giờ khớp công thức đếm cung Đại An → Tốc Hỷ → Lưu Niên → Xích Khẩu → Tiểu Cát → Không Vong; mùng 1 tháng giêng giờ Tý là Đại An',
+    [ltpBad.length, ltpBad.slice(0, 3), C.getLyThuanPhong(1, 1, 0).name, C.getDayHoursDetails('Tý', 1, 1).map((h) => h.lyThuanPhong.name).slice(0, 6)],
+    [0, [], 'Đại An', ['Đại An', 'Tốc Hỷ', 'Lưu Niên', 'Xích Khẩu', 'Tiểu Cát', 'Không Vong']]);
+  eq('Lý Thuần Phong: Đại An, Tốc Hỷ, Tiểu Cát là cung tốt; Lưu Niên, Xích Khẩu, Không Vong là cung xấu',
+    C.LY_THUAN_PHONG.map((x) => `${x.name}:${x.quality}`), ['Đại An:good', 'Tốc Hỷ:good', 'Lưu Niên:bad', 'Xích Khẩu:bad', 'Tiểu Cát:good', 'Không Vong:bad']);
+
+  eq('Lý Thuần Phong: mỗi cung có cụm nghĩa ngắn hiện mặc định, không chứa lời khuyên về hướng; lời truyền khẩu đầy đủ vẫn còn để hiện khi người dùng mở',
+    [C.LY_THUAN_PHONG.map((x) => x.short), C.LY_THUAN_PHONG.some((x) => /hướng|đại lợi/i.test(x.short)), C.LY_THUAN_PHONG.every((x) => x.meaning.length > 40)],
+    [['yên ổn', 'tin vui đến nhanh', 'việc chậm, dây dưa', 'dễ cãi vã', 'may mắn nhỏ', 'việc khó thành'], false, true]);
+
+  // Hoàng đạo: hai cách tra (QĐ-16). Bảng theo tháng âm viết tay ở đây, độc lập với hàm của mã.
+  const HD_BY_MONTH = { 1: 'Tý Sửu Thìn Tỵ Mùi Tuất', 2: 'Dần Mão Ngọ Mùi Dậu Tý', 3: 'Thìn Tỵ Thân Dậu Hợi Dần', 4: 'Ngọ Mùi Tuất Hợi Sửu Thìn', 5: 'Thân Dậu Tý Sửu Mão Ngọ', 6: 'Tuất Hợi Dần Mão Tỵ Thân' };
+  let tableBad = 0;
+  for (let mo = 1; mo <= 12; mo++) for (let z = 0; z < 12; z++) {
+    if (C.isHoangDaoByLunarMonth(mo, z) !== HD_BY_MONTH[((mo - 1) % 6) + 1].split(' ').includes(NT.data.ZHI_VI[z])) tableBad++;
+  }
+  eq('Hoàng đạo tra theo tháng âm: 12 tháng × 12 chi khớp bảng viết tay (tháng 1, 7: Tý Sửu Thìn Tỵ Mùi Tuất…)', tableBad, 0);
+  const hdDiff = (y) => {
+    let diffDays = 0, coreMismatch = 0;
+    for (let t = Date.UTC(y, 0, 1); t <= Date.UTC(y, 11, 31); t += 864e5) {
+      const dt = new Date(t);
+      const r = C.compareDayHoangDao(dt.getUTCDate(), dt.getUTCMonth() + 1, y);
+      if (r.differs) diffDays++;
+      if (r.bySolarTerm !== (NT.scoring.dayContext(y, dt.getUTCMonth() + 1, dt.getUTCDate()).tianShenLuck === '吉')) coreMismatch++;
+    }
+    return [diffDays, coreMismatch];
+  };
+  eq('Hoàng đạo: số ngày cách theo tiết khí (phần lõi) khác cách theo tháng âm là 77 (2025), 65 (2026), 36 (2027); vế tiết khí trùng thần nhật của phần chọn ngày',
+    [hdDiff(2025), hdDiff(2026), hdDiff(2027)], [[77, 0], [65, 0], [36, 0]]);
+  // 08/08/2025 = 15/6 nhuận (đáp án ở phép thử sổ giỗ bên dưới): tháng nhuận tra theo bảng của tháng 6
+  const leapDay = Solar.fromYmd(2025, 8, 8).getLunar();
+  eq('Hoàng đạo theo tháng âm: ngày trong tháng 6 nhuận 2025 tra theo bảng tháng 6 (Tuất Hợi Dần Mão Tỵ Thân)',
+    [NT.calendar.solarToLunar(8, 8, 2025).leap, C.compareDayHoangDao(8, 8, 2025).byLunarMonth],
+    [true, 'Tuất Hợi Dần Mão Tỵ Thân'.split(' ').includes(NT.data.ZHI_VI[leapDay.getDayZhiIndex()])]);
   // Đáp án độc lập: 15/6 nhuận 2025 = 08/08/2025 nên 29/6 nhuận = 22/08/2025
   eq('Giỗ 30/6 nhuận, năm 2025 tháng 6 nhuận chỉ 29 ngày → 29/6 nhuận (22/08/2025), không nhảy về tháng 6 thường',
     [AN.getAnniversaryOccurrences(15, 6, 2025, true)[0].solarDateStr, AN.getAnniversaryOccurrences(30, 6, 2025, true)[0].solarDateStr], ['2025-08-08', '2025-08-22']);

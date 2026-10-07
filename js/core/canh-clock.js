@@ -3,7 +3,8 @@
  * 
  * Nguồn thuật toán:
  *  - 12 Giờ Hoàng Đạo / Hắc Đạo theo Địa Chi ngày (Hiệp Kỷ Biện Phương Thư).
- *  - Phép xuất hành Lục Diệu của Lý Thuần Phong (Đại An, Lưu Niên, Tốc Hỷ, Xích Khẩu, Tiểu Cát, Không Vong).
+ *  - Phép xuất hành Lục Diệu của Lý Thuần Phong (Đại An, Tốc Hỷ, Lưu Niên, Xích Khẩu, Tiểu Cát, Không Vong:
+ *    thứ tự phổ biến ở Việt Nam theo QĐ-16; tập tục dân gian, các nguồn không thống nhất).
  *  - Hướng xuất hành Hỷ Thần, Tài Thần (theo Can ngày) và Hạc Thần (theo vòng 60 can chi của ngày).
  */
 (function (NT) {
@@ -26,41 +27,50 @@
     { chi: 'Hợi', start: 21, end: 23, label: '21:00 – 22:59' }
   ];
 
-  // 6 Cung Lục Diệu Lý Thuần Phong
+  // 6 Cung Lục Diệu Lý Thuần Phong, theo thứ tự đếm cung (QĐ-16): Đại An → Tốc Hỷ → Lưu Niên →
+  // Xích Khẩu → Tiểu Cát → Không Vong. Thứ tự của mảng chính là thứ tự đếm, không được xếp lại.
+  // `short` là nghĩa đen của tên cung, hiện mặc định. `meaning` là lời truyền khẩu, chưa đối chiếu sách:
+  // chỉ hiện khi người dùng tự mở, kèm nhãn (không đưa lời khuyên về hướng đi ra mặc định).
   const LY_THUAN_PHONG = [
     {
       id: 'dai_an',
       name: 'Đại An',
+      short: 'yên ổn',
       quality: 'good',
       meaning: 'Vạn sự bình an, cầu tài đi hướng Tây Nam, gia đạo yên ổn, người xuất hành bình an vô sự.'
     },
     {
-      id: 'luu_nien',
-      name: 'Lưu Niên',
-      quality: 'bad',
-      meaning: 'Mọi sự dây dưa trễ nải, mưu sự khó thành ngay, cần kiên nhẫn, phòng ngừa khẩu thiệt thị phi.'
-    },
-    {
       id: 'toc_hy',
       name: 'Tốc Hỷ',
+      short: 'tin vui đến nhanh',
       quality: 'good',
       meaning: 'Tin vui đến nhanh chóng, xuất hành cầu tài sáng sớm hướng Nam đại lợi, việc tiến hành mau lẹ.'
     },
     {
+      id: 'luu_nien',
+      name: 'Lưu Niên',
+      short: 'việc chậm, dây dưa',
+      quality: 'bad',
+      meaning: 'Mọi sự dây dưa trễ nải, mưu sự khó thành ngay, cần kiên nhẫn, phòng ngừa khẩu thiệt thị phi.'
+    },
+    {
       id: 'xich_khau',
       name: 'Xích Khẩu',
+      short: 'dễ cãi vã',
       quality: 'bad',
       meaning: 'Dễ nảy sinh cãi vã, khẩu thiệt thị phi, bất đồng quan điểm, nên nhường nhịn, thận trọng lời ăn tiếng nói.'
     },
     {
       id: 'tieu_cat',
       name: 'Tiểu Cát',
+      short: 'may mắn nhỏ',
       quality: 'good',
       meaning: 'Gặp may mắn nhỏ, giao dịch buôn bán có lợi, người đi sắp về, sức khỏe dồi dào, gia sự êm ấm.'
     },
     {
       id: 'khong_vong',
       name: 'Không Vong',
+      short: 'việc khó thành',
       quality: 'bad',
       meaning: 'Cầu tài mịt mờ, xuất hành dễ hao tài tốn của, việc quan trắc trở, nên an phận giữ mình chờ thời.'
     }
@@ -229,6 +239,31 @@
     });
   }
 
+  // Ngày hoàng đạo tra theo THÁNG ÂM (cách thứ hai nêu ở QĐ-16; chưa có sách xác nhận): Thanh Long khởi tại
+  // Tý (tháng 1, 7), Dần (2, 8), Thìn (3, 9), Ngọ (4, 10), Thân (5, 11), Tuất (6, 12); ngày hoàng đạo
+  // là các chi cách điểm khởi 0, 1, 4, 5, 7, 10 (Thanh Long, Minh Đường, Kim Quỹ, Bảo Quang, Ngọc Đường, Tư Mệnh).
+  const HOANG_DAO_OFFSETS = [0, 1, 4, 5, 7, 10];
+  function isHoangDaoByLunarMonth(lunarMonth, dayChiIdx) {
+    const start = ((lunarMonth - 1) % 6) * 2;
+    return HOANG_DAO_OFFSETS.includes(((dayChiIdx - start) % 12 + 12) % 12);
+  }
+
+  /**
+   * So hai cách xác định ngày hoàng đạo cho một ngày dương (QĐ-16). Phần lõi (chọn ngày, lịch tháng)
+   * dùng cách theo tiết khí; cách theo tháng âm chỉ để ghi chú, không dùng để tính điểm.
+   * Tháng nhuận tra theo bảng của tháng mang cùng số (tháng 6 nhuận tra như tháng 6).
+   * @returns {{bySolarTerm: boolean, byLunarMonth: boolean, differs: boolean}|null} null nếu không tính được
+   */
+  function compareDayHoangDao(d, m, y) {
+    try {
+      const lunarLib = globalThis.Solar.fromYmd(y, m, d).getLunar();
+      const bySolarTerm = lunarLib.getDayTianShenType() === '黄道';
+      const byLunarMonth = isHoangDaoByLunarMonth(NT.calendar.solarToLunar(d, m, y).month, lunarLib.getDayZhiIndex());
+      return { bySolarTerm, byLunarMonth, differs: bySolarTerm !== byLunarMonth };
+    } catch {
+      return null;
+    }
+  }
   NT.canhClock = Object.freeze({
     CHI_NAMES,
     CHI_HOURS,
@@ -237,7 +272,9 @@
     getCurrentCanhStatus,
     getLyThuanPhong,
     getDirections,
-    getDayHoursDetails
+    getDayHoursDetails,
+    isHoangDaoByLunarMonth,
+    compareDayHoangDao
   });
 
 })(globalThis.NT ??= {});

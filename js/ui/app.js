@@ -1066,12 +1066,10 @@
 
       const hoursDetails = NT.canhClock.getDayHoursDetails(gz.dChi, lunar.month, lunar.day);
       const currHourDetail = hoursDetails[status.chiIndex];
-      const ltp = NT.canhClock.getLyThuanPhong(lunar.month, lunar.day, status.chiIndex);
 
       const nameEl = $('#bar-chi-name');
       const spanEl = $('#bar-chi-span');
       const statusEl = $('#bar-canh-status');
-      const ltpEl = $('#bar-ltp-val');
       const countEl = $('#bar-countdown');
       const timeEl = $('#bar-clock-time');
 
@@ -1082,9 +1080,6 @@
           ? `🟡 Hoàng Đạo (${currHourDetail.starName})` 
           : `⚫ Hắc Đạo (${currHourDetail.starName})`;
         statusEl.className = 'canh-status-tag ' + (currHourDetail.isHuangDao ? 'hd' : 'hei');
-      }
-      if (ltpEl && ltp) {
-        ltpEl.textContent = `${ltp.name} (${ltp.quality === 'good' ? 'Cát' : 'Hung/Thứ'})`;
       }
       if (countEl) {
         countEl.innerHTML = `Còn <b>${status.remainingMinutes} phút</b> sang Canh ${status.nextChi}`;
@@ -1109,11 +1104,17 @@
               <td>${h.chiIndex === 0 ? '00:00 – 00:59' : h.label}</td>
               <td>${h.starName}</td>
               <td><span class="badge-tag ${isHD ? 'cat' : 'taboo'}">${isHD ? 'Hoàng Đạo' : 'Hắc Đạo'}</span></td>
-              <td><span class="${h.lyThuanPhong.quality === 'good' ? 'text-gold' : ''}"><b>${h.lyThuanPhong.name}</b> — ${h.lyThuanPhong.meaning}</span></td>
+              <td><span class="${h.lyThuanPhong.quality === 'good' ? 'text-gold' : ''}"><b>${h.lyThuanPhong.name}</b> (${h.lyThuanPhong.quality === 'good' ? 'tốt' : 'xấu'}) — ${h.lyThuanPhong.short}</span></td>
             </tr>
           `;
         }).join('');
       }
+    }
+
+    // Lời truyền khẩu đầy đủ của sáu cung: chỉ hiện khi người dùng tự mở (mục mở/đóng dưới bảng)
+    const ltpFull = $('#ltp-full-list');
+    if (ltpFull && NT.canhClock) {
+      ltpFull.innerHTML = NT.canhClock.LY_THUAN_PHONG.map((c) => `<li><b>${esc(c.name)}</b> (${c.quality === 'good' ? 'tốt' : 'xấu'}): ${esc(c.meaning)}</li>`).join('');
     }
 
     updateClock();
