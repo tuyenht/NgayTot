@@ -3,6 +3,7 @@
  */
 import { createRequire } from 'node:module';
 import { readFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import vm from 'node:vm';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
@@ -668,6 +669,59 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   const withAddr = NT.prayers.filterPrayers({}).map((p) => NT.prayers.getPrayerById(p.id)).find((p) => p.content.includes('{{GIA_CHU_ADDRESS}}'));
   const out = NT.prayers.renderPrayer(withAddr.id, { fullName: 'A $& B', address: "Số 5 $& $` $' phố" }, {});
   eq('Văn khấn: ký tự $ trong tên, địa chỉ được giữ nguyên văn', [out.renderedText.includes("Số 5 $& $` $' phố"), out.renderedText.includes('{{')], [true, false]);
+}
+
+// G1 — bảng sóc và tiết khí đã đóng băng (PRD mục 5, 13.1 lớp 1). Bảng do tools/astro/build_astro_events.py sinh;
+// phép so với TDBtimes của Yuk Tung Liu chạy bằng tools/astro/compare_tdbtimes.py, không chạy ở đây.
+{
+  const raw = readFileSync(path.join(root, 'data/astro_events.json'));
+  const frozen = readFileSync(path.join(root, 'data/astro_events.sha256'), 'utf8').split(/\s+/)[0];
+  // Mã băm ghi cứng ở đây để một lượt sinh lại bảng không thể lặng lẽ đổi cả bảng lẫn tệp .sha256
+  eq('Bảng astro_events khớp mã băm SHA-256 đã đóng băng ngày 2026-10-07',
+    [createHash('sha256').update(raw).digest('hex'), frozen],
+    ['9818f55bd948489358386251fd43e64fbbe5537f44ce577048b1e846c41b7ad1', '9818f55bd948489358386251fd43e64fbbe5537f44ce577048b1e846c41b7ad1']);
+  const astro = JSON.parse(raw.toString('utf8'));
+  const [y0, y1] = astro.meta.khoang_nam;
+  const ms = (iso) => Date.parse(iso + 'Z');
+  const terms = astro.events.filter((e) => e[0] === 'tiet_khi');
+  const soc = astro.events.filter((e) => e[0] === 'soc');
+  const perYear = new Map();
+  for (const [, [y, i]] of terms) perYear.set(y, (perYear.get(y) || []).concat(i));
+  let badYears = 0;
+  for (let y = y0; y <= y1; y++) {
+    const got = (perYear.get(y) || []).slice().sort((a, b) => a - b);
+    if (got.length !== 24 || got.some((v, i) => v !== i)) badYears++;
+  }
+  eq('astro_events: 1799–2200, mỗi năm đủ 24 tiết khí', [y0, y1, terms.length, badYears], [1799, 2200, 9648, 0]);
+  let gapMin = Infinity, gapMax = 0, kBad = 0;
+  for (let i = 1; i < soc.length; i++) {
+    const g = (ms(soc[i][2]) - ms(soc[i - 1][2])) / 864e5;
+    gapMin = Math.min(gapMin, g); gapMax = Math.max(gapMax, g);
+    if (soc[i][1] - soc[i - 1][1] !== 1) kBad++;
+  }
+  eq('astro_events: hai sóc liên tiếp cách nhau 29,2–29,9 ngày, số thứ tự tuần trăng tăng đều',
+    [soc.length, gapMin > 29.2, gapMax < 29.9, kBad], [4972, true, true, 0]);
+  eq('astro_events: thứ tự thời gian tăng dần; ΔT = TT − UT1 khớp cột delta_t trong 1 giây',
+    [astro.events.every((e, i) => i === 0 || ms(e[2]) > ms(astro.events[i - 1][2])),
+      astro.events.every((e) => Math.abs((ms(e[2]) - ms(e[3])) / 1000 - e[4]) <= 1)], [true, true]);
+  // Ca ranh giới của PRD 5.3: Đại hàn 1979 rơi vài giây trước nửa đêm UTC+8
+  const daiHan1979 = terms.find((e) => e[1][0] === 1979 && e[1][1] === 20);
+  eq('astro_events: Đại hàn 1979 rơi 5 giây trước nửa đêm tính theo UT1 + 8 giờ (ca ranh giới ở PRD 5.3)',
+    new Date(ms(daiHan1979[3]) + 8 * 3600e3).toISOString().slice(0, 19), '1979-01-20T23:59:55');
+  // Bộ máy đối chiếu thứ hai (PRD 5.2): thư viện lịch đang dùng, giờ UTC+8. Sau 2030 hai bên lệch dần vì ngoại suy ΔT khác nhau.
+  const NAMES = ['春分', '清明', '谷雨', '立夏', '小满', '芒种', '夏至', '小暑', '大暑', '立秋', '处暑', '白露', '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至', '小寒', '大寒', '立春', '雨水', '惊蛰'];
+  const ours = new Map(terms.map((e) => [`${e[1][0]}:${e[1][1]}`, ms(e[3]) + 8 * 3600e3]));
+  let n = 0, worst = 0;
+  for (let y = 1929; y <= 2030; y++) {
+    for (const [k, s] of Object.entries(Lunar.fromYmd(y, 6, 1).getJieQiTable())) {
+      const idx = NAMES.indexOf(k);
+      const o = ours.get(`${y}:${idx}`);
+      if (idx < 0 || s.getYear() !== y || o === undefined) continue;
+      const theirs = Date.UTC(s.getYear(), s.getMonth() - 1, s.getDay(), s.getHour(), s.getMinute(), s.getSecond());
+      n++; worst = Math.max(worst, Math.abs(theirs - o) / 1000);
+    }
+  }
+  eq('astro_events: tiết khí 1929–2030 lệch thư viện lịch đang dùng không quá 5 giây (theo UTC+8)', [n > 2300, worst <= 5], [true, true]);
 }
 
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);

@@ -6,3 +6,6 @@ __pycache__/
 temp/
 apps/
 .env
+
+# G1: tệp đối chiếu tải về, không thuộc kho mã (xem tools/astro/compare_tdbtimes.py)
+tools/astro/TDBtimes.txt
