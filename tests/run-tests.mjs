@@ -1031,5 +1031,130 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   console.log('   (số ngày đề xuất nhậm chức 11/2026, linh hoạt: ' + flex.ranked.length + '/' + flex.days.length + ' ngày)');
 }
 
+// Văn khấn: ngày âm khi mở từ kho, ngày lễ ở tháng nhuận (docs 14.2 dòng 46)
+{
+  const P = NT.prayers;
+  const badge = (o, id) => P.filterPrayers(o).find((p) => p.id === id)?.priorityBadge ?? null;
+
+  // 08/08/2025 = 15 tháng 6 nhuận; tháng luôn dương, nhuận có cờ riêng
+  eq('lunarContextForDate: 08/08/2025 = 15 tháng 6 nhuận, tháng dương (không âm như thư viện gốc)',
+    ((c) => [c.day, c.month, c.leap, c.monthText])(P.lunarContextForDate(new Date(2025, 7, 8))), [15, 6, true, '6 nhuận']);
+  eq('renderPrayer điền ngày âm tháng nhuận: "15 tháng 6 nhuận"',
+    P.renderPrayer(P.PRAYERS.find((p) => p.content.includes('{{NGAY_AM}}')).id, {}, { lunarDay: 15, lunarMonth: '6 nhuận' }).renderedText.includes('15 tháng 6 nhuận'), true);
+
+  // Lễ âm lịch cố định tính ở tháng thường, không lặp ở tháng nhuận; mùng Một và rằm hằng tháng thì tháng nhuận vẫn có
+  eq('Trung Thu (rằm tháng 8): 10/8 thường còn 5 ngày có gợi ý; 10/8 nhuận thì KHÔNG (lễ đã qua ở tháng thường)',
+    [badge({ currentLunarDay: 10, currentLunarMonth: 8 }, 'vk_trung_thu'), badge({ currentLunarDay: 10, currentLunarMonth: 8, currentLunarLeap: true }, 'vk_trung_thu')],
+    ['🔥 Sắp đến dịp (còn 5 ngày)', null]);
+  eq('Cuối tháng 4 nhuận (29/4 nhuận) vẫn gợi ý lễ Đoan Ngọ (5/5) sắp tới',
+    badge({ currentLunarDay: 29, currentLunarMonth: 4, currentLunarLeap: true }, 'vk_doan_ngo'), '🔥 Sắp đến dịp (còn 6 ngày)');
+  const socVong = (o) => P.filterPrayers(o).filter((p) => p.category === 'tuan_tiet').map((p) => p.priorityBadge);
+  eq('Tháng nhuận vẫn có tuần Sóc Vọng (rằm 15/7 nhuận, mùng Một 1/7 nhuận); ngày thường trong tháng nhuận thì không',
+    [socVong({ currentLunarDay: 15, currentLunarMonth: 7, currentLunarLeap: true }).every((b) => /Tuần Vọng/.test(b)),
+      socVong({ currentLunarDay: 1, currentLunarMonth: 7, currentLunarLeap: true }).every((b) => /Tuần Sóc/.test(b)),
+      socVong({ currentLunarDay: 10, currentLunarMonth: 7, currentLunarLeap: true }).every((b) => b == null)],
+    [true, true, true]);
+  const gioX = { lunarDay: 12, lunarMonth: 7, deceasedName: 'X' };
+  eq('Giỗ ghi ở tháng thường 7: sắp đến khi 10/7 thường, không báo khi 10/7 nhuận; giỗ ghi ở tháng 7 nhuận thì báo ở 10/7 nhuận',
+    [badge({ currentLunarDay: 10, currentLunarMonth: 7, upcomingAnniversaries: [gioX] }, 'vk_gio_thuong') !== null,
+      badge({ currentLunarDay: 10, currentLunarMonth: 7, currentLunarLeap: true, upcomingAnniversaries: [gioX] }, 'vk_gio_thuong'),
+      badge({ currentLunarDay: 10, currentLunarMonth: 7, currentLunarLeap: true, upcomingAnniversaries: [{ ...gioX, isLeapMonth: true }] }, 'vk_gio_thuong') !== null],
+    [true, null, true]);
+}
+
+// Màn hình văn khấn chạy với DOM giả: mở từ kho điền ngày âm; ẩn tab rồi quay lại xin lại khóa sáng màn hình; mọi cách đóng đều dọn
+{
+  const docL = new Set();
+  const els = new Map();
+  const mk = (sel) => {
+    const l = {};
+    const el = {
+      sel, value: '', textContent: '', innerHTML: '', style: {}, dataset: {}, open: false, checked: true, scrollTop: 0, clientHeight: 0, scrollHeight: 0,
+      classList: { add() {}, remove() {}, toggle() {}, contains: () => false },
+      addEventListener(t, f) { (l[t] ??= new Set()).add(f); },
+      removeEventListener(t, f) { l[t]?.delete(f); },
+      fire(t) { for (const f of [...(l[t] ?? [])]) f({ target: el }); },
+      setAttribute() {}, querySelector: () => null, querySelectorAll: () => [],
+      showModal() { el.open = true; },
+      close() { if (el.open) { el.open = false; el.fire('close'); } },
+    };
+    return el;
+  };
+  let wakeReq = 0, wakeRel = 0;
+  const sentinels = [];
+  const fakeDoc = {
+    visibilityState: 'visible',
+    // Trang thật không có nút in và chip tốc độ: giả lập thiếu phần tử để chắc mã không nổ
+    querySelector: (s) => (s === '#btn-print-prayer' || s === '.speed-chip' ? null : (els.get(s) ?? (els.set(s, mk(s)), els.get(s)))),
+    querySelectorAll: () => [],
+    addEventListener(t, f) { if (t === 'visibilitychange') docL.add(f); },
+    removeEventListener(t, f) { if (t === 'visibilitychange') docL.delete(f); },
+    hide() { fakeDoc.visibilityState = 'hidden'; for (const f of [...docL]) f(); },
+    show() { fakeDoc.visibilityState = 'visible'; for (const f of [...docL]) f(); },
+  };
+  const fakeNav = { wakeLock: { request: async () => {
+    wakeReq++;
+    const s = { released: false, release() { s.released = true; wakeRel++; return Promise.resolve(); }, addEventListener(t, f) { s.onRelease = f; } };
+    sentinels.push(s);
+    return s;
+  } } };
+  const oldNav = Object.getOwnPropertyDescriptor(globalThis, 'navigator');
+  Object.defineProperty(globalThis, 'document', { value: fakeDoc, configurable: true, writable: true });
+  Object.defineProperty(globalThis, 'navigator', { value: fakeNav, configurable: true, writable: true });
+  const tick = () => new Promise((r) => setTimeout(r, 0));
+  try {
+    vm.runInThisContext(readFileSync(path.join(root, 'js/ui/prayers-ui.js'), 'utf8'), { filename: 'prayers-ui.js' });
+    const UI = NT.prayersUI;
+    await UI.init();
+    const dlg = fakeDoc.querySelector('#prayer-dialog');
+    const view = fakeDoc.querySelector('#prayer-text-view');
+    const withDate = NT.prayers.PRAYERS.find((p) => p.content.includes('{{NGAY_AM}}')).id;
+
+    // 1. Mở từ kho (không kèm ngày) → ngày âm hôm nay; mở từ Sổ giỗ (có ngày) → giữ ngày được truyền
+    const t = NT.prayers.lunarContextForDate(new Date());
+    await UI.openPrayerModal(withDate, 'text');
+    await tick();
+    eq('Mở bài từ kho: điền ngày âm hôm nay, không còn "[Ngày âm]"/"[Tháng âm]"',
+      [view.innerHTML.includes(`ngày ${t.day} tháng ${t.monthText} âm lịch`), /\[Ngày âm\]|\[Tháng âm\]/.test(view.innerHTML)], [true, false]);
+    dlg.close();
+    await UI.openPrayerModal(withDate, 'text', { lunarDay: 7, lunarMonth: 3 });
+    eq('Mở bài từ Sổ giỗ/lịch tháng kèm ngày: giữ đúng ngày được truyền', view.innerHTML.includes('ngày 7 tháng 3 âm lịch'), true);
+    dlg.close();
+    await tick();
+
+    // 2. Khóa sáng màn hình
+    const w0 = wakeReq, r0 = wakeRel, s0 = sentinels.length;
+    await UI.openPrayerModal(withDate, 'text');
+    await tick();
+    eq('Mở bài: xin khóa 1 lần, có 1 trình nghe visibilitychange', [wakeReq - w0, docL.size], [1, 1]);
+    fakeDoc.hide();
+    await tick();
+    eq('Ẩn tab: chưa xin thêm', wakeReq - w0, 1);
+    sentinels[s0].released = true; sentinels[s0].onRelease?.(); // trình duyệt tự nhả khóa khi tab bị ẩn
+    fakeDoc.show();
+    await tick();
+    eq('Quay lại tab khi bài còn mở: xin lại khóa (lần 2), khóa mới đang giữ', [wakeReq - w0, sentinels[s0 + 1].released], [2, false]);
+    fakeDoc.show();
+    await tick();
+    eq('Quay lại tab khi đang giữ khóa: không xin chồng', wakeReq - w0, 2);
+    dlg.close(); // cùng đường với phím Esc và bấm ra ngoài
+    await tick();
+    eq('Đóng bài: trả khóa, gỡ trình nghe visibilitychange', [sentinels[s0 + 1].released, wakeRel - r0 >= 1, docL.size], [true, true, 0]);
+    fakeDoc.hide(); fakeDoc.show();
+    await tick();
+    eq('Sau khi đóng bài, ẩn/hiện tab không xin khóa nữa', wakeReq - w0, 2);
+
+    // 3. Mở lại liên tiếp không nhân đôi trình nghe
+    await UI.openPrayerModal(withDate, 'text');
+    await UI.openPrayerModal(withDate, 'text');
+    eq('Mở bài lại: vẫn chỉ 1 trình nghe visibilitychange', docL.size, 1);
+    dlg.close();
+    await tick();
+  } finally {
+    delete globalThis.document;
+    if (oldNav) Object.defineProperty(globalThis, 'navigator', oldNav); else delete globalThis.navigator;
+  }
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

@@ -1382,6 +1382,8 @@ Nguồn tham khảo: báo Văn Hóa.`
     // 3. Ưu tiên khi đến dịp (gần ngày thì ưu tiên lên trên)
     const curD = Number(opts.currentLunarDay);
     const curM = Number(opts.currentLunarMonth);
+    // Hôm nay thuộc tháng nhuận (curM là số tháng thường mà tháng nhuận lặp lại, luôn dương).
+    const curLeap = !!opts.currentLunarLeap;
 
     if (curD && curM) {
       // a. Tuần tiết Sóc Vọng (Mùng 1 và Rằm)
@@ -1394,13 +1396,15 @@ Nguồn tham khảo: báo Văn Hóa.`
         }
       }
 
-      // b. Ngày lễ mùa vụ trong năm
+      // b. Ngày lễ mùa vụ trong năm. Lễ âm lịch cố định tính ở tháng thường, không lặp ở tháng nhuận
+      // (mùng Một và rằm hằng tháng ở mục a thì tháng nhuận vẫn có): đang ở tháng nhuận N thì lễ của
+      // tháng N đã qua (ở tháng thường), lễ các tháng sau vẫn tính khoảng cách bình thường.
       const fest = FESTIVAL_DATES[p.id];
       if (fest) {
         const targetDays = fest.m * 30 + fest.d;
         const currentDays = curM * 30 + curD;
         let diff = targetDays - currentDays;
-        if (diff < 0) diff += 360;
+        if (diff < 0 || (curLeap && fest.m === curM)) diff += 360;
 
         if (diff >= 0 && diff <= 15) {
           const proximityScore = Math.max(10, 110 - diff * 6);
@@ -1415,7 +1419,10 @@ Nguồn tham khảo: báo Văn Hóa.`
         let matchedAnniv = null;
         for (const a of opts.upcomingAnniversaries) {
           let diffA = (a.lunarMonth * 30 + a.lunarDay) - (curM * 30 + curD);
-          if (diffA < 0) diffA += 360;
+          // Giỗ ở tháng thường của tháng N thì đã qua khi đang ở tháng nhuận N (và ngược lại: giỗ ghi ở tháng nhuận N
+          // chỉ trùng khi hôm nay cũng ở tháng nhuận N).
+          const aLeap = !!(a.isLeapMonth ?? a.isLeap);
+          if (diffA < 0 || (curLeap && a.lunarMonth === curM && !aLeap)) diffA += 360;
           if (diffA < nearestAnnivDiff) {
             nearestAnnivDiff = diffA;
             matchedAnniv = a;
@@ -1449,6 +1456,7 @@ Nguồn tham khảo: báo Văn Hóa.`
     userEthnicity = '',
     currentLunarDay = null,
     currentLunarMonth = null,
+    currentLunarLeap = false,
     upcomingAnniversaries = []
   } = {}) {
     const kw = keyword.trim().toLowerCase();
@@ -1482,6 +1490,7 @@ Nguồn tham khảo: báo Văn Hóa.`
         userEthnicity,
         currentLunarDay,
         currentLunarMonth,
+        currentLunarLeap,
         upcomingAnniversaries
       });
       return { prayer: p, score, badgeText };
@@ -1504,6 +1513,25 @@ Nguồn tham khảo: báo Văn Hóa.`
    */
   function getPrayerById(id) {
     return PRAYERS.find((p) => p.id === id) || null;
+  }
+
+  /**
+   * Ngày âm (theo lịch Việt Nam của ứng dụng) của một ngày dương, dùng chung cho gợi ý lễ và điền bài khấn.
+   * month luôn dương; tháng nhuận có leap = true. Trả về null nếu ngày ngoài phạm vi hỗ trợ.
+   * @returns {{day:number, month:number, leap:boolean, year:number, yearName:string, monthText:string}|null}
+   */
+  function lunarContextForDate(date = new Date()) {
+    try {
+      const l = NT.calendar.solarToLunar(date.getDate(), date.getMonth() + 1, date.getFullYear());
+      if (!l) return null;
+      return Object.freeze({
+        day: l.day, month: l.month, leap: !!l.leap, year: l.year,
+        yearName: NT.data.ganZhiVi(NT.calendar.lunarYearGan(l.year), NT.calendar.lunarYearZhi(l.year)),
+        monthText: `${l.month}${l.leap ? ' nhuận' : ''}`
+      });
+    } catch {
+      return null;
+    }
   }
 
   function currentLunarYearName(now = new Date()) {
@@ -1614,6 +1642,7 @@ Nguồn tham khảo: báo Văn Hóa.`
     PRAYERS,
     filterPrayers,
     getPrayerById,
-    renderPrayer
+    renderPrayer,
+    lunarContextForDate
   });
 })(globalThis.NT ??= {});

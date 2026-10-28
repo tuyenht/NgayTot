@@ -114,17 +114,11 @@
     const userRegion = $('#user-pref-region')?.value || '';
     const userEthnicity = $('#user-pref-eth')?.value || '';
 
-    // Lấy ngày tháng âm lịch hiện tại để tính toán dịp lễ cận kề
-    let currentLunarDay = 1;
-    let currentLunarMonth = 1;
-    try {
-      if (typeof Solar !== 'undefined') {
-        const solar = Solar.fromDate(new Date());
-        const lunar = solar.getLunar();
-        currentLunarDay = lunar.getDay();
-        currentLunarMonth = lunar.getMonth();
-      }
-    } catch {}
+    // Ngày âm hôm nay (lịch Việt Nam của ứng dụng) để tính dịp lễ cận kề; tháng luôn dương, tháng nhuận có cờ riêng
+    const todayLunar = pData.lunarContextForDate(new Date());
+    const currentLunarDay = todayLunar ? todayLunar.day : 1;
+    const currentLunarMonth = todayLunar ? todayLunar.month : 1;
+    const currentLunarLeap = todayLunar ? todayLunar.leap : false;
 
     // Lấy danh sách ngày giỗ từ Sổ Giỗ để ưu tiên bài khấn giỗ cận kề
     let upcomingAnniversaries = [];
@@ -143,6 +137,7 @@
       userEthnicity,
       currentLunarDay,
       currentLunarMonth,
+      currentLunarLeap,
       upcomingAnniversaries
     });
 
@@ -231,7 +226,13 @@
     const prayer = pData.getPrayerById(prayerId);
     if (!prayer) return;
     activePrayer = prayer;
-    activeCustomContext = { enablePersonalization: true, ...customContext };
+    // Ngày, tháng, năm âm điền vào bài: mở từ kho (không kèm ngày) thì lấy ngày âm hôm nay,
+    // mở từ Sổ giỗ hoặc lịch tháng thì giữ ngày họ truyền vào
+    const todayLunar = pData.lunarContextForDate(new Date());
+    const dateDefaults = todayLunar
+      ? { lunarDay: todayLunar.day, lunarMonth: todayLunar.monthText, lunarYearName: todayLunar.yearName }
+      : {};
+    activeCustomContext = { enablePersonalization: true, ...dateDefaults, ...customContext };
 
     const profile = await getStoredProfile();
 
@@ -303,6 +304,9 @@
     applyFontSize(currentFontSize);
 
     dlg.showModal();
+
+    // Ẩn tab rồi quay lại thì trình duyệt đã nhả khóa sáng màn hình: nghe để xin lại khi bài còn mở
+    document.addEventListener('visibilitychange', onVisibilityChange);
 
     // Xin khóa sáng màn hình sau khi mở; nếu người dùng đã đóng trước khi có kết quả thì trả lại ngay
     requestScreenWakeLock().then(() => { if (!dlg.open) releaseScreenWakeLock(); });
@@ -408,7 +412,17 @@
     try {
       if (wakeLockSentinel && !wakeLockSentinel.released) return; // đang giữ rồi: không xin chồng
       if ('wakeLock' in navigator) {
-        wakeLockSentinel =await navigator.wakeLock.request('screen');
+        const sentinel = await navigator.wakeLock.request('screen');
+        // Hai lần xin chồng nhau (mở bài rồi quay lại tab ngay): giữ khóa đến trước, trả khóa đến sau
+        if (wakeLockSentinel && !wakeLockSentinel.released) { sentinel.release().catch(() => {}); return; }
+        wakeLockSentinel = sentinel;
+        // Trình duyệt tự nhả khi ẩn tab: cập nhật nhãn để không còn báo "Màn hình sáng" sai
+        sentinel.addEventListener?.('release', () => {
+          if (wakeLockSentinel !== sentinel) return;
+          wakeLockSentinel = null;
+          const b = $('#wakelock-status-badge');
+          if (b) { b.textContent = 'Màn hình'; b.classList.remove('active'); }
+        });
         const badge = $('#wakelock-status-badge');
         if (badge) {
           badge.textContent = '💡 Màn hình sáng';
@@ -418,6 +432,13 @@
     } catch {
       // Wake lock not supported or battery saver active
     }
+  }
+
+  // Quay lại tab khi bài khấn còn mở: xin lại khóa sáng màn hình (trình duyệt đã tự nhả lúc tab bị ẩn)
+  function onVisibilityChange() {
+    const dlg = $('#prayer-dialog');
+    if (document.visibilityState !== 'visible' || !dlg || !dlg.open) return;
+    requestScreenWakeLock().then(() => { if (!dlg.open) releaseScreenWakeLock(); });
   }
 
   function releaseScreenWakeLock() {
@@ -573,6 +594,7 @@
     // Modal Close
     const dlg = $('#prayer-dialog');
     const cleanup = () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
       cancelHandsFreeCountdown();
       stopAutoScroll();
       releaseScreenWakeLock();
