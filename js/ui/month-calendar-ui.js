@@ -414,7 +414,7 @@
             deceasedName: `${btn.dataset.rel ? btn.dataset.rel + ' ' : ''}${btn.dataset.name}`,
             lunarDay: btn.dataset.day,
             lunarMonth: btn.dataset.month,
-            lunarYearName: `${y}`
+            lunarYearName: `${gz.yCan} ${gz.yChi}`
           });
         }
       });

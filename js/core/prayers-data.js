@@ -1337,19 +1337,17 @@ Nguồn tham khảo: báo Văn Hóa.`
     vk_mung_1_tet: { m: 1, d: 1, label: 'Sáng mùng 1 Tết Nguyên Đán' },
     vk_hoa_vang: { m: 1, d: 3, label: 'Lễ Hóa Vàng tạ Tết' },
     vk_ram_thang_gieng: { m: 1, d: 15, label: 'Tết Thượng Nguyên (Rằm tháng Giêng)' },
-    vk_tet_han_thuc: { m: 3, d: 3, label: 'Tết Hàn Thực (Mùng 3 tháng 3)' },
+    vk_han_thuc: { m: 3, d: 3, label: 'Tết Hàn Thực (Mùng 3 tháng 3)' },
     vk_thanh_minh: { m: 3, d: 5, label: 'Tiết Thanh Minh & Tảo Mộ' },
     vk_gio_to_hung_vuong: { m: 3, d: 10, label: 'Giỗ Tổ Hùng Vương 10 tháng 3' },
     vk_doan_ngo: { m: 5, d: 5, label: 'Tết Đoan Ngọ (Mùng 5 tháng 5)' },
     vk_cung_am_hon_hue: { m: 5, d: 23, label: 'Lễ Cúng Âm Hồn Huế (23 tháng 5)' },
-    vk_vu_lan: { m: 7, d: 15, label: 'Lễ Vu Lan Báo Hiếu (Rằm tháng 7)' },
-    vk_cung_chung_sinh_thang_7: { m: 7, d: 15, label: 'Cúng Chúng Sinh tháng 7' },
-    vk_thap_cham_kate: { m: 7, d: 1, label: 'Lễ Hội Katê Chăm (Đầu tháng 7)' },
+    vk_vu_lan_bao_hieu: { m: 7, d: 15, label: 'Lễ Vu Lan Báo Hiếu (Rằm tháng 7)' },
+    vk_xa_toi_vong_nhan: { m: 7, d: 15, label: 'Cúng Chúng Sinh tháng 7' },
     vk_trung_thu: { m: 8, d: 15, label: 'Tết Trung Thu (Rằm tháng 8)' },
     vk_sen_dolta_khmer: { m: 8, d: 29, label: 'Lễ Sen Dolta Khmer Báo Hiếu' },
     vk_ha_nguyen: { m: 10, d: 15, label: 'Tết Hạ Nguyên / Cơm Mới (Rằm tháng 10)' },
-    vk_via_than_tai_mien_nam: { m: 1, d: 10, label: 'Vía Thần Tài mùng 10 tháng Giêng' },
-    vk_chol_chnam_thmay: { m: 3, d: 15, label: 'Tết Chôl Chnăm Thmây Khmer' }
+    vk_via_than_tai_mien_nam: { m: 1, d: 10, label: 'Vía Thần Tài mùng 10 tháng Giêng' }
   });
 
   /**

@@ -1184,5 +1184,20 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   console.log(`ℹ️  Quét 1 năm (cưới hỏi, 2033, chọn giờ tốt nhất): ${yr.days.length} ngày trong ${Math.round(performance.now() - t0)} ms (thông tin, không chấm đạt/không đạt)`);
 }
 
+// Văn khấn: bảng ngày lễ trỏ đúng mã bài; việc thi cử theo PRD (CAREER_FIXED); tên năm âm của bài khấn
+{
+  const P = NT.prayers, A = NT.activities;
+  const badge = (o, id) => P.filterPrayers(o).find((p) => p.id === id)?.priorityBadge ?? null;
+  eq('Ngày 10/7 âm: Vu Lan và Cúng chúng sinh (rằm tháng 7) có gợi ý; ngày 01/3 âm: Hàn Thực (mùng 3 tháng 3) có gợi ý',
+    [badge({ currentLunarDay: 10, currentLunarMonth: 7 }, 'vk_vu_lan_bao_hieu'), badge({ currentLunarDay: 10, currentLunarMonth: 7 }, 'vk_xa_toi_vong_nhan'), badge({ currentLunarDay: 1, currentLunarMonth: 3 }, 'vk_han_thuc')],
+    ['🔥 Sắp đến dịp (còn 5 ngày)', '🔥 Sắp đến dịp (còn 5 ngày)', '🔥 Sắp đến dịp (còn 2 ngày)']);
+  const cf = A.byId('career_fixed');
+  eq('career_fixed là thi cử, phỏng vấn (PRD PK-02 CAREER_FIXED): không có từ khóa nghi/kỵ, chỉ xem ngày đã định; chỉ còn một việc mang nhãn "Nhậm chức"',
+    [cf.label, cf.yiPrimary.length + cf.yi.length, cf.fixedOnly, A.ACTIVITIES.filter((a) => /Nhậm chức/.test(a.label)).map((a) => a.id)],
+    ['Thi cử, phỏng vấn (ngày đã định)', 0, true, ['career_post']]);
+  const g = NT.calendar.solarToGanZhi(10, 1, 2026);
+  eq('Tên năm âm cho bài khấn lấy theo Tết Việt Nam: 10/01/2026 còn năm Ất Tỵ', `${g.yCan} ${g.yChi}`, 'Ất Tỵ');
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

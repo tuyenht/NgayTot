@@ -176,6 +176,18 @@
     bindListActions();
   }
 
+  // Tên năm âm (can chi) của lần giỗ sắp tới, để bài khấn ghi "năm Bính Ngọ" chứ không ghi số năm dương
+  function occurrenceYearName(item) {
+    try {
+      const occ = NT.anniversary.nextAnniversaryOccurrence(item.lunarDay, item.lunarMonth, new Date());
+      const [oy, om, od] = occ.solarDateStr.split('-').map(Number);
+      const gz = NT.calendar.solarToGanZhi(od, om, oy);
+      return `${gz.yCan} ${gz.yChi}`;
+    } catch {
+      return undefined; // bài khấn tự dùng năm âm của hôm nay
+    }
+  }
+
   function bindListActions() {
     // 1. Mở văn khấn giỗ (Chính Kỵ và Tiên Thường) có tự điền đầy đủ 6 biến chuẩn
     const handleOpenPrayer = (btn, prayerId) => {
@@ -196,7 +208,7 @@
           burialPlace: item.restingPlace || '',
           lunarDay: item.lunarDay,
           lunarMonth: item.lunarMonth,
-          lunarYearName: `${new Date().getFullYear()}`,
+          lunarYearName: occurrenceYearName(item),
           invitedAncestors: otherAncestors,
           enablePersonalization: true
         });

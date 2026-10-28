@@ -138,9 +138,10 @@
       yearChecks: [], pk: 'PK-02'
     },
     {
-      id: 'career_fixed', label: 'Nhậm chức / Bắt đầu công việc (Cố định)', icon: '📜',
-      desc: 'Xem thông tin ngày giờ đã ấn định khi nhận chức, bắt đầu công việc',
-      yiPrimary: ['赴任'], yi: ['会亲友', '祭祀'],
+      // PRD 8 PK-02 CAREER_FIXED: thi cử, phỏng vấn; sách cổ không có mục nghi/kỵ khớp nên không có từ khóa
+      id: 'career_fixed', label: 'Thi cử, phỏng vấn (ngày đã định)', icon: '📜',
+      desc: 'Xem thông tin ngày giờ đã ấn định của kỳ thi, buổi phỏng vấn',
+      yiPrimary: [], yi: [],
       zhixingGood: ['成', '定', '开', '建'], zhixingBad: ['破', '危', '闭'],
       shenGood: ['天德', '月德', '福德', '驿马', '天马'],
       shenBad: { '大耗': 6, '往亡': 6, '归忌': 5, '天吏': 4 },
