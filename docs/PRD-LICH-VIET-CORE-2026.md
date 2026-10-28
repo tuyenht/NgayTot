@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.15 — 4.2 và 4.3 ghi theo hiện trạng mới: tháng tiết khí theo múi giờ dựng lịch, không còn theo UTC+8 của thư viện (14.2 dòng 14, 54); không đổi yêu cầu. Bản 4.14: thêm QĐ-33 đến QĐ-36 (lõi tra bảng tháng âm lịch dựng từ bảng thiên văn; ngoại lệ thứ ba ở 13.4; 4.2 và 4.3 ghi theo hiện trạng mới). Bản 4.13: thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
+| Phiên bản | 4.16 — thêm QĐ-37: sách chủ dự án đưa vào được học và áp dụng sau khi đánh giá, chọn lọc (7.4 bước 1a–3a; ngoại lệ ở dòng AI của 1.3). Bản 4.15: 4.2 và 4.3 ghi theo hiện trạng mới: tháng tiết khí theo múi giờ dựng lịch, không còn theo UTC+8 của thư viện (14.2 dòng 14, 54); không đổi yêu cầu. Bản 4.14: thêm QĐ-33 đến QĐ-36 (lõi tra bảng tháng âm lịch dựng từ bảng thiên văn; ngoại lệ thứ ba ở 13.4; 4.2 và 4.3 ghi theo hiện trạng mới). Bản 4.13: thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
 | Ngày cập nhật | 2026-10-28 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
@@ -59,7 +59,7 @@ Sản phẩm có **hai bản dùng chung một phần lõi tính toán** (`js/co
 - Quảng cáo trên bản web (QĐ-27); thông báo viết theo lối câu khách (QĐ-25).
 - Nội dung chép hoặc viết lại từ ứng dụng khác (QĐ-18, QĐ-25).
 - Máy chủ ứng dụng, tài khoản người dùng, API công khai, lưu dữ liệu người dùng trên máy chủ (xem 4.1).
-- Mô hình ngôn ngữ (AI) không tham gia bất kỳ phép tính nào và không được sinh hay sửa bảng tra.
+- Mô hình ngôn ngữ (AI) không tham gia bất kỳ phép tính nào và không được sinh hay sửa bảng tra; ngoại lệ duy nhất là lập bảng tra từ sách chủ dự án đưa vào theo 7.4 bước 1a–3a (QĐ-37).
 
 ### 1.4 Phạm vi năm
 
@@ -461,9 +461,16 @@ vi_du_trong_sach:               # thành kiểm thử bắt buộc
 
 ### 7.4 Quy trình thêm luật
 
+Nguồn là sách gốc chữ Hán: làm bước 1–6. Nguồn là sách chủ dự án đưa vào (QĐ-37): bước 1–3 thay bằng 1a–3a; bước 4–6 giữ nguyên.
+
 1. Chép nguyên văn chữ Hán kèm ảnh chụp trang.
 2. Người đọc được Hán văn dịch và lập bảng. AI chỉ hỗ trợ nháp.
 3. Người thứ hai kiểm độc lập bảng so với nguyên văn.
+
+1a. Đọc hết sách; mỗi luật, bảng, ví dụ ghi số trang. Trích ngắn làm bằng chứng; lời văn trong ứng dụng tự viết, không chép của sách.
+2a. Đánh giá từng luật: sách có tự nhất quán không (ví dụ của sách có theo đúng luật sách nêu); so với bảng tra và luật đang có, với 6tail, lichvang và các sách đã đọc; công thức có tự đếm lại được không; có nằm trong phạm vi 1.3 không. Kết luận cho từng luật: áp dụng, áp dụng có điều kiện, hoặc không áp dụng, kèm lý do.
+3a. Chủ dự án duyệt danh sách áp dụng trước khi cài. Bảng tra lập từ sách được một lượt kiểm khác với lượt lập bảng so lại với ảnh trang; mỗi luật cài có chú thích nguồn (sách, trang).
+
 4. Mọi ví dụ trong sách thành kiểm thử bắt buộc.
 5. Đối chiếu với 6tail và lichvang; mỗi chỗ lệch phải giải thích được bằng trường phái hoặc quy ước.
 6. Gắn nhãn tin cậy (2.1) và mức xử lý (bảng 8.3) cho luật trước khi phát hành; luật chưa có nhãn thì không được bật.

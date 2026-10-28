@@ -20,4 +20,6 @@ Chủ dự án thường chạy nhiều phiên song song trên dự án này. C�
 
 ## Quy tắc khác của dự án
 
+Chủ dự án đưa đường dẫn một cuốn sách (PDF) và nói "học" (hoặc "đọc và áp dụng"): dùng skill `hoc-sach` (tệp `C:\Users\tuyen\.claude\skills\hoc-sach\SKILL.md`), theo QĐ-37 và PRD 7.4 bước 1a–3a; không cần chủ dự án nhắc lại quy trình.
+
 Yêu cầu sản phẩm ở `docs/PRD-LICH-VIET-CORE-2026.md`, quyết định ở `docs/QUYET-DINH.md` (chỉ thêm dòng mới), tình trạng ở `docs/HIEN-TRANG.md` (theo quy tắc cập nhật ghi ở đầu tệp đó). Mọi thay đổi chạm vào cách tính ngày, giờ hoặc chấm điểm phải qua `node tests/run-tests.mjs`.
