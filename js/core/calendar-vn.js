@@ -160,7 +160,8 @@
     let t = decoded.get(key);
     if (t) return t;
     const n = src.codes.length;
-    t = { starts: new Array(n), months: new Array(n), leaps: new Array(n), lengths: new Array(n), years: new Array(n), index: new Map(), risk: new Map(src.risk) };
+    t = { starts: new Array(n), months: new Array(n), leaps: new Array(n), lengths: new Array(n), years: new Array(n), index: new Map(), risk: new Map(src.risk),
+      zqRisk: new Map((src.zqRisk || []).map(([i, seconds, term, month, leap, year]) => [i, Object.freeze({ seconds, term, month, leap: leap === 1, year })])) };
     let start = src.start, year = src.year;
     for (let i = 0; i < n; i++) {
       const v = CODE.indexOf(src.codes[i]);
@@ -187,7 +188,7 @@
   }
   // ── Tiết khí đã tính trước (js/core/solar-terms.js) ─────────────────────────────────────────────
   // Tên chữ Hán theo chỉ số (0 = Xuân phân) để dùng chung từ điển NT.vi.jieqi với thư viện lịch
-  const TERM_KEYS = ['春分', '清明', '谷雨', '立夏', '小满', '芒种', '夏至', '小暑', '大暑', '立秋', '处暑', '白露', '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至', '小寒', '大寒', '立春', '雨水', '惊蛰'];
+  const TERM_KEYS = Object.freeze(['春分', '清明', '谷雨', '立夏', '小满', '芒种', '夏至', '小暑', '大暑', '立秋', '处暑', '白露', '秋分', '寒露', '霜降', '立冬', '小雪', '大雪', '冬至', '小寒', '大寒', '立春', '雨水', '惊蛰']);
   const termCache = new Map();
   /** Số giây UT1 (tính từ 00:00 ngày 1/1) của 24 tiết khí năm `yy`, hoặc null nếu năm nằm ngoài bảng hay bảng chưa nạp. */
   function termSeconds(yy) {
@@ -223,11 +224,89 @@
   }
 
   /**
+   * Tháng theo tiết khí (nguyệt kiến, PRD §6.4) của một ngày dương: tháng đổi ở ngày chứa một trong 12 tiết
+   * (chỉ số lẻ), Lập xuân (chỉ số 21) mở tháng Dần và đổi năm can chi. "Ngày chứa tiết" theo múi giờ dựng lịch,
+   * không theo giờ Bắc Kinh (14.2 dòng 14). Can tháng theo phép Ngũ hổ độn từ can của năm tính theo Lập xuân.
+   * @returns {{ganIndex:number, zhiIndex:number, yearGanIndex:number, yearZhiIndex:number, termIndex:number}|undefined}
+   *   chỉ số can 0 = Giáp, chi 0 = Tý; termIndex: tiết mở đầu tháng; undefined nếu ngày nằm ngoài bảng tiết khí.
+   */
+  function monthPillar(dd, mm, yy, tz = calendarTz(yy, mm, dd)) {
+    const jdn = jdFromDate(dd, mm, yy);
+    let best = null;
+    for (const Y of [yy - 1, yy]) {
+      const row = termSeconds(Y);
+      if (!row) return undefined;
+      const jan1 = jdFromDate(1, 1, Y);
+      for (let i = 1; i < 24; i += 2) {
+        const day = jan1 + floor((row[i] + Math.round(tz * 3600)) / 86400);
+        if (day <= jdn && (!best || day > best.day)) best = { day, i, Y };
+      }
+    }
+    const n = ((best.i - 21 + 24) % 24) / 2; // 0 = tháng Dần
+    const solarYear = best.i === 19 ? best.Y - 1 : best.Y; // tháng Sửu (Tiểu hàn, tháng 1 dương lịch) thuộc năm trước Lập xuân
+    const yearGanIndex = (((solarYear - 4) % 10) + 10) % 10;
+    return Object.freeze({
+      ganIndex: (yearGanIndex * 2 + 2 + n) % 10,
+      zhiIndex: (2 + n) % 12,
+      yearGanIndex,
+      yearZhiIndex: (((solarYear - 4) % 12) + 12) % 12,
+      termIndex: best.i,
+    });
+  }
+
+  /**
+   * Các mục của thư viện lịch (vendor/lunar.js) phụ thuộc tháng tiết khí — can chi tháng, năm theo Lập xuân,
+   * thần trực nhật (Trực), thần nhật hoàng/hắc đạo, nghi/kỵ, thần sát — tính lại với tháng của monthPillar.
+   * Thư viện đổi tháng theo ngày tiết của giờ UTC+8; ở tiết rơi trong giờ cuối của ngày theo giờ Việt Nam
+   * nó đổi chậm một ngày. Ngày nằm ngoài bảng tiết khí thì giữ nguyên kết quả của thư viện.
+   * opts: `region` ('bac' | 'nam'), `tz` (múi giờ dựng lịch, mặc định theo calendarTz).
+   * @returns {object} `lunar`: đối tượng Lunar của thư viện (dùng cho các mục không phụ thuộc tháng: can chi ngày, Tú…);
+   *   `adjusted`: tháng tiết khí khác với thư viện.
+   */
+  const almanacCache = new Map();
+  function dayAlmanac(dd, mm, yy, { region = 'bac', tz = calendarTz(yy, mm, dd, region) } = {}) {
+    const key = `${yy}-${mm}-${dd}-${tz}`;
+    const hit = almanacCache.get(key);
+    if (hit) return hit;
+    const lunar = globalThis.Solar.fromYmd(yy, mm, dd).getLunar();
+    const U = globalThis.LunarUtil;
+    const mp = monthPillar(dd, mm, yy, tz);
+    const lib = {
+      ganIndex: lunar.getMonthGanIndex(), zhiIndex: lunar.getMonthZhiIndex(),
+      yearGanIndex: lunar.getYearGanIndexByLiChun(), yearZhiIndex: lunar.getYearZhiIndexByLiChun(),
+    };
+    const p = mp || lib;
+    const dayGZ = lunar.getDayInGanZhi();
+    const dayZ = lunar.getDayZhiIndex();
+    // Cùng công thức với getZhiXing, getDayTianShen, getDayYi… của thư viện, với tháng tiết khí của monthPillar
+    const monthZhi = U.ZHI[p.zhiIndex + 1];
+    const monthGZ = U.GAN[p.ganIndex + 1] + monthZhi;
+    const tianShen = U.TIAN_SHEN[(dayZ + U.ZHI_TIAN_SHEN_OFFSET[monthZhi]) % 12 + 1];
+    const tianShenType = U.TIAN_SHEN_TYPE[tianShen];
+    const out = Object.freeze({
+      lunar,
+      adjusted: p.ganIndex !== lib.ganIndex || p.zhiIndex !== lib.zhiIndex || p.yearGanIndex !== lib.yearGanIndex || p.yearZhiIndex !== lib.yearZhiIndex,
+      monthGanIndex: p.ganIndex, monthZhiIndex: p.zhiIndex,
+      yearGanIndex: p.yearGanIndex, yearZhiIndex: p.yearZhiIndex,
+      yearGanZhi: U.GAN[p.yearGanIndex + 1] + U.ZHI[p.yearZhiIndex + 1],
+      yi: U.getDayYi(monthGZ, dayGZ), ji: U.getDayJi(monthGZ, dayGZ),
+      jiShen: U.getDayJiShen(p.zhiIndex, dayGZ), xiongSha: U.getDayXiongSha(p.zhiIndex, dayGZ),
+      zhiXing: U.ZHI_XING[((dayZ - p.zhiIndex + 12) % 12) + 1],
+      tianShen, tianShenType, tianShenLuck: U.TIAN_SHEN_TYPE_LUCK[tianShenType],
+    });
+    if (almanacCache.size > 3000) almanacCache.clear();
+    almanacCache.set(key, out);
+    return out;
+  }
+
+  /**
    * Thông tin tháng âm chứa một ngày dương: ngày mùng Một (JDN), số ngày, và nếu điểm sóc mở đầu tháng cách nửa đêm
    * dưới ngưỡng của bảng thì `boundarySeconds` là khoảng cách có dấu (dương: sóc ngay sau nửa đêm, lệch chút nữa thì
    * mùng Một lùi về hôm trước; âm: sóc ngay trước nửa đêm, lệch chút nữa thì mùng Một sang hôm sau) — cờ BOUNDARY_RISK (PRD §5.3).
    * Tháng kế tiếp có điểm sóc sát nửa đêm thì trả ở `nextBoundarySeconds` (ngày cuối tháng này có thể thuộc tháng sau).
-   * @returns {{start:number, length:number, boundarySeconds:number|null, nextBoundarySeconds:number|null, fromTable:boolean}|null}
+   * Tháng sẽ đổi tên (số tháng, nhuận) nếu một trung khí sát nửa đêm rơi sang ngày bên kia thì `zhongqiRisk` cho biết
+   * trung khí đó (`term`, 0 = Xuân phân), khoảng cách `seconds` và tên tháng khi ấy (`month`, `leap`, `year`).
+   * @returns {{start:number, length:number, boundarySeconds:number|null, nextBoundarySeconds:number|null, zhongqiRisk:object|null, fromTable:boolean}|null}
    */
   function lunarMonthInfo(dd, mm, yy, tz = calendarTz(yy, mm, dd)) {
     const t = monthTable(tz);
@@ -238,7 +317,18 @@
       start: t.starts[i], length: t.lengths[i], fromTable: true,
       boundarySeconds: t.risk.has(i) ? t.risk.get(i) : null,
       nextBoundarySeconds: t.risk.has(i + 1) ? t.risk.get(i + 1) : null,
+      zhongqiRisk: t.zqRisk.get(i) || null,
     });
+  }
+
+  /**
+   * Sai số chuẩn σ của ΔT (giây) cho một năm — cùng công thức với sigmaDeltaT của tools/astro/lunar-from-astro.mjs:
+   * mô hình Huber (2000) theo Espenak và Meeus, mốc 2005; trước 2005 ΔT đã đo, lấy cận trên 1 giây.
+   */
+  function deltaTSigma(year) {
+    const N = year - 2005;
+    if (N <= 0) return 1;
+    return Math.max(1, (365.25 * N * Math.sqrt(((N * 0.058) / 3) * (1 + N / 2500))) / 1000);
   }
 
   /**
@@ -366,13 +456,16 @@
    */
   function solarToGanZhi(d, m, y) {
     if (typeof globalThis.Solar !== 'undefined' && globalThis.Solar.fromYmd) {
-      const lunar = globalThis.Solar.fromYmd(y, m, d).getLunar();
+      const al = dayAlmanac(d, m, y);
+      const lunar = al.lunar;
       const dg = lunar.getDayGanIndex();
       const dz = lunar.getDayZhiIndex();
-      const mg = lunar.getMonthGanIndex();
-      const mz = lunar.getMonthZhiIndex();
-      const yg = lunar.getYearGanIndex();
-      const yz = lunar.getYearZhiIndex();
+      const mg = al.monthGanIndex; // tháng tiết khí theo giờ Việt Nam
+      const mz = al.monthZhiIndex;
+      // Năm can chi theo năm âm lịch Việt Nam (đổi ở Tết của lịch Việt), không theo năm âm của thư viện (lịch Trung Quốc)
+      const vnYear = solarToLunar(d, m, y).year;
+      const yg = lunarYearGan(vnYear);
+      const yz = lunarYearZhi(vnYear);
       const D = NT.data;
 
       return {
@@ -404,8 +497,8 @@
   }
 
   NT.calendar = Object.freeze({
-    TZ_VN, VERIFIED_RANGE, SUPPORTED_RANGE, jdFromDate, jdToDate, solarToLunar, solarToLunarVN, lunarToSolar,
-    lunarMonthInfo, solarTermOn, lunarYearZhi, lunarYearGan, equationOfTime, trueSolarTime, calendarTz, civilTz, civilTzNote, fmtTz, inVerifiedRange,
+    TZ_VN, TERM_KEYS, VERIFIED_RANGE, SUPPORTED_RANGE, jdFromDate, jdToDate, solarToLunar, solarToLunarVN, lunarToSolar,
+    lunarMonthInfo, deltaTSigma, solarTermOn, monthPillar, dayAlmanac, lunarYearZhi, lunarYearGan, equationOfTime, trueSolarTime, calendarTz, civilTz, civilTzNote, fmtTz, inVerifiedRange,
     solarToGanZhi,
   });
 })(globalThis.NT ??= {});

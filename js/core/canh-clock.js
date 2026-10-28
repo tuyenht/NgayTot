@@ -256,9 +256,9 @@
    */
   function compareDayHoangDao(d, m, y) {
     try {
-      const lunarLib = globalThis.Solar.fromYmd(y, m, d).getLunar();
-      const bySolarTerm = lunarLib.getDayTianShenType() === '黄道';
-      const byLunarMonth = isHoangDaoByLunarMonth(NT.calendar.solarToLunar(d, m, y).month, lunarLib.getDayZhiIndex());
+      const al = NT.calendar.dayAlmanac(d, m, y);
+      const bySolarTerm = al.tianShenType === '黄道';
+      const byLunarMonth = isHoangDaoByLunarMonth(NT.calendar.solarToLunar(d, m, y).month, al.lunar.getDayZhiIndex());
       return { bySolarTerm, byLunarMonth, differs: bySolarTerm !== byLunarMonth };
     } catch {
       return null;

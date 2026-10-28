@@ -230,7 +230,7 @@
   // để lịch tháng và kết quả trạch cát không bao giờ nói khác nhau về một ngày.
   function checkDayHuangDao(y, m, d) {
     try {
-      return globalThis.Solar.fromYmd(y, m, d).getLunar().getDayTianShenType() === '黄道';
+      return NT.calendar.dayAlmanac(d, m, y).tianShenType === '黄道';
     } catch {
       return false;
     }
@@ -263,7 +263,7 @@
           isStarGood = lObj.getXiuLuck() === '吉';
           const rawXiu = lObj.getXiu();
           starName = NT.vi && NT.vi.xiu ? NT.vi.xiu(rawXiu) : rawXiu;
-          const rawTs = lObj.getDayTianShen();
+          const rawTs = NT.calendar.dayAlmanac(d, m, y).tianShen; // thần nhật theo tháng tiết khí giờ Việt Nam
           tianShenName = NT.vi && NT.vi.tianshen ? NT.vi.tianshen(rawTs) : rawTs;
         }
       }
@@ -285,7 +285,7 @@
       : '';
     const conv = NT.dateConvert ? NT.dateConvert.solarToLunar({ day: d, month: m, year: y }) : null;
     const boundaryNoteHtml = conv && conv.ok && conv.flags.includes('BOUNDARY_RISK')
-      ? `<p class="source-note" id="month-boundary-note">Lưu ý: ${esc(conv.notes.filter((n) => n.startsWith('Trăng non')).join(' '))}</p>`
+      ? `<p class="source-note" id="month-boundary-note">Lưu ý: ${esc(conv.notes.filter((n) => n.startsWith('Trăng non') || n.startsWith('Trung khí')).join(' '))}</p>`
       : '';
     const calendarInfoHtml = `
       <ul class="why">

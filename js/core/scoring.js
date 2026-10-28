@@ -33,18 +33,20 @@
     const key = ymdKey(y, m, d);
     const hit = ctxCache.get(key);
     if (hit) return hit;
-    const lunar = globalThis.Solar.fromYmd(y, m, d).getLunar();
+    // Tháng tiết khí và các mục phụ thuộc nó theo giờ Việt Nam (14.2 dòng 14); các mục chỉ phụ thuộc ngày lấy thẳng từ thư viện
+    const al = NT.calendar.dayAlmanac(d, m, y);
+    const lunar = al.lunar;
     const ctx = Object.freeze({
       key, y, m, d,
       weekday: new Date(Date.UTC(y, m - 1, d)).getUTCDay(),
       vn: NT.calendar.solarToLunar(d, m, y),
       dayG: lunar.getDayGanIndex(), dayZ: lunar.getDayZhiIndex(),
-      monthG: lunar.getMonthGanIndex(), monthZ: lunar.getMonthZhiIndex(),
-      yearGZ: lunar.getYearInGanZhiByLiChun(),
-      yi: lunar.getDayYi(), ji: lunar.getDayJi(),
-      jiShen: lunar.getDayJiShen(), xiongSha: lunar.getDayXiongSha(),
-      zhixing: lunar.getZhiXing(), xiu: lunar.getXiu(), xiuLuck: lunar.getXiuLuck(),
-      tianShen: lunar.getDayTianShen(), tianShenLuck: lunar.getDayTianShenLuck(),
+      monthG: al.monthGanIndex, monthZ: al.monthZhiIndex,
+      yearGZ: al.yearGanZhi,
+      yi: al.yi, ji: al.ji,
+      jiShen: al.jiShen, xiongSha: al.xiongSha,
+      zhixing: al.zhiXing, xiu: lunar.getXiu(), xiuLuck: lunar.getXiuLuck(),
+      tianShen: al.tianShen, tianShenLuck: al.tianShenLuck,
       // Ngày chứa tiết khí tính theo giờ Việt Nam từ bảng đã tính trước (14.2 dòng 14); thiếu bảng thì theo thư viện (giờ UTC+8)
       jieqi: (() => { const st = NT.calendar.solarTermOn ? NT.calendar.solarTermOn(d, m, y) : undefined; return st === undefined ? lunar.getJieQi() : (st ? st.key : ''); })(),
       nayin: lunar.getDayNaYin(),

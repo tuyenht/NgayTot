@@ -898,5 +898,61 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
     ['25/11/2077', true, '']);
 }
 
+// Đối chiếu với sách in: Đại Quốc Siêu, "Nguyên lý chọn ngày theo Bát tự", NXB Văn hóa – Thông tin, nộp lưu chiểu 2009
+// (giấy phép 1098-2008/CXB/48/02-179/VHTT). Nguồn thứ cấp, không phải sách gốc; dùng làm dữ liệu đối chiếu cho phép đổi ngày và lá số.
+{
+  const D = NT.dateConvert;
+  // Ngày dương của mùng Một từng tháng âm trong bảng lịch của sách (tr. 86–175); [năm âm, tháng, nhuận, ngày dương, can chi ngày nếu sách ghi]
+  const BOOK = [
+    [2009, 1, false, '26/01/2009', 'Tân Mùi'], [2009, 5, true, '23/06/2009'], [2009, 8, false, '19/09/2009'],
+    [2010, 1, false, '14/02/2010', 'Ất Mùi'], [2010, 2, false, '16/03/2010'], [2010, 3, false, '14/04/2010'], [2010, 4, false, '14/05/2010'], [2010, 5, false, '12/06/2010'], [2010, 6, false, '12/07/2010'],
+    [2011, 1, false, '03/02/2011', 'Kỷ Sửu'], [2011, 2, false, '05/03/2011'], [2011, 3, false, '03/04/2011'], [2011, 4, false, '03/05/2011'], [2011, 5, false, '02/06/2011'], [2011, 6, false, '01/07/2011'],
+    [2011, 7, false, '31/07/2011'], [2011, 8, false, '29/08/2011'], [2011, 9, false, '27/09/2011'], [2011, 10, false, '27/10/2011'], [2011, 11, false, '25/11/2011'], [2011, 12, false, '25/12/2011'],
+    [2012, 1, false, '23/01/2012', 'Quý Mùi'], [2012, 2, false, '22/02/2012'], [2012, 3, false, '22/03/2012'], [2012, 4, false, '21/04/2012'], [2012, 4, true, '21/05/2012'], [2012, 5, false, '19/06/2012'],
+    [2012, 6, false, '19/07/2012'], [2012, 7, false, '17/08/2012'], [2012, 8, false, '16/09/2012'], [2012, 9, false, '15/10/2012'], [2012, 10, false, '14/11/2012'], [2012, 11, false, '13/12/2012'], [2012, 12, false, '12/01/2013'],
+  ];
+  const bad = BOOK.filter(([y, m, leap, solar, cc]) => {
+    const r = D.lunarToSolar({ day: 1, month: m, year: y, leap });
+    return !r.ok || r.solar.text !== solar || (cc && r.canChi.day !== cc);
+  }).map((x) => x.slice(0, 3).join('/'));
+  eq('Sách in 2009 (Đại Quốc Siêu): 34 mốc mùng Một tháng âm 2009–2012, gồm nhuận tháng 5 năm 2009 và nhuận tháng 4 năm 2012, khớp bộ đổi ngày', [BOOK.length, bad], [34, []]);
+  const r1931 = D.solarToLunar({ day: 8, month: 3, year: 1931 });
+  const chart = NT.bazi.buildChart({ birthDate: '2009-01-26', birthTime: '06:00', gender: 'male', lon: 105.85, useTrueSolar: false });
+  const gz = (k) => NT.data.ganZhiVi(chart.pillars[k].g, chart.pillars[k].z);
+  // Sách tr. 85 ghi năm Kỷ Sửu, tháng Bính Dần cho ví dụ này (đổi theo Tết và mùng Một), trái với quy tắc chính sách nêu ở tr. 14–15
+  // (năm đổi ở Lập xuân, tháng đổi ở tiết khí); ứng dụng theo quy tắc đó nên ra Mậu Tý, Ất Sửu.
+  eq('Ví dụ trong sách: 08/03/1931 = 20 tháng Giêng Tân Mùi, ngày Nhâm Tuất; 06:00 ngày 26/01/2009 có trụ ngày Tân Mùi, trụ giờ Tân Mão, trụ năm và tháng theo Lập xuân là Mậu Tý, Ất Sửu',
+    [r1931.lunar.day, r1931.lunar.month, r1931.lunar.yearName, r1931.canChi.day, gz('day'), gz('hour'), gz('year'), gz('month')],
+    [20, 1, 'Tân Mùi', 'Nhâm Tuất', 'Tân Mùi', 'Tân Mão', 'Mậu Tý', 'Ất Sửu']);
+}
+
+// ---------- Tháng tiết khí theo giờ Việt Nam (14.2 dòng 14) ----------
+{
+  const C = NT.calendar;
+  const adjusted = [], mism = [], late = [];
+  for (let t = Date.UTC(2020, 0, 1); t <= Date.UTC(2032, 11, 31); t += 864e5) {
+    const dt = new Date(t), y = dt.getUTCFullYear(), m = dt.getUTCMonth() + 1, d = dt.getUTCDate();
+    const a = C.dayAlmanac(d, m, y), L = a.lunar;
+    if (a.adjusted) {
+      adjusted.push(`${d}/${m}/${y}`);
+      // Thư viện đổi tháng ở ngày hôm sau (ngày tiết theo UTC+8)
+      const n = new Date(t + 864e5), L2 = Solar.fromYmd(n.getUTCFullYear(), n.getUTCMonth() + 1, n.getUTCDate()).getLunar();
+      if (!C.solarTermOn(d, m, y) || L2.getMonthZhiIndex() !== a.monthZhiIndex) late.push(`${d}/${m}/${y}`);
+      continue;
+    }
+    const lib = [L.getMonthGanIndex(), L.getMonthZhiIndex(), L.getYearInGanZhiByLiChun(), L.getDayYi(), L.getDayJi(), L.getDayJiShen(), L.getDayXiongSha(), L.getZhiXing(), L.getDayTianShen(), L.getDayTianShenLuck()];
+    const ours = [a.monthGanIndex, a.monthZhiIndex, a.yearGanZhi, a.yi, a.ji, a.jiShen, a.xiongSha, a.zhiXing, a.tianShen, a.tianShenLuck];
+    if (JSON.stringify(lib) !== JSON.stringify(ours)) mism.push(`${d}/${m}/${y}`);
+  }
+  eq('2020–2032: ngày không có tiết rơi sát nửa đêm thì can chi tháng, trực, thần nhật, nghi/kỵ, thần sát trùng thư viện; chỉ 5 ngày tiết rơi trong giờ cuối theo giờ Việt Nam được đổi tháng sớm một ngày',
+    [mism, adjusted, late], [[], ['6/12/2020', '5/6/2022', '7/11/2023', '5/5/2031', '7/8/2031'], []]);
+  const a = C.dayAlmanac(5, 5, 2031), g = C.solarToGanZhi(5, 5, 2031), ctx = NT.scoring.dayContext(2031, 5, 5);
+  eq('Lập hạ 2031 (23:35 ngày 05/05 giờ Việt Nam): ngày 05/05 đã sang tháng Quý Tỵ, trực Kiến, thần Câu Trận (thư viện theo UTC+8 còn tháng Nhâm Thìn)',
+    [a.lunar.getMonthInGanZhi(), g.mCan + ' ' + g.mChi, a.zhiXing, a.tianShen, a.tianShenType, ctx && [ctx.zhixing, ctx.tianShen, ctx.jieqi]], ['壬辰', 'Quý Tỵ', '建', '勾陈', '黑道', ['建', '勾陈', '立夏']]);
+  const y85 = C.solarToGanZhi(1, 2, 1985), y07 = C.solarToGanZhi(10, 2, 2007);
+  eq('Năm can chi của ngày theo Tết Việt Nam: 01/02/1985 thuộc năm Ất Sửu (Tết Việt 21/01, Tết Trung Quốc 20/02); 10/02/2007 còn năm Bính Tuất (Tết Việt 17/02)',
+    [y85.yCan + ' ' + y85.yChi, y07.yCan + ' ' + y07.yChi], ['Ất Sửu', 'Bính Tuất']);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);
