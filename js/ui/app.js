@@ -511,7 +511,7 @@
           <div class="day-sub">Âm lịch ${esc(dsc.lunarText)}</div>
           <div class="day-sub">Ngày ${esc(dsc.ganZhi)} · Tháng tiết khí ${esc(dsc.monthGanZhi)}</div></div>
       </div>
-      <div class="tags">${dsc.jieqi ? `<span class="tag">${esc(dsc.jieqi)}</span>` : ''}</div>
+      <div class="tags">${dsc.jieqi ? `<span class="tag">${esc(dsc.jieqi)}</span>` : ''}${dsc.boundaryNote ? `<span class="tag">${BOUNDARY_TAG}</span>` : ''}</div>
       <div class="hours-row">Giờ đã định: <span class="hour-chip">${esc(r.chosen.label)}</span> (giờ ${esc(r.chosen.ganZhi)})</div>
     </article>`;
     }
@@ -548,6 +548,7 @@
         <span class="tag">Trực ${esc(dsc.zhixing)}</span>
         <span class="tag ${fixed ? '' : (dsc.xiuGood ? 'good' : 'bad')}">Sao ${esc(dsc.xiu)}</span>
         ${dsc.jieqi ? `<span class="tag">${esc(dsc.jieqi)}</span>` : ''}
+        ${dsc.boundaryNote ? `<span class="tag">${BOUNDARY_TAG}</span>` : ''}
       </div>
       <div class="hours-row">${state.results.mode === 'fixed' ? 'Giờ cố định:' : multiStep ? 'Giờ hoàng đạo trong ngày:' : `Giờ tốt để ${esc(meaning ?? 'làm lễ')}:`} ${hours || '<span class="hint">không có trong khung 07:00–20:59</span>'}</div>
       ${multiStep ? '<div class="hint">Bấm vào một canh giờ để ứng dụng đề xuất giờ cụ thể cho từng mốc (xuất phát, vào nhà gái, về tới nhà trai) theo quãng đường.</div>' : ''}
@@ -612,6 +613,11 @@
   const legalFlagsOf = (r) => (NT.legal?.checkLegal ? NT.legal.checkLegal(state.act, state.chart, r.ctx.key, r.chosen.label.slice(0, 5), state.legalCtx) : []);
   /** Câu chữ của các cảnh báo cứng — phải có cả trong bản sao chép và tệp .ics. */
   const hardWarningTexts = (r) => legalFlagsOf(r).filter((f) => f.severity === 'hard_warning').map((f) => `${f.message} (Căn cứ: ${f.rule.doc}; chưa đối chiếu văn bản gốc.)`);
+  const BOUNDARY_TAG = 'Trực, thần nhật có thể khác — xem chi tiết'; // nhãn trên thẻ kết quả của ngày mang cờ BOUNDARY_RISK
+  /** Câu báo tiết đổi tháng sát nửa đêm (PRD §5.3) — có ở hộp chi tiết ngày, bản sao chép và tệp .ics; '' nếu ngày không mang cờ. */
+  const boundaryText = (dsc) => (dsc.boundaryNote
+    ? `Lưu ý: ${dsc.boundaryNote}${noIndex() || calendarOnly() ? '' : ' Điểm của ngày tính theo cách của ứng dụng (khả năng thứ nhất).'}`
+    : '');
   /** Biểu ngữ cảnh báo cứng ở đầu kết quả, không tắt được. */
   function legalBannerHTML(days) {
     const hit = days.filter((r) => legalFlagsOf(r).some((f) => f.severity === 'hard_warning'));
@@ -652,9 +658,7 @@
     $('#dlg-title').textContent = `${dsc.weekday}, ${fmtDate(r.ctx)}`;
     $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng tiết khí ${dsc.monthGanZhi}${whoText() ? ' · ' + whoText() : ''}`;
     // Tiết đổi tháng sát nửa đêm (PRD 5.3): nêu cả hai khả năng của tháng tiết khí, Trực, thần nhật
-    const boundaryHtml = dsc.boundaryNote
-      ? `<p class="source-note" id="dlg-term-boundary-note">Lưu ý: ${esc(dsc.boundaryNote)}${fixed || calendarOnly() ? '' : ' Điểm của ngày tính theo cách của ứng dụng (khả năng thứ nhất).'}</p>`
-      : '';
+    const boundaryHtml = dsc.boundaryNote ? `<p class="source-note" id="dlg-term-boundary-note">${esc(boundaryText(dsc))}</p>` : '';
 
     if (calendarOnly()) {
       $('#dlg-body').innerHTML = `
@@ -933,6 +937,7 @@
       fixed ? (state.act.isMedical ? MEDICAL_NOTE : FIXED_NOTE) : '',
       whoText() ? whoText() + '.' : '',
       ...hardWarningTexts(r),
+      boundaryText(dsc),
       DISCLAIMER, 'Lập bởi Ngày Tốt.',
     ].filter(Boolean).join(' ');
     const body = [
@@ -968,7 +973,7 @@
           : `Ngày ${dsc.ganZhi} · ${r.grade.label} ${r.score}/100 (chỉ số tham khảo) · Giờ ${r.chosen.label} (${r.chosen.ganZhi}) — giờ để ${hourMeaning()}`,
         ...r.day.items.map((i) => `${i.pts > 0 ? '+' : ''}${i.pts}  ${i.text}`),
       ];
-    lines.push(...(whoText() ? [whoText() + '.'] : []), ...hardWarningTexts(r), '', DISCLAIMER);
+    lines.push(...(whoText() ? [whoText() + '.'] : []), ...hardWarningTexts(r), ...(dsc.boundaryNote ? [boundaryText(dsc)] : []), '', DISCLAIMER);
     const text = lines.join('\n');
     try {
       await navigator.clipboard.writeText(text);
