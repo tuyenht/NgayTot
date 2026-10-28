@@ -1008,5 +1008,28 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
     [has(9, 12, 2072), has(16, 11, 2077), has(21, 4, 2031)], [true, true, false]);
 }
 
+// ---------- Việc Nhậm chức CAREER_POST (PRD PK-02: 赴任, Người đi, cố định hoặc linh hoạt) ----------
+{
+  const S = NT.scoring, A = NT.activities;
+  const post = A.byId('career_post');
+  eq('Nhậm chức: có trong danh sách (một lần), nhóm PK-02, từ khóa chính 赴任, không phải việc chỉ-cố-định',
+    [!!post, post?.pk, post?.yiPrimary, !!post?.fixedOnly, A.ACTIVITIES.filter((a) => a.id === 'career_post').length], [true, 'PK-02', ['赴任'], false, 1]);
+  eq('Nhậm chức: chủ thể là một người (Người đi) như xuất hành/thi cử; giờ tốt = giờ nhận chức',
+    [A.subjectOf(post), A.subjectOf(A.byId('travel_biz')), A.subjectOf(A.byId('career_fixed')), A.hourMeaningOf(post)], ['person', 'person', 'person', 'nhận chức, bắt đầu làm việc']);
+  const vocab = new Set();
+  for (let m = 1; m <= 12; m++) for (let d = 1; d <= 28; d++) { const l = Solar.fromYmd(2025, m, d).getLunar(); l.getDayYi().forEach((k) => vocab.add(k)); l.getDayJi().forEach((k) => vocab.add(k)); }
+  eq('Từ khóa 赴任 có trong từ vựng nghi/kỵ của lunar.js; mọi từ khóa của việc đều trong từ vựng',
+    [vocab.has('赴任'), [...post.yiPrimary, ...post.yi].filter((k) => !vocab.has(k))], [true, []]);
+  const flex = S.findDays({ chart, act: post, nameInfo: null, from: '2026-11-01', to: '2026-11-30', mode: 'best' });
+  eq('Nhậm chức, chế độ linh hoạt, tháng 11/2026: đủ 30 ngày được chấm, có ngày đề xuất, ngày đề xuất đều có giờ hoàng đạo',
+    [flex.days.length, flex.ranked.length > 0, flex.ranked.every((d) => d.bestHours.length > 0)], [30, true, true]);
+  const fx = S.findDays({ chart, act: post, nameInfo: null, from: '2026-11-10', to: '2026-11-10', mode: 'fixed', fixedTime: '09:00' });
+  eq('Nhậm chức, chế độ cố định một ngày: ra đúng 1 ngày với giờ đã chọn 09:00', [fx.days.length, fx.days[0]?.chosen?.label], [1, '09:00']);
+  let blocked = '';
+  try { S.findDays({ chart, act: A.byId('career_fixed'), nameInfo: null, from: '2026-11-01', to: '2026-11-30', mode: 'fixed', fixedTime: '09:00' }); } catch (e) { blocked = e.message; }
+  eq('Việc chỉ-cố-định (career_fixed) chặn quét khoảng ngày', /chỉ xem thông tin/.test(blocked), true);
+  console.log('   (số ngày đề xuất nhậm chức 11/2026, linh hoạt: ' + flex.ranked.length + '/' + flex.days.length + ' ngày)');
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

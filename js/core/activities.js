@@ -148,6 +148,17 @@
       yearChecks: [], pk: 'PK-02', fixedOnly: true
     },
     {
+      // PRD 8 PK-02 CAREER_POST: cố định hoặc linh hoạt (không đặt fixedOnly: chọn "giờ cố định" hoặc để app tìm ngày).
+      id: 'career_post', label: 'Nhậm chức', icon: '🏛️',
+      desc: 'Nhận chức, nhận việc mới, ngày đầu đến cơ quan (chọn ngày hoặc xem ngày đã định)',
+      yiPrimary: ['赴任'], yi: ['会亲友', '祭祀'],
+      zhixingGood: ['成', '定', '开', '建'], zhixingBad: ['破', '危', '闭'],
+      shenGood: ['天德', '月德', '福德', '驿马', '天马'],
+      shenBad: { '大耗': 6, '往亡': 6, '归忌': 5, '天吏': 4 },
+      tenGods: () => [3, 4], boost: { lu: 1.5, quyNhan: 1.5, vanXuong: 1, yiMa: 0.5, taoHua: 0 },
+      yearChecks: [], pk: 'PK-02'
+    },
+    {
       id: 'travel_biz', label: 'Xuất hành, đi công tác', icon: '🧭',
       desc: 'Đi công tác, đi xa làm ăn',
       yiPrimary: ['出行'], yi: ['移徙', '乘船', '会亲友'],
@@ -271,6 +282,7 @@
     biz_sign: 'đặt bút ký',
     buy_asset: 'giao dịch, nhận tài sản',
     travel_biz: 'ra khỏi nhà',
+    career_post: 'nhận chức, bắt đầu làm việc',
     altar_set: 'an vị bàn thờ, bốc bát hương',
     med_checkup: 'đi khám',
     daily_hair: 'cắt tóc',
