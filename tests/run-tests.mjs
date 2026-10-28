@@ -954,5 +954,59 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
     [y85.yCan + ' ' + y85.yChi, y07.yCan + ' ' + y07.yChi], ['Ất Sửu', 'Bính Tuất']);
 }
 
+// Tháng tiết khí: phép so trên cả khoảng năm (bổ sung cho khối 2020–2032 ở trên)
+{
+  const C = NT.calendar;
+  // Đối chiếu độc lập: ở UTC+8 thư viện lịch đổi tháng theo ngày tiết của chính nó, nên phải trùng ở mọi ngày
+  let days = 0, at8 = 0;
+  const vnDiff = [], vnExpected = [];
+  for (let jd = C.jdFromDate(1, 1, 1912); jd <= C.jdFromDate(31, 12, 2100); jd++) {
+    const [d, m, y] = C.jdToDate(jd);
+    const L = Solar.fromYmd(y, m, d).getLunar();
+    const lib = [L.getMonthGanIndex(), L.getMonthZhiIndex(), L.getYearGanIndexByLiChun(), L.getYearZhiIndexByLiChun()];
+    const same = (p) => p.ganIndex === lib[0] && p.zhiIndex === lib[1] && p.yearGanIndex === lib[2] && p.yearZhiIndex === lib[3];
+    days++;
+    if (!same(C.monthPillar(d, m, y, 8))) at8++;
+    if (y >= 1976) {
+      if (!same(C.monthPillar(d, m, y))) vnDiff.push(jd);
+      const st = C.solarTermOn(d, m, y);
+      if (st && st.index % 2 === 1 && st.boundarySeconds < 0 && st.boundarySeconds >= -3600) vnExpected.push(jd);
+    }
+  }
+  eq('Can chi tháng tiết khí và năm theo Lập xuân ở UTC+8 trùng thư viện lịch ở mọi ngày 1912–2100', [days, at8], [69032, 0]);
+  console.log(`ℹ️  1976–2100: ${vnDiff.length} ngày có tháng tiết khí theo giờ Việt Nam khác thư viện lịch`);
+  eq('Giờ Việt Nam 1976–2100: tháng tiết khí khác thư viện đúng ở các ngày chứa một trong 12 tiết rơi trong giờ cuối của ngày, không thừa không thiếu',
+    [vnDiff.length > 0, JSON.stringify(vnDiff) === JSON.stringify(vnExpected)], [true, true]);
+  // PRD 13.3: năm tiết rơi 00:00–01:00 giờ Bắc Kinh trong 2024–2040 — theo giờ Việt Nam tháng mới bắt đầu từ hôm trước
+  const cases = [[5, 5, 2031, 5], [7, 8, 2031, 8], [7, 10, 2036, 10], [4, 4, 2038, 4], [7, 10, 2040, 10]];
+  eq('Năm ca tiết rơi 00:00–01:00 giờ Bắc Kinh (2024–2040, PRD 13.3): ngày hôm trước theo giờ Việt Nam đã sang tháng mới, thư viện lịch thì chưa',
+    cases.map(([d, m, y, z]) => [C.dayAlmanac(d, m, y).monthZhiIndex === z, Solar.fromYmd(y, m, d).getLunar().getMonthZhiIndex() === (z + 11) % 12, C.dayAlmanac(d + 1, m, y).monthZhiIndex === z]),
+    cases.map(() => [true, true, true]));
+}
+
+// Sai số ΔT theo năm và cờ ranh giới cho trung khí (PRD 5.3)
+{
+  const C = NT.calendar, D = NT.dateConvert;
+  const { sigmaDeltaT, riskWindow } = await import(pathToFileURL(path.join(root, 'tools/astro/lunar-from-astro.mjs')).href);
+  let same = true, window600 = true;
+  for (let y = 1799; y <= 2200; y++) { if (sigmaDeltaT(y) !== C.deltaTSigma(y)) same = false; if (riskWindow(y) !== 600) window600 = false; }
+  eq('σ_ΔT: bản của lõi trùng bản của công cụ sinh bảng 1799–2200; năm 2100 khoảng 48 giây; năm 3000 khoảng 1.885 giây như bảng của Espenak và Meeus',
+    [same, Math.round(C.deltaTSigma(2100)), Math.round(sigmaDeltaT(3000))], [true, 48, 1885]);
+  eq('Cửa sổ rủi ro max(10 phút, 3σ_ΔT) bằng 10 phút ở mọi năm 1799–2200 (3σ_ΔT năm 2200 khoảng 431 giây)', [window600, Math.round(3 * C.deltaTSigma(2200))], [true, 431]);
+  const zq = (k) => [...new Set(NT.lunarMonths.tables[k].zqRisk.map((r) => `${r[5]}:${r[1]}`))];
+  eq('Trung khí sát nửa đêm làm đổi tên tháng: giờ Bắc Kinh 1917, 1922, 1984–1985, 1987; UTC+8 1987; UTC+7 1938',
+    [zq('bj'), zq('8'), zq('7')], [['1917:181', '1922:317', '1984:509', '1985:509', '1987:-270'], ['1987:590'], ['1938:-33']]);
+  const n1917 = D.solarToLunar({ day: 20, month: 4, year: 1917 }), n1922 = D.solarToLunar({ day: 15, month: 8, year: 1922 });
+  eq('Bộ đổi ngày: 20/04/1917 và 15/08/1922 (lịch theo giờ Bắc Kinh) có cờ và ghi chú trung khí kèm tên tháng nếu lệch',
+    [n1917.lunar.text, n1917.flags.includes('BOUNDARY_RISK'), n1917.notes.some((n) => n.startsWith('Trung khí Cốc Vũ rơi sau nửa đêm chỉ 181 giây') && n.includes('tháng này là tháng Ba;')),
+      n1922.lunar.text, n1922.notes.some((n) => n.startsWith('Trung khí Đại Thử') && n.includes('tháng Sáu nhuận'))],
+    ['ngày 29 tháng Hai nhuận năm Đinh Tỵ (1917)', true, true, 'ngày 23 tháng Sáu năm Nhâm Tuất (1922)', true]);
+  eq('Thu phân 2033 rơi 499 giây trước nửa đêm giờ Việt Nam nhưng không đổi tên tháng nào: không gắn cờ',
+    D.solarToLunar({ day: 15, month: 10, year: 2033 }).flags, []);
+  const has = (d, m, y) => D.solarToLunar({ day: d, month: m, year: y }).notes.some((n) => n.includes('chưa thể khẳng định'));
+  eq('Ghi chú "chưa thể khẳng định" khi khoảng cách nhỏ hơn 3σ_ΔT: có ở 09/12/2072 (14 giây, 3σ ≈ 85) và 16/11/2077 (62 giây, 3σ ≈ 94); không có ở 21/04/2031 (174 giây, 3σ ≈ 20)',
+    [has(9, 12, 2072), has(16, 11, 2077), has(21, 4, 2031)], [true, true, false]);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);
