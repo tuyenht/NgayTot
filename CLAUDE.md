@@ -1,6 +1,6 @@
 # NgayTot — quy tắc cho các phiên làm việc
 
-Chủ dự án thường chạy nhiều phiên song song trên dự án này. Các quy tắc dưới đây để các phiên không lẫn và không ghi đè việc của nhau (lập ngày 2026-10-28, sau khi một khối kiểm thử của phiên này bị cuốn vào commit của phiên khác).
+Chủ dự án thường chạy nhiều phiên song song trên dự án này. Các quy tắc dưới đây để các phiên không lẫn và không ghi đè việc của nhau (lập ngày 2026-10-28, sau khi tệp của một phiên hai lần bị cuốn vào commit của phiên khác).
 
 ## Làm song song
 
