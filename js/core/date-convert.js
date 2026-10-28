@@ -41,6 +41,30 @@
       : '';
   }
 
+  /**
+   * Ghi chú cờ BOUNDARY_RISK của tháng tiết khí (PRD §5.3): một trong 12 tiết rơi sát nửa đêm nên tháng tiết khí của ngày
+   * (và Trực, thần nhật…) có thể khác. Nêu cả hai khả năng. Dùng chung cho lịch tháng và hộp chi tiết ngày của Trạch cát.
+   * @returns {string|null} null nếu ngày không mang cờ (hoặc thư viện lịch chưa nạp).
+   */
+  function termBoundaryNote(day, month, year) {
+    if (!globalThis.Solar) return null;
+    const al = C.dayAlmanac(day, month, year);
+    if (!al.flags.includes('BOUNDARY_RISK')) return null;
+    const V = NT.vi || {};
+    const s = al.boundarySeconds, alt = al.alternative, tz = C.calendarTz(year, month, day);
+    const sec = s < 0 ? 86400 + s : s; // giờ trong ngày của tiết
+    const clock = [Math.floor(sec / 3600), Math.floor((sec % 3600) / 60), sec % 60].map((n) => String(n).padStart(2, '0')).join(':');
+    const gap = `${Math.abs(s)} giây${Math.abs(s) >= 90 ? `, khoảng ${Math.round(Math.abs(s) / 60)} phút` : ''}`;
+    const sum = (a, other) => `tháng ${gan(a.monthGanIndex)} ${zhi(a.monthZhiIndex)}`
+      + (a.yearGanZhi !== other.yearGanZhi ? ` (năm can chi tính theo Lập xuân: ${gan(a.yearGanIndex)} ${zhi(a.yearZhiIndex)})` : '')
+      + `, thần nhật ${V.tianshen ? V.tianshen(a.tianShen) : a.tianShen} (${a.tianShenType === '黄道' ? 'hoàng đạo' : 'hắc đạo'}), trực ${V.zhixing ? V.zhixing(a.zhiXing) : a.zhiXing}`;
+    return `Tiết ${termName(al.boundaryTermIndex)} rơi lúc ${clock} ${s < 0 ? 'cuối ngày này' : 'rạng sáng ngày hôm sau'} (${tz === 7 ? 'giờ Việt Nam' : `giờ dựng lịch UTC+${C.fmtTz(tz)}`}), `
+      + `chỉ ${s < 0 ? 'trước' : 'sau'} nửa đêm ${gap}. `
+      + `Ứng dụng tính ngày này ${s < 0 ? 'đã sang tháng mới' : 'còn ở tháng cũ'}: ${sum(al, alt)}. `
+      + `Lịch tính theo cách khác có thể ghi tiết này ${s < 0 ? 'sang ngày hôm sau' : 'vào ngày này'}; khi đó ngày này ${s < 0 ? 'còn ở tháng cũ' : 'đã sang tháng mới'}: ${sum(alt, al)}.`
+      + deltaTNote(s, C.jdFromDate(day, month, year));
+  }
+
   function solarExists(day, month, year) {
     if (![day, month, year].every(isInt) || month < 1 || month > 12 || day < 1) return false;
     const last = new Date(Date.UTC(year, month, 0)).getUTCDate();
@@ -220,6 +244,5 @@
     });
   }
 
-  // deltaTNote dùng chung với thẻ chi tiết ngày (ghi chú tiết đổi tháng sát nửa đêm)
-  NT.dateConvert = Object.freeze({ RANGE, solarToLunar, lunarToSolar, lunarYearInfo, deltaTNote });
+  NT.dateConvert = Object.freeze({ RANGE, solarToLunar, lunarToSolar, lunarYearInfo, deltaTNote, termBoundaryNote });
 })(globalThis.NT ??= {});

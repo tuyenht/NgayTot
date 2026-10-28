@@ -430,7 +430,8 @@
       days.push({
         ctx, key: ctx.key, isWeekend, day, hours, chosen, bestHours, severe,
         excluded: o.skipWeekend && isWeekend,
-        flags: NT.calendar.inVerifiedRange(ctx.y) ? [] : ['OUT_OF_VERIFIED_RANGE'],
+        // BOUNDARY_RISK: tiết đổi tháng sát nửa đêm (PRD 5.3) — chỉ ghi chú, điểm vẫn tính theo tháng của lõi
+        flags: [...(NT.calendar.inVerifiedRange(ctx.y) ? [] : ['OUT_OF_VERIFIED_RANGE']), ...NT.calendar.dayAlmanac(ctx.d, ctx.m, ctx.y).flags],
         score, grade: gradeOf(score, severe),
       });
     }
@@ -453,6 +454,7 @@
       jiShen: ctx.jiShen.map(V.shensha), xiongSha: ctx.xiongSha.map(V.shensha),
       jieqi: ctx.jieqi ? V.jieqi(ctx.jieqi) : '',
       chong: `Xung tuổi ${D.ZHI_VI[ctx.chongZhi]} (${D.ZHI_ANIMAL[ctx.chongZhi]})`,
+      boundaryNote: NT.dateConvert?.termBoundaryNote ? NT.dateConvert.termBoundaryNote(ctx.d, ctx.m, ctx.y) : null,
     };
   }
 

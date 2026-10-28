@@ -1299,5 +1299,23 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
     [true, false]);
 }
 
+// Ghi chú cờ BOUNDARY_RISK của tháng tiết khí dùng chung cho lịch tháng và hộp chi tiết ngày của Trạch cát (PRD 5.3: hiện cả hai khả năng)
+{
+  const tn = NT.dateConvert.termBoundaryNote;
+  const a = tn(5, 1, 2011), b = tn(7, 9, 2014), c = tn(4, 2, 1947);
+  eq('Ghi chú 05/01/2011: giờ rơi của tiết, khoảng cách, tháng của ứng dụng và tháng nếu lệch kèm Trực',
+    [/lúc 23:54:38 cuối ngày này \(giờ Việt Nam\), chỉ trước nửa đêm 322 giây, khoảng 5 phút/.test(a), /đã sang tháng mới: tháng Kỷ Sửu, .*trực Nguy/.test(a), /còn ở tháng cũ: tháng Mậu Tý, .*trực Thành/.test(a), /chưa thể khẳng định/.test(a)],
+    [true, true, true, false]);
+  eq('Ghi chú 07/09/2014 (tiết rơi sau nửa đêm), 04/02/1947 (Lập xuân, giờ dựng lịch UTC+8, nêu năm theo Lập xuân), 06/08/2060 (chưa thể khẳng định); ngày thường không có ghi chú',
+    [/lúc 00:01:26 rạng sáng ngày hôm sau/.test(b), /còn ở tháng cũ: tháng Nhâm Thân/.test(b), /UTC\+8/.test(c), /năm can chi tính theo Lập xuân: Bính Tuất/.test(c), /chưa thể khẳng định/.test(tn(6, 8, 2060)), tn(28, 10, 2026)],
+    [true, true, true, true, true, null]);
+  const res = NT.scoring.findDays({ chart, act: NT.activities.byId('biz_open'), nameInfo: null, from: '2011-01-04', to: '2011-01-06', mode: 'best' });
+  const day = (k) => res.days.find((x) => x.key === k);
+  eq('Chọn ngày: 05/01/2011 mang cờ BOUNDARY_RISK và describeDay có ghi chú; 04/01, 06/01 không',
+    [day('2011-01-05').flags, day('2011-01-04').flags, day('2011-01-06').flags, NT.scoring.describeDay(day('2011-01-05').ctx).boundaryNote === a,
+      NT.scoring.describeDay(day('2011-01-04').ctx).boundaryNote],
+    [['BOUNDARY_RISK'], [], [], true, null]);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

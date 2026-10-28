@@ -651,6 +651,8 @@
     }
     $('#dlg-title').textContent = `${dsc.weekday}, ${fmtDate(r.ctx)}`;
     $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng tiết khí ${dsc.monthGanZhi}${whoText() ? ' · ' + whoText() : ''}`;
+    // Tiết đổi tháng sát nửa đêm (PRD 5.3): nêu cả hai khả năng của tháng tiết khí, Trực, thần nhật
+    const boundaryHtml = dsc.boundaryNote ? `<p class="source-note" id="dlg-term-boundary-note">Lưu ý: ${esc(dsc.boundaryNote)}</p>` : '';
 
     if (calendarOnly()) {
       $('#dlg-body').innerHTML = `
@@ -663,6 +665,7 @@
         <dt>Giờ đã định</dt><dd>${esc(r.chosen.label)} (giờ ${esc(r.chosen.ganZhi)})</dd>
         ${dsc.jieqi ? `<dt>Tiết khí</dt><dd>${esc(dsc.jieqi)}</dd>` : ''}
       </dl>
+      ${boundaryHtml}
       <p class="hint">Với lịch mổ, sinh mổ và điều trị do bác sĩ chỉ định, ứng dụng không xem ngày tốt xấu.</p>
       <h3>Thao tác</h3>
       <div class="sheet-actions">
@@ -703,6 +706,7 @@
     $('#dlg-body').innerHTML = `
       ${note}
       ${legalAlert}
+      ${boundaryHtml}
       <div class="sheet-cols">
         <div>
           <h3 style="margin-top:0">${fixed ? 'Thông tin tham khảo' : 'Vì sao có điểm này'}</h3>
