@@ -1156,5 +1156,33 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   }
 }
 
+// ---------- 14.2 dòng 19: hiệu năng quét 1 năm ----------
+{
+  const S = NT.scoring, V = NT.vi, act = NT.activities.byId('wed_main');
+  // Mục giờ tính thẳng theo can chi ngày + giờ:phút (có cache), không dựng Lunar từng giờ: phải trùng thư viện ở mọi mốc,
+  // kể cả Tý muộn 23:00–23:59 (can chi ngày "exact" sang hôm sau) và giờ lẻ ở biên khung giờ
+  const keys = [...act.yiPrimary, ...act.yi];
+  const yiJiText = (l) => {
+    const yi = keys.filter((k) => l.getTimeYi().includes(k)), ji = keys.filter((k) => l.getTimeJi().includes(k));
+    return [...(yi.length ? [`Giờ nên: ${yi.slice(0, 2).map(V.yiji).join(', ')}`] : []), ...(ji.length ? [`Giờ kỵ: ${ji.slice(0, 2).map(V.yiji).join(', ')}`] : [])];
+  };
+  const times = [...NT.data.HOUR_SLOTS.map((s) => s.rep), [9, 0], [23, 0], [23, 59], [0, 0], [10, 59], [11, 0]];
+  const mism = [];
+  for (let t = Date.UTC(2031, 0, 1), k = 0; k < 60; k++, t += 864e5) {
+    const dt = new Date(t), ctx = S.dayContext(dt.getUTCFullYear(), dt.getUTCMonth() + 1, dt.getUTCDate());
+    for (const [hh, mi] of times) {
+      const h = S.scoreHour(ctx, chart, act, hh, mi);
+      const l = Solar.fromYmdHms(ctx.y, ctx.m, ctx.d, hh, mi, 0).getLunar();
+      const ok = h.g === l.getTimeGanIndex() && h.z === l.getTimeZhiIndex() && h.tianShen === V.tianshen(l.getTimeTianShen())
+        && h.huangDao === (l.getTimeTianShenLuck() === '吉') && JSON.stringify(h.items.filter((i) => /^Giờ (nên|kỵ):/.test(i.text)).map((i) => i.text)) === JSON.stringify(yiJiText(l));
+      if (!ok) mism.push(`${ctx.key} ${hh}:${mi}`);
+    }
+  }
+  eq('Giờ tính thẳng không dựng Lunar từng giờ: can chi giờ, thần, hoàng/hắc đạo, nghi/kỵ của giờ trùng thư viện ở 60 can chi ngày × 19 mốc giờ', mism, []);
+  const t0 = performance.now();
+  const yr = S.findDays({ chart, act, nameInfo: n, from: '2033-01-01', to: '2033-12-31', mode: 'best' });
+  console.log(`ℹ️  Quét 1 năm (cưới hỏi, 2033, chọn giờ tốt nhất): ${yr.days.length} ngày trong ${Math.round(performance.now() - t0)} ms (thông tin, không chấm đạt/không đạt)`);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

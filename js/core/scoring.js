@@ -261,21 +261,63 @@
   /* ------------------------------------------------------------------ */
   /* Chấm điểm GIỜ                                                      */
   /* ------------------------------------------------------------------ */
+  // Các mục giờ của thư viện (can chi giờ, thần hoàng/hắc đạo của giờ, nghi/kỵ của giờ, chi ngày "exact") chỉ phụ thuộc
+  // can chi của ngày dương và giờ:phút (vendor/lunar.js _computeDay, _computeTime, getTimeTianShen, getTimeYi…) → tính thẳng
+  // bằng cùng công thức với bảng LunarUtil, không dựng đối tượng Solar/Lunar cho từng giờ, và cache theo khóa đó: quét 1 năm
+  // chỉ còn khoảng 60 × 13 lần tính thay vì 365 × 13 lần dựng Lunar (14.2 dòng 19).
+  const hourCache = new Map();
+  const okHm = (hh, mi) => Number.isInteger(hh) && hh >= 0 && hh <= 23 && Number.isInteger(mi) && mi >= 0 && mi <= 59;
+  function hourAlmanac(ctx, hh, mi) {
+    const key = `${ctx.dayG}-${ctx.dayZ}-${hh}-${mi}`;
+    const hit = hourCache.get(key);
+    if (hit) return hit;
+    let out;
+    if (okHm(hh, mi)) {
+      const U = globalThis.LunarUtil;
+      const hm = `${pad(hh)}:${pad(mi)}`;
+      // Giờ Tý muộn (23:00–23:59): can chi ngày "exact" sang ngày hôm sau, như _computeDay của thư viện
+      const late = hh === 23;
+      const dgE = late ? (ctx.dayG + 1) % 10 : ctx.dayG, dzE = late ? (ctx.dayZ + 1) % 12 : ctx.dayZ;
+      const tzh = U.getTimeZhiIndex(hm);
+      const tg = ((dgE % 5) * 2 + tzh) % 10;
+      const dayZhiExact = U.ZHI[dzE + 1];
+      const tianShen = U.TIAN_SHEN[(tzh + U.ZHI_TIAN_SHEN_OFFSET[dayZhiExact]) % 12 + 1];
+      const dayGZ = U.GAN[dgE + 1] + dayZhiExact, timeGZ = U.GAN[tg + 1] + U.ZHI[tzh + 1];
+      out = Object.freeze({
+        tg, tzh, tianShen, luck: U.TIAN_SHEN_TYPE_LUCK[U.TIAN_SHEN_TYPE[tianShen]],
+        tYi: Object.freeze(U.getTimeYi(dayGZ, timeGZ)), tJi: Object.freeze(U.getTimeJi(dayGZ, timeGZ)),
+        dayZhiExact,
+      });
+    } else {
+      // Giờ:phút ngoài khuôn (không phải số nguyên hợp lệ): để thư viện xử lý như trước (báo lỗi giống hệt)
+      const l = globalThis.Solar.fromYmdHms(ctx.y, ctx.m, ctx.d, hh, mi, 0).getLunar();
+      out = Object.freeze({
+        tg: l.getTimeGanIndex(), tzh: l.getTimeZhiIndex(),
+        tianShen: l.getTimeTianShen(), luck: l.getTimeTianShenLuck(),
+        tYi: Object.freeze(l.getTimeYi()), tJi: Object.freeze(l.getTimeJi()),
+        dayZhiExact: l.getDayZhiExact(),
+      });
+    }
+    if (hourCache.size > 3000) hourCache.clear();
+    hourCache.set(key, out);
+    return out;
+  }
+
   function scoreHour(ctx, chart, act, hh, mi) {
-    const l = globalThis.Solar.fromYmdHms(ctx.y, ctx.m, ctx.d, hh, mi, 0).getLunar();
-    const tg = l.getTimeGanIndex(), tzh = l.getTimeZhiIndex();
+    const l = hourAlmanac(ctx, hh, mi);
+    const tg = l.tg, tzh = l.tzh;
     const items = [];
     const add = (pts, text, severe = false) => {
       if (pts !== 0 || severe) items.push({ pts: Math.round(pts * 10) / 10, text, severe });
     };
-    const tianShen = l.getTimeTianShen();
-    const luck = l.getTimeTianShenLuck();
+    const tianShen = l.tianShen;
+    const luck = l.luck;
     // Hướng Hỷ thần, Tài thần: chưa qua kiểm nguồn (PRD §7.1, §8.6) → không tính, không trả về.
     if (luck === '吉') add(6, `Giờ Hoàng đạo (${V.tianshen(tianShen)})`);
     else add(-6, `Giờ Hắc đạo (${V.tianshen(tianShen)})`);
 
     const keys = [...act.yiPrimary, ...act.yi];
-    const tYi = l.getTimeYi(), tJi = l.getTimeJi();
+    const tYi = l.tYi, tJi = l.tJi;
     const yiHit = keys.filter((k) => tYi.includes(k));
     const jiHit = keys.filter((k) => tJi.includes(k));
     if (yiHit.length) add(4, `Giờ nên: ${yiHit.slice(0, 2).map(V.yiji).join(', ')}`);
@@ -284,7 +326,7 @@
     const P = chart.pillars, tz = chart.tuoi.zhi;
     if (D.isChong(tzh, tz)) add(-10, `Giờ ${D.ZHI_VI[tzh]} xung tuổi ${D.ZHI_VI[tz]}`, true);
     if (D.isChong(tzh, P.day.z)) add(-6, `Giờ xung Nhật chi ${D.ZHI_VI[P.day.z]}`);
-    const dayZExact = D.zhiIndex(l.getDayZhiExact());
+    const dayZExact = D.zhiIndex(l.dayZhiExact);
     if (D.isChong(tzh, dayZExact)) add(-4, 'Giờ xung chi của ngày (Nhật phá)');
     if ([tz, P.day.z].some((z) => D.isLiuHe(tzh, z) || D.isSanHe(tzh, z))) add(3, 'Giờ hợp tuổi / Nhật chi');
 
@@ -393,7 +435,8 @@
       });
     }
     const filterSevere = o.options?.hideSevere !== false;
-    const ranked = days.filter((x) => !x.excluded && (!filterSevere || !x.severe)).sort((a, b) => b.score - a.score || a.key.localeCompare(b.key));
+    // Khóa 'YYYY-MM-DD' cùng độ dài: so chuỗi thường cho cùng thứ tự với localeCompare mà nhanh hơn nhiều
+    const ranked = days.filter((x) => !x.excluded && (!filterSevere || !x.severe)).sort((a, b) => b.score - a.score || (a.key < b.key ? -1 : a.key > b.key ? 1 : 0));
     return { days, ranked, ms: Math.round(performance.now() - t0) };
   }
 
