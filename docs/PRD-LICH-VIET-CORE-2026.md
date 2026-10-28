@@ -3,7 +3,7 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.16 — thêm QĐ-37: sách chủ dự án đưa vào được học và áp dụng sau khi đánh giá, chọn lọc (7.4 bước 1a–3a; ngoại lệ ở dòng AI của 1.3). Bản 4.15: 4.2 và 4.3 ghi theo hiện trạng mới: tháng tiết khí theo múi giờ dựng lịch, không còn theo UTC+8 của thư viện (14.2 dòng 14, 54); không đổi yêu cầu. Bản 4.14: thêm QĐ-33 đến QĐ-36 (lõi tra bảng tháng âm lịch dựng từ bảng thiên văn; ngoại lệ thứ ba ở 13.4; 4.2 và 4.3 ghi theo hiện trạng mới). Bản 4.13: thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
+| Phiên bản | 4.17 — thêm QĐ-38: nhãn tin cậy và các trường của lược đồ cho luật lấy từ sách chủ dự án đưa vào (7.3, 7.6); 7.7 và 15.2 ghi ngoại lệ của QĐ-37. Bản 4.16: thêm QĐ-37: sách chủ dự án đưa vào được học và áp dụng sau khi đánh giá, chọn lọc (7.4 bước 1a–3a; ngoại lệ ở dòng AI của 1.3). Bản 4.15: 4.2 và 4.3 ghi theo hiện trạng mới: tháng tiết khí theo múi giờ dựng lịch, không còn theo UTC+8 của thư viện (14.2 dòng 14, 54); không đổi yêu cầu. Bản 4.14: thêm QĐ-33 đến QĐ-36 (lõi tra bảng tháng âm lịch dựng từ bảng thiên văn; ngoại lệ thứ ba ở 13.4; 4.2 và 4.3 ghi theo hiện trạng mới). Bản 4.13: thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
 | Ngày cập nhật | 2026-10-28 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
@@ -459,6 +459,8 @@ vi_du_trong_sach:               # thành kiểm thử bắt buộc
   - {chi_thang: Dan, chi_ngay: Suu, ket_qua: Minh Duong}
 ```
 
+Luật lấy từ sách chủ dự án đưa vào (QĐ-37, QĐ-38): `nguon.nguyen_van` là trích ngắn tiếng Việt kèm trang, `ban_dich` để trống, `kiem_duyet` ghi lượt lập bảng và lượt kiểm ở 7.4 bước 3a.
+
 ### 7.4 Quy trình thêm luật
 
 Nguồn là sách gốc chữ Hán: làm bước 1–6. Nguồn là sách chủ dự án đưa vào (QĐ-37): bước 1–3 thay bằng 1a–3a; bước 4–6 giữ nguyên.
@@ -467,9 +469,9 @@ Nguồn là sách gốc chữ Hán: làm bước 1–6. Nguồn là sách chủ 
 2. Người đọc được Hán văn dịch và lập bảng. AI chỉ hỗ trợ nháp.
 3. Người thứ hai kiểm độc lập bảng so với nguyên văn.
 
-1a. Đọc hết sách; mỗi luật, bảng, ví dụ ghi số trang. Trích ngắn làm bằng chứng; lời văn trong ứng dụng tự viết, không chép của sách.
-2a. Đánh giá từng luật: sách có tự nhất quán không (ví dụ của sách có theo đúng luật sách nêu); so với bảng tra và luật đang có, với 6tail, lichvang và các sách đã đọc; công thức có tự đếm lại được không; có nằm trong phạm vi 1.3 không. Kết luận cho từng luật: áp dụng, áp dụng có điều kiện, hoặc không áp dụng, kèm lý do.
-3a. Chủ dự án duyệt danh sách áp dụng trước khi cài. Bảng tra lập từ sách được một lượt kiểm khác với lượt lập bảng so lại với ảnh trang; mỗi luật cài có chú thích nguồn (sách, trang).
+- **1a.** Đọc hết sách; mỗi luật, bảng, ví dụ ghi số trang. Trích ngắn làm bằng chứng; lời văn trong ứng dụng tự viết, không chép của sách.
+- **2a.** Đánh giá từng luật: sách có tự nhất quán không (ví dụ của sách có theo đúng luật sách nêu); so với bảng tra và luật đang có, với 6tail, lichvang và các sách đã đọc; công thức có tự đếm lại được không; có nằm trong phạm vi 1.3 không. Kết luận cho từng luật: áp dụng, áp dụng có điều kiện, hoặc không áp dụng, kèm lý do.
+- **3a.** Chủ dự án duyệt danh sách áp dụng trước khi cài. Bảng tra lập từ sách được một lượt kiểm khác với lượt lập bảng so lại với ảnh trang; mỗi luật cài có chú thích nguồn (sách, trang).
 
 4. Mọi ví dụ trong sách thành kiểm thử bắt buộc.
 5. Đối chiếu với 6tail và lichvang; mỗi chỗ lệch phải giải thích được bằng trường phái hoặc quy ước.
@@ -488,6 +490,7 @@ Khung bảng lấy từ V5.1 (mục VI.2), đã sửa cho khớp bảng 8.3 và 
 | Thiên văn | Skyfield + JPL DE440; đối chiếu DE431 (Yuk Tung Liu) | Sóc, 24 tiết khí (UTC) | Lệch ≤ 60 giây ở mọi sự kiện | `ASTRO` |
 | Lịch pháp | Số liệu Ban Lịch Nhà nước; bảng Đài Thiên văn Hồng Kông; Quyết định 121-CP, 134/2002 | Tháng âm, tháng nhuận, can chi | Khớp toàn bộ, hoặc chỗ lệch có trong `official_overrides` kèm lý do | `CONVENTION` |
 | Sách chọn ngày | Hiệp Kỷ Biện Phương Thư; Ngọc Hạp Thông Thư; Đổng Công Tuyển Trạch | Thần sát, Trực, Tú, nghi/kỵ theo việc | Có ảnh chụp Hán văn, hai người kiểm độc lập, đạt mọi ví dụ trong sách (7.4) | `CONSENSUS` / `SCHOOL_SPLIT` |
+| Sách chủ dự án đưa vào (QĐ-37, QĐ-38) | Sách tiếng Việt, sách dịch | Luật, bảng tra, ví dụ kiểm thử, lời giải thích | 7.4 bước 1a–3a và 4–6 | Theo kết quả đối chiếu: `CONSENSUS` khi khớp ít nhất một nguồn độc lập khác (sách khác hoặc 6tail) và công thức tự đếm lại được; `SCHOOL_SPLIT` khi chỗ lệch giải thích được bằng trường phái; `DISPUTED` khi các nguồn chép khác nhau; `VN_FOLK` với tục dân gian; chỉ có trong một sách thì `UNVERIFIED`, ghi rõ "chỉ có trong <sách>, chưa đối chiếu nguồn khác" |
 | Thư viện đối chiếu | 6tail, cnlunar, lichvang, Thọ Tinh | Đối chiếu; tạm dùng khi chưa có bảng từ sách | Khóa phiên bản; ghi rõ "chưa đối chiếu sách gốc" | `UNVERIFIED` |
 | Tập tục Việt | Phan Kế Bính; khảo sát theo ba miền | Tam nương, Nguyệt kỵ, đầy tháng, lại mặt | Công thức rõ, ghi vùng áp dụng | `VN_FOLK` |
 | Thuyết có dị bản | Nhiều sách chép khác nhau | Kim lâu, Hoang ốc, Tam tai, trùng tang | Hiển thị trung tính kèm dị bản; không loại ngày | `DISPUTED` |
@@ -499,7 +502,7 @@ Không dùng bài viết trên mạng không dẫn được về sách hoặc v�
 ### 7.7 Những điều cấm
 
 - Luật mang nhãn `CONSENSUS` hoặc `SCHOOL_SPLIT` mà không có trường `nguon` hoặc thiếu người kiểm duyệt.
-- AI sinh ra hoặc sửa bảng tra.
+- AI sinh ra hoặc sửa bảng tra, trừ ngoại lệ ở 1.3 (bảng tra lập từ sách chủ dự án đưa vào theo 7.4 bước 1a–3a, QĐ-37).
 - Chỉ số tổng hợp không tuân năm điều kiện ở 8.4; gán điểm cộng trừ cho sao, thần sát mà trình bày như có trong sách.
 - Trình bày luật `UNVERIFIED`, `HEURISTIC`, `USER_DEFINED` như thể có nguồn sách.
 - Dịch vụ mê tín: dâng sao giải hạn, bán vật phẩm, cúng thuê.
@@ -1045,7 +1048,7 @@ G1 làm trước W1 và M1 (QĐ-31, giữ QĐ-03). Thứ tự giữa W1, M1 và 
 | Không có chuẩn lịch quốc gia dạng máy đọc được | Phần UTC+7 chỉ kiểm chéo được | Kiểm lõi ở UTC+8 với Hồng Kông; đối chiếu ba nguồn Việt độc lập |
 | Sự kiện thiên văn sát nửa đêm | Lệch một ngày âm lịch | Cờ `BOUNDARY_RISK`, hiển thị cả hai khả năng |
 | Độ bất định ΔT sau 2100 | Sai số tăng dần | Chỉ cam kết 1929–2100 |
-| Thiếu người đọc Hán văn | Tầng C chậm và dễ sai | AI chỉ làm nháp; bắt buộc hai người kiểm; G5 là tùy chọn |
+| Thiếu người đọc Hán văn | Tầng C chậm và dễ sai | Với sách gốc chữ Hán: AI chỉ làm nháp; bắt buộc hai người kiểm; G5 là tùy chọn. Với sách chủ dự án đưa vào: 7.4 bước 1a–3a (QĐ-37) |
 | Múi giờ trước 1976 chưa chắc chắn | Ngày sinh âm và lá số của người lớn tuổi có thể sai | Hiện múi giờ đề xuất, cho sửa, trả cả hai kết quả khi khác nhau |
 | Người dùng hiểu kết quả là dự báo | Lo lắng, quyết định sai | Dòng miễn trừ cố định; chỉ số mang nhãn `HEURISTIC`; không chỉ số ở việc nhạy cảm |
 | Phụ thuộc 6tail cho toàn bộ nghi/kỵ | Sai của thư viện thành sai của ứng dụng | Nhãn `UNVERIFIED`; khóa phiên bản; G5 |

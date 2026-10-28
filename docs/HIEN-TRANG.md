@@ -13,7 +13,7 @@ Tệp này ghi mã nguồn hiện đáp ứng `PRD-LICH-VIET-CORE-2026.md` tới
 | Ngày kiểm gần nhất | 2026-10-28 (dòng 13, 14, 19, 27, 46, 54–58); 2026-10-07 (dòng 48–53); 2026-10-06 (dòng 40–47); phần còn lại kiểm 2026-10-05 |
 | Nhánh, commit mã | `audit-g0`, mã ở `88e1962` |
 | Bộ kiểm thử của dự án | 231/231 đạt tại `88e1962`; 228/228 đạt tại `17dfdcd`; 220/220 đạt tại `b372539`; 218/218 đạt tại `f94ffd1`; 216/216 đạt tại `699d5bb`; 212/212 đạt tại `08acd4e`; 187/187 đạt tại `f79b42c` (`16ebcb1` chỉ có phần kiểm thử của dòng 54, không chạy riêng); 178/178 đạt tại `093e4b8`; 173/173 đạt tại `571987c`; 151/151 đạt tại `a41fcf6`; 145/145 đạt tại `927bb8a`; 144/144 đạt tại `372a12c`; 139/139 tại `ad8dbed` (`node tests/run-tests.mjs`); 118/118 tại `132a0a9` |
-| PRD đối chiếu | Bản 4.15 |
+| PRD đối chiếu | Bản 4.17 (4.16 và 4.17 chỉ thêm quy trình học sách chủ dự án đưa vào, QĐ-37 và QĐ-38; chưa có mã theo quy trình này) |
 
 ## Giai đoạn
 
