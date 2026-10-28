@@ -289,6 +289,7 @@
       : '';
     const calendarInfoHtml = `
       <ul class="why">
+        <li>Tháng theo tiết khí: <b>${esc(`${gz.mCan} ${gz.mChi}`)}</b> (dùng để tính thần nhật, trực, nghi/kỵ)</li>
         <li>Thần nhật: <b>${esc(tianShenName || '—')}</b> (${isHuangDao ? 'hoàng đạo' : 'hắc đạo'})</li>
         <li>Sao (nhị thập bát tú): <b>${esc(starName || '—')}</b>${starName ? ` (${isStarGood ? 'sao tốt' : 'sao xấu'})` : ''}</li>
         <li>${esc(kystr)}</li>
@@ -335,7 +336,7 @@
           <div class="pillar-col">
             <span class="p-lbl">THÁNG</span>
             <span class="p-num">${lunar.month}${lunar.leap ? ' (Nhuận)' : ''}</span>
-            <span class="p-gz">${gz.mCan} ${gz.mChi}</span>
+            <span class="p-gz">${conv && conv.ok ? esc(conv.canChi.lunarMonth || 'không có can chi riêng') : '—'}</span>
           </div>
           <div class="pillar-col">
             <span class="p-lbl">NĂM</span>

@@ -1008,5 +1008,17 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
     [has(9, 12, 2072), has(16, 11, 2077), has(21, 4, 2031)], [true, true, false]);
 }
 
+// Can chi tháng âm (PRD 6.4: lịch in Việt Nam ghi can chi theo tháng âm, giữ riêng với tháng tiết khí);
+// tháng nhuận không gán can chi riêng (mặc định lunar_month_canchi_leap, PRD 6.5)
+{
+  const D = NT.dateConvert;
+  const lm = (d, m, y) => D.solarToLunar({ day: d, month: m, year: y }).canChi.lunarMonth;
+  eq('Can chi tháng âm: tháng Giêng Bính Ngọ (17/02/2026) Canh Dần; tháng Tám Bính Ngọ (07/10/2026) Đinh Dậu; tháng Ba Tân Hợi (20/04/2031) Nhâm Thìn; tháng Ba nhuận (21/04/2031) không có can chi riêng',
+    [lm(17, 2, 2026), lm(7, 10, 2026), lm(20, 4, 2031), lm(21, 4, 2031)], ['Canh Dần', 'Đinh Dậu', 'Nhâm Thìn', null]);
+  const g = NT.calendar.solarToGanZhi(5, 5, 2031);
+  eq('05/05/2031: tháng âm là tháng Ba nhuận (không có can chi riêng), tháng tiết khí là Quý Tỵ — hai loại giữ riêng',
+    [D.solarToLunar({ day: 5, month: 5, year: 2031 }).lunar.leap, lm(5, 5, 2031), `${g.mCan} ${g.mChi}`], [true, null, 'Quý Tỵ']);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);
