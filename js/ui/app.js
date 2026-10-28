@@ -509,7 +509,7 @@
         <div class="info-badge" aria-hidden="true">📅</div>
         <div><div class="day-date">${dsc.weekday}, ${fmtDate(r.ctx)}</div>
           <div class="day-sub">Âm lịch ${esc(dsc.lunarText)}</div>
-          <div class="day-sub">Ngày ${esc(dsc.ganZhi)} · Tháng ${esc(dsc.monthGanZhi)}</div></div>
+          <div class="day-sub">Ngày ${esc(dsc.ganZhi)} · Tháng tiết khí ${esc(dsc.monthGanZhi)}</div></div>
       </div>
       <div class="tags">${dsc.jieqi ? `<span class="tag">${esc(dsc.jieqi)}</span>` : ''}</div>
       <div class="hours-row">Giờ đã định: <span class="hour-chip">${esc(r.chosen.label)}</span> (giờ ${esc(r.chosen.ganZhi)})</div>
@@ -650,7 +650,7 @@
       g.textContent = `${r.grade.label} · ngày ${r.day.score} / giờ ${r.chosen.score}`;
     }
     $('#dlg-title').textContent = `${dsc.weekday}, ${fmtDate(r.ctx)}`;
-    $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng ${dsc.monthGanZhi}${whoText() ? ' · ' + whoText() : ''}`;
+    $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng tiết khí ${dsc.monthGanZhi}${whoText() ? ' · ' + whoText() : ''}`;
 
     if (calendarOnly()) {
       $('#dlg-body').innerHTML = `
@@ -659,7 +659,7 @@
       <dl class="kv">
         <dt>Dương lịch</dt><dd>${esc(dsc.weekday)}, ${fmtDate(r.ctx)}</dd>
         <dt>Âm lịch</dt><dd>${esc(dsc.lunarText)}</dd>
-        <dt>Can chi</dt><dd>Ngày ${esc(dsc.ganZhi)} · Tháng ${esc(dsc.monthGanZhi)}</dd>
+        <dt>Can chi</dt><dd>Ngày ${esc(dsc.ganZhi)} · Tháng tiết khí ${esc(dsc.monthGanZhi)}</dd>
         <dt>Giờ đã định</dt><dd>${esc(r.chosen.label)} (giờ ${esc(r.chosen.ganZhi)})</dd>
         ${dsc.jieqi ? `<dt>Tiết khí</dt><dd>${esc(dsc.jieqi)}</dd>` : ''}
       </dl>

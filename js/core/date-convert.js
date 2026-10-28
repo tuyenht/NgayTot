@@ -91,8 +91,9 @@
       }),
       canChi: Object.freeze({
         day: `${gan((jdn + 9) % 10)} ${zhi((jdn + 1) % 12)}`,
-        // Can chi của tháng âm (tháng nhuận mang tên tháng trước nó); khác can chi tháng theo tiết khí dùng cho lá số
-        lunarMonth: `${gan((l.year * 12 + l.month + 3) % 10)} ${zhi((l.month + 1) % 12)}`,
+        // Can chi của tháng âm, khác can chi tháng theo tiết khí dùng cho lá số và chọn ngày (PRD §6.4).
+        // Tháng nhuận: null — theo mặc định lunar_month_canchi_leap của PRD §6.5, tháng nhuận không gán can chi riêng
+        lunarMonth: l.leap ? null : `${gan((l.year * 12 + l.month + 3) % 10)} ${zhi((l.month + 1) % 12)}`,
         year: yearName,
       }),
       solarTerm: (() => { const st = C.solarTermOn(d, m, y, tz); return st ? Object.freeze({ index: st.index, name: NT.vi && NT.vi.jieqi ? NT.vi.jieqi(st.key) : st.key, boundarySeconds: st.boundarySeconds }) : null; })(),
