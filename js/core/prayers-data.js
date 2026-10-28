@@ -1338,7 +1338,7 @@ Nguồn tham khảo: báo Văn Hóa.`
     vk_hoa_vang: { m: 1, d: 3, label: 'Lễ Hóa Vàng tạ Tết' },
     vk_ram_thang_gieng: { m: 1, d: 15, label: 'Tết Thượng Nguyên (Rằm tháng Giêng)' },
     vk_han_thuc: { m: 3, d: 3, label: 'Tết Hàn Thực (Mùng 3 tháng 3)' },
-    vk_thanh_minh: { m: 3, d: 5, label: 'Tiết Thanh Minh & Tảo Mộ' },
+    vk_thanh_minh: { term: '清明', label: 'Tiết Thanh Minh & Tảo Mộ' }, // tiết khí (khoảng 04–05/4 dương lịch), không theo ngày âm
     vk_gio_to_hung_vuong: { m: 3, d: 10, label: 'Giỗ Tổ Hùng Vương 10 tháng 3' },
     vk_doan_ngo: { m: 5, d: 5, label: 'Tết Đoan Ngọ (Mùng 5 tháng 5)' },
     vk_cung_am_hon_hue: { m: 5, d: 23, label: 'Lễ Cúng Âm Hồn Huế (23 tháng 5)' },
@@ -1405,7 +1405,8 @@ Nguồn tham khảo: báo Văn Hóa.`
       // tháng N đã qua; đang ở tháng N thường mà năm có tháng N nhuận thì lễ các tháng sau xa thêm một tháng.
       const fest = FESTIVAL_DATES[p.id];
       if (fest) {
-        const diff = daysUntil(fest.m, false, fest.d);
+        // Lễ theo tiết khí: số ngày tới tiết do nơi gọi tra từ bảng tiết khí (lunarContextForDate); không có thì bỏ qua
+        const diff = fest.term ? (opts.daysToTerm && Number.isInteger(opts.daysToTerm[fest.term]) ? opts.daysToTerm[fest.term] : -1) : daysUntil(fest.m, false, fest.d);
 
         if (diff >= 0 && diff <= 15) {
           const proximityScore = Math.max(10, 110 - diff * 6);
@@ -1457,6 +1458,7 @@ Nguồn tham khảo: báo Văn Hóa.`
     currentLunarMonth = null,
     currentLunarLeap = false,
     currentLunarYearLeapMonth = null,
+    daysToTerm = null,
     upcomingAnniversaries = []
   } = {}) {
     const kw = keyword.trim().toLowerCase();
@@ -1492,6 +1494,7 @@ Nguồn tham khảo: báo Văn Hóa.`
         currentLunarMonth,
         currentLunarLeap,
         currentLunarYearLeapMonth,
+        daysToTerm,
         upcomingAnniversaries
       });
       return { prayer: p, score, badgeText };
@@ -1527,12 +1530,24 @@ Nguồn tham khảo: báo Văn Hóa.`
     return 0;
   }
 
+  // Số ngày từ `date` tới các tiết khí trong 15 ngày tới (ngày chứa tiết theo giờ Việt Nam), vd { '清明': 3 }
+  function daysToTermsFrom(date) {
+    const out = {};
+    for (let k = 0; k <= 15; k++) {
+      const t = new Date(date.getFullYear(), date.getMonth(), date.getDate() + k);
+      const st = NT.calendar.solarTermOn ? NT.calendar.solarTermOn(t.getDate(), t.getMonth() + 1, t.getFullYear()) : null;
+      if (st && !(st.key in out)) out[st.key] = k;
+    }
+    return Object.freeze(out);
+  }
+
   function lunarContextForDate(date = new Date()) {
     try {
       const l = NT.calendar.solarToLunar(date.getDate(), date.getMonth() + 1, date.getFullYear());
       if (!l) return null;
       return Object.freeze({
         day: l.day, month: l.month, leap: !!l.leap, year: l.year, yearLeapMonth: leapMonthOf(l.year),
+        daysToTerm: daysToTermsFrom(date),
         yearName: NT.data.ganZhiVi(NT.calendar.lunarYearGan(l.year), NT.calendar.lunarYearZhi(l.year)),
         monthText: `${l.month}${l.leap ? ' nhuận' : ''}`
       });

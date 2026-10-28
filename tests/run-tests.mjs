@@ -1230,5 +1230,17 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
     [D.solarToLunar({ day: 5, month: 5, year: 2031 }).lunar.leap, lm(5, 5, 2031), `${g.mCan} ${g.mChi}`], [true, null, 'Quý Tỵ']);
 }
 
+// Văn khấn: Thanh minh theo tiết khí, không theo ngày âm cố định (14.2 dòng 55)
+{
+  const P = NT.prayers;
+  const badge = (o, id) => P.filterPrayers(o).find((p) => p.id === id)?.priorityBadge ?? null;
+  const c = P.lunarContextForDate(new Date(2026, 3, 1)), c2 = P.lunarContextForDate(new Date(2026, 4, 1));
+  eq('01/04/2026: Thanh minh (05/04/2026 theo giờ Việt Nam) còn 4 ngày, có gợi ý dù ngày âm là 14 tháng 2; 01/05/2026 không gợi ý',
+    [c.daysToTerm['清明'], badge({ currentLunarDay: c.day, currentLunarMonth: c.month, daysToTerm: c.daysToTerm }, 'vk_thanh_minh'),
+      badge({ currentLunarDay: c2.day, currentLunarMonth: c2.month, daysToTerm: c2.daysToTerm }, 'vk_thanh_minh')],
+    [4, '🔥 Sắp đến dịp (còn 4 ngày)', null]);
+  eq('Ngày 5/3 âm (22/04/2026) không còn báo Thanh minh', badge({ currentLunarDay: 5, currentLunarMonth: 3, daysToTerm: P.lunarContextForDate(new Date(2026, 3, 22)).daysToTerm }, 'vk_thanh_minh'), null);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

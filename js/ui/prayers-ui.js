@@ -120,6 +120,7 @@
     const currentLunarMonth = todayLunar ? todayLunar.month : 1;
     const currentLunarLeap = todayLunar ? todayLunar.leap : false;
     const currentLunarYearLeapMonth = todayLunar ? todayLunar.yearLeapMonth : null;
+    const daysToTerm = todayLunar ? todayLunar.daysToTerm : null;
 
     // Lấy danh sách ngày giỗ từ Sổ Giỗ để ưu tiên bài khấn giỗ cận kề
     let upcomingAnniversaries = [];
@@ -140,6 +141,7 @@
       currentLunarMonth,
       currentLunarLeap,
       currentLunarYearLeapMonth,
+      daysToTerm,
       upcomingAnniversaries
     });
 
