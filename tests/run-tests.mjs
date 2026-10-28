@@ -1265,9 +1265,15 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   const altOk = got.every(([jd, s]) => {
     const [d, m, y] = C.jdToDate(jd), [d2, m2, y2] = C.jdToDate(s < 0 ? jd - 1 : jd + 1);
     const a = C.monthPillar(d, m, y).alternative, b = C.monthPillar(d2, m2, y2);
-    return a.ganIndex === b.ganIndex && a.zhiIndex === b.zhiIndex && a.yearGanIndex === b.yearGanIndex && a.termIndex === b.termIndex;
+    return a.ganIndex === b.ganIndex && a.zhiIndex === b.zhiIndex && a.yearGanIndex === b.yearGanIndex && a.yearZhiIndex === b.yearZhiIndex && a.termIndex === b.termIndex;
   });
   eq('Tháng thay thế (alternative) của mọi ngày mang cờ trùng tháng của ngày bên kia tiết', altOk, true);
+  // Lập xuân 04/02/1947 lúc 23:50:20 theo giờ dựng lịch UTC+8: đổi cả năm can chi (Đinh Hợi, lệch thì còn Bính Tuất)
+  const lx47 = C.monthPillar(4, 2, 1947), al47 = C.dayAlmanac(4, 2, 1947);
+  eq('04/02/1947 (UTC+8): Lập xuân cách nửa đêm -580 giây; tháng Nhâm Dần năm Đinh Hợi, thay thế tháng Tân Sửu năm Bính Tuất; 03/02/1947 không mang cờ',
+    [lx47.boundarySeconds, lx47.boundaryTermIndex, gz({ g: lx47.ganIndex, z: lx47.zhiIndex }), gz({ g: lx47.alternative.ganIndex, z: lx47.alternative.zhiIndex }),
+      al47.yearGanZhi, al47.alternative.yearGanZhi, C.monthPillar(3, 2, 1947).boundarySeconds],
+    [-580, 21, '壬寅', '辛丑', '丁亥', '丙戌', null]);
 
   // Tiểu hàn 05/01/2011 lúc 23:54:38 giờ Việt Nam: ngày 05/01 đã sang tháng Sửu (Kỷ Sửu), lệch thì còn tháng Tý (Mậu Tý)
   const p = C.monthPillar(5, 1, 2011), a = C.dayAlmanac(5, 1, 2011);

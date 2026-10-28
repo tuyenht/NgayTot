@@ -299,7 +299,7 @@
       const sum = (a, other) => `${month(a)}${a.yearGanZhi !== other.yearGanZhi ? ` (năm ${D.GAN_VI[a.yearGanIndex]} ${D.ZHI_VI[a.yearZhiIndex]})` : ''}, `
         + `thần nhật ${V.tianshen ? V.tianshen(a.tianShen) : a.tianShen} (${a.tianShenType === '黄道' ? 'hoàng đạo' : 'hắc đạo'}), trực ${V.zhixing ? V.zhixing(a.zhiXing) : a.zhiXing}`;
       const alt = al.alternative;
-      const text = `Tiết ${V.jieqi ? V.jieqi(key) : key} rơi ${s < 0 ? 'trước' : 'sau'} nửa đêm cuối ngày này chỉ ${Math.abs(s)} giây (${tz === 7 ? 'giờ Việt Nam' : `giờ dựng lịch UTC+${NT.calendar.fmtTz(tz)}`}), `
+      const text = `Tiết ${V.jieqi ? V.jieqi(key) : key} rơi ${s < 0 ? 'trước' : 'sau'} nửa đêm cuối ngày này chỉ ${Math.abs(s)} giây${Math.abs(s) >= 90 ? `, khoảng ${Math.round(Math.abs(s) / 60)} phút` : ''} (${tz === 7 ? 'giờ Việt Nam' : `giờ dựng lịch UTC+${NT.calendar.fmtTz(tz)}`}), `
         + `nên ngày này ${s < 0 ? 'đã sang tháng mới' : 'còn ở tháng cũ'}: ${sum(al, alt)}. `
         + `Lịch tính theo cách khác có thể ghi tiết này vào ${s < 0 ? 'ngày hôm sau' : 'ngày này'}; khi đó ngày này ${s < 0 ? 'còn ở tháng cũ' : 'đã sang tháng mới'}: ${sum(alt, al)}.`
         + (NT.dateConvert && NT.dateConvert.deltaTNote ? NT.dateConvert.deltaTNote(s, NT.calendar.jdFromDate(d, m, y)) : '');
