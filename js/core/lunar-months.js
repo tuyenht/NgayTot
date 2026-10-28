@@ -2,13 +2,15 @@
  * NgayTot — bảng tháng âm lịch đã tính trước (tầng B, PRD 4.4 lunar_months).
  * TỆP SINH TỰ ĐỘNG bởi tools/astro/build_lunar_months.mjs từ data/astro_events.json. Không sửa tay.
  * start: số ngày Julius của mùng Một tháng Giêng năm `year`; codes: mỗi ký tự một tháng liên tiếp,
- * giá trị = (số tháng − 1) × 4 + (nhuận ? 2 : 0) + (số ngày − 29); risk: [chỉ số tháng, giây có dấu từ điểm sóc tới nửa đêm].
+ * giá trị = (số tháng − 1) × 4 + (nhuận ? 2 : 0) + (số ngày − 29); risk: [chỉ số tháng, giây có dấu từ điểm sóc tới nửa đêm];
+ * zqRisk: [chỉ số tháng, giây có dấu từ trung khí tới nửa đêm, chỉ số trung khí (0 = Xuân phân), số tháng, nhuận 0/1, năm âm]
+ * — tên tháng nếu trung khí đó rơi sang ngày bên kia nửa đêm.
  */
 (function (NT) {
   'use strict';
   NT.lunarMonths = Object.freeze({
    "source": "astro_events 9818f55bd948489358386251fd43e64fbbe5537f44ce577048b1e846c41b7ad1",
-   "riskSeconds": 600,
+   "riskSeconds": "max(600, 3 × σ_ΔT)",
    "tables": {
     "7": {
      "start": 2418713,
@@ -134,6 +136,24 @@
       [
        2345,
        -463
+      ]
+     ],
+     "zqRisk": [
+      [
+       353,
+       -33,
+       12,
+       7,
+       1,
+       1938
+      ],
+      [
+       354,
+       -33,
+       12,
+       8,
+       0,
+       1938
       ]
      ]
     },
@@ -290,6 +310,24 @@
        2367,
        400
       ]
+     ],
+     "zqRisk": [
+      [
+       958,
+       590,
+       10,
+       7,
+       0,
+       1987
+      ],
+      [
+       959,
+       590,
+       10,
+       7,
+       1,
+       1987
+      ]
      ]
     },
     "bj": {
@@ -420,6 +458,96 @@
       [
        2367,
        -460
+      ]
+     ],
+     "zqRisk": [
+      [
+       88,
+       181,
+       2,
+       3,
+       0,
+       1917
+      ],
+      [
+       89,
+       181,
+       2,
+       3,
+       1,
+       1917
+      ],
+      [
+       153,
+       317,
+       8,
+       6,
+       0,
+       1922
+      ],
+      [
+       154,
+       317,
+       8,
+       6,
+       1,
+       1922
+      ],
+      [
+       925,
+       509,
+       18,
+       11,
+       0,
+       1984
+      ],
+      [
+       926,
+       509,
+       18,
+       12,
+       0,
+       1984
+      ],
+      [
+       927,
+       509,
+       18,
+       1,
+       0,
+       1985
+      ],
+      [
+       928,
+       509,
+       18,
+       2,
+       0,
+       1985
+      ],
+      [
+       929,
+       509,
+       18,
+       2,
+       1,
+       1985
+      ],
+      [
+       958,
+       -270,
+       10,
+       6,
+       1,
+       1987
+      ],
+      [
+       959,
+       -270,
+       10,
+       7,
+       0,
+       1987
       ]
      ]
     }

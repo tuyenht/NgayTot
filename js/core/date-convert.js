@@ -7,8 +7,9 @@
  *
  * Cờ:
  *  - OUT_OF_VERIFIED_RANGE: năm ngoài 1929–2100 (PRD §1.4).
- *  - BOUNDARY_RISK: điểm sóc mở đầu tháng (hoặc tháng kế) cách nửa đêm dưới 10 phút theo giờ dựng lịch, nên
- *    lịch in theo cách tính khác có thể lệch một ngày (PRD §5.3).
+ *  - BOUNDARY_RISK: điểm sóc mở đầu tháng (hoặc tháng kế) cách nửa đêm dưới cửa sổ rủi ro (10 phút, hoặc 3 lần
+ *    sai số ΔT của năm nếu lớn hơn) theo giờ dựng lịch, nên lịch in theo cách tính khác có thể lệch một ngày; hoặc
+ *    một trung khí sát nửa đêm mà rơi sang ngày bên kia thì tháng đổi tên, thường là đổi tháng nhuận (PRD §5.3).
  *  - REGION_DIFFERS: 1968–1975 hai miền dùng hai lịch; kết quả hai miền khác nhau (PRD §6.3).
  */
 (function (NT) {
@@ -27,6 +28,18 @@
   const fmtSolar = (s) => `${String(s.day).padStart(2, '0')}/${String(s.month).padStart(2, '0')}/${s.year}`;
   const monthName = (m, leap) => `tháng ${MONTH_NAMES[m - 1]}${leap ? ' nhuận' : ''}`;
   const fmtLunar = (l) => `ngày ${l.day} ${monthName(l.month, l.leap)} năm ${l.yearName} (${l.year})`;
+  const termName = (i) => (NT.vi && NT.vi.jieqi ? NT.vi.jieqi(C.TERM_KEYS[i]) : C.TERM_KEYS[i]);
+  /**
+   * Câu nói thêm khi khoảng cách tới nửa đêm nhỏ hơn 3 lần sai số ΔT của năm: khi ấy chưa thể khẳng định phía nào.
+   * Sai số theo năm dương lịch của ngày `jdn` (ngày mùng Một hoặc ngày chứa sự kiện).
+   */
+  function deltaTNote(seconds, jdn) {
+    const year = C.jdToDate(jdn)[2];
+    const limit = Math.round(3 * C.deltaTSigma(year));
+    return Math.abs(seconds) <= limit
+      ? ` Với năm ${year}, thời điểm này chỉ dự báo được với sai số có thể tới khoảng ${limit} giây (tốc độ quay của Trái Đất thay đổi khó đoán trước), lớn hơn khoảng cách trên, nên chưa thể khẳng định.`
+      : '';
+  }
 
   function solarExists(day, month, year) {
     if (![day, month, year].every(isInt) || month < 1 || month > 12 || day < 1) return false;
@@ -55,10 +68,18 @@
       const where = `Trăng non mở đầu tháng âm này rơi ${own > 0 ? 'sau' : 'trước'} nửa đêm chỉ ${Math.abs(own)} giây (${tz === 7 ? 'giờ Việt Nam' : `giờ dựng lịch UTC+${C.fmtTz(tz)}`}). `;
       notes.push(where + (own < 0 && l.day === 1
         ? 'Lịch in theo cách tính khác có thể coi ngày này là ngày cuối của tháng trước.'
-        : `Lịch in theo cách tính khác có thể ghi ngày âm ${own > 0 ? 'lớn hơn' : 'nhỏ hơn'} một ngày trong cả tháng này.`));
+        : `Lịch in theo cách tính khác có thể ghi ngày âm ${own > 0 ? 'lớn hơn' : 'nhỏ hơn'} một ngày trong cả tháng này.`) + deltaTNote(own, info.start));
     } else if (next !== null && next > 0 && info && l.day === info.length) {
       flags.push('BOUNDARY_RISK');
-      notes.push(`Trăng non của tháng kế tiếp rơi sau nửa đêm chỉ ${next} giây; lịch in theo cách tính khác có thể coi ngày này là mùng Một tháng sau.`);
+      notes.push(`Trăng non của tháng kế tiếp rơi sau nửa đêm chỉ ${next} giây; lịch in theo cách tính khác có thể coi ngày này là mùng Một tháng sau.` + deltaTNote(next, info.start + info.length));
+    }
+    const zq = info ? info.zhongqiRisk : null;
+    if (zq) {
+      if (!flags.includes('BOUNDARY_RISK')) flags.push('BOUNDARY_RISK');
+      const tzText = tz === 7 ? 'giờ Việt Nam' : `giờ dựng lịch UTC+${C.fmtTz(tz)}`;
+      notes.push(`Trung khí ${termName(zq.term)} rơi ${zq.seconds > 0 ? 'sau' : 'trước'} nửa đêm chỉ ${Math.abs(zq.seconds)} giây (${tzText}). `
+        + `Nếu tính lệch sang ngày bên kia thì tháng này là ${monthName(zq.month, zq.leap)}${zq.year !== l.year ? ` năm ${zq.year}` : ''}; ngày âm trong tháng không đổi.`
+        + deltaTNote(zq.seconds, info.start));
     }
     if (!info) notes.push('Ngày này nằm ngoài bảng tháng đã tính trước; kết quả tính bằng công thức xấp xỉ.');
     return {

@@ -6,18 +6,18 @@
  *     node tools/astro/build_lunar_months.mjs --check  chỉ so tệp hiện có với kết quả sinh lại
  *
  * Mỗi tháng mã hóa thành một ký tự: (số tháng − 1) × 4 + (nhuận ? 2 : 0) + (số ngày − 29).
- * Tháng có điểm sóc cách nửa đêm dưới 10 phút được ghi riêng ở `risk` (PRD 5.3, cờ BOUNDARY_RISK).
+ * Tháng có điểm sóc cách nửa đêm dưới cửa sổ rủi ro max(10 phút, 3 × σ_ΔT của năm) được ghi riêng ở `risk`;
+ * tháng đổi tên khi một trung khí sát nửa đêm rơi sang ngày bên kia được ghi ở `zqRisk` (PRD 5.3, cờ BOUNDARY_RISK).
  */
 import { createHash } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { loadAstroEvents, buildLunarMonths } from './lunar-from-astro.mjs';
+import { loadAstroEvents, buildLunarMonths, riskWindow, zhongqiRisks } from './lunar-from-astro.mjs';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
 const OUT = path.join(ROOT, 'js', 'core', 'lunar-months.js');
 export const ALPHABET = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
-export const RISK_SECONDS = 600;
 // Năm âm lịch được đưa vào bảng: rộng hơn khoảng 1912–2100 mà phần lõi hỗ trợ một năm mỗi đầu
 export const YEAR_FROM = 1910, YEAR_TO = 2101;
 // Khóa múi giờ: 'bj' = kinh tuyến Bắc Kinh (lịch Trung Quốc 1912–1928), '8' = UTC+8, '7' = UTC+7
@@ -39,15 +39,19 @@ export function generate() {
       start: first.start,
       year: first.year,
       codes: months.map((m) => ALPHABET[(m.month - 1) * 4 + (m.leap ? 2 : 0) + (m.length - 29)]).join(''),
-      risk: months.map((m, i) => [i, Math.round(m.socMargin)]).filter(([, s]) => Math.abs(s) < RISK_SECONDS),
+      risk: months.map((m, i) => [i, Math.round(m.socMargin), m.year]).filter(([, s, y]) => Math.abs(s) < riskWindow(y)).map(([i, s]) => [i, s]),
+      zqRisk: zhongqiRisks(astro, tz, YEAR_FROM, YEAR_TO).map((r) => [months.findIndex((m) => m.start === r.start), r.margin, r.term, r.month, r.leap ? 1 : 0, r.year])
+        .filter(([i]) => i >= 0),
     };
   }
-  const body = JSON.stringify({ source: `astro_events ${hash}`, riskSeconds: RISK_SECONDS, tables }, null, 1);
+  const body = JSON.stringify({ source: `astro_events ${hash}`, riskSeconds: 'max(600, 3 × σ_ΔT)', tables }, null, 1);
   return `/**
  * NgayTot — bảng tháng âm lịch đã tính trước (tầng B, PRD 4.4 lunar_months).
  * TỆP SINH TỰ ĐỘNG bởi tools/astro/build_lunar_months.mjs từ data/astro_events.json. Không sửa tay.
  * start: số ngày Julius của mùng Một tháng Giêng năm \`year\`; codes: mỗi ký tự một tháng liên tiếp,
- * giá trị = (số tháng − 1) × 4 + (nhuận ? 2 : 0) + (số ngày − 29); risk: [chỉ số tháng, giây có dấu từ điểm sóc tới nửa đêm].
+ * giá trị = (số tháng − 1) × 4 + (nhuận ? 2 : 0) + (số ngày − 29); risk: [chỉ số tháng, giây có dấu từ điểm sóc tới nửa đêm];
+ * zqRisk: [chỉ số tháng, giây có dấu từ trung khí tới nửa đêm, chỉ số trung khí (0 = Xuân phân), số tháng, nhuận 0/1, năm âm]
+ * — tên tháng nếu trung khí đó rơi sang ngày bên kia nửa đêm.
  */
 (function (NT) {
   'use strict';

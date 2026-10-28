@@ -96,3 +96,47 @@ export function lookupLunar(months, jdn) {
   const m = months[lo];
   return { day: jdn - m.start + 1, month: m.month, year: m.year, leap: m.leap, length: m.length, socMargin: m.socMargin };
 }
+
+/**
+ * Sai số chuẩn σ của ΔT (giây) cho một năm, theo mô hình Huber (2000) như Espenak và Meeus dùng trong
+ * "Five Millennium Canon of Solar Eclipses" (eclipsewise.com/help/uncertainty.html):
+ * σ = 365,25 × N × √[(N × Q / 3) × (1 + N / M)] / 1000, N = năm − 2005, Q = 0,058 ms²/năm, M = 2500 năm.
+ * Trước 2005 ΔT đã đo; bảng 2 của Stephenson và Houlden (1986) ghi σ ≈ 1 giây năm 1800, 0,1 giây năm 1900,
+ * nên lấy cận trên 1 giây. Bản cùng công thức trong js/core/calendar-vn.js (deltaTSigma); kiểm thử so hai bản.
+ */
+export function sigmaDeltaT(year) {
+  const N = year - 2005;
+  if (N <= 0) return 1;
+  return Math.max(1, (365.25 * N * Math.sqrt(((N * 0.058) / 3) * (1 + N / 2500))) / 1000);
+}
+
+/** Cửa sổ cờ ranh giới (giây) của PRD 5.3: max(10 phút, 3 × σ_ΔT của năm). */
+export const riskWindow = (year) => Math.max(600, 3 * sigmaDeltaT(year));
+
+/**
+ * Trung khí sát nửa đêm làm đổi tên tháng: với mỗi trung khí cách nửa đêm (giờ dựng lịch `tz`) dưới cửa sổ rủi ro,
+ * dời nó sang ngày bên kia nửa đêm, dựng lại lịch và so tên tháng (số tháng, nhuận, năm) theo ngày mùng Một.
+ * Ngày mùng Một không đổi vì chỉ sóc quyết định ngày đầu tháng.
+ * @returns {{start:number, margin:number, term:number, month:number, leap:boolean, year:number}[]} mỗi tháng đổi tên một dòng,
+ *   kèm tên tháng nếu trung khí rơi sang ngày bên kia; `margin`: giây có dấu từ trung khí tới nửa đêm gần nhất.
+ */
+export function zhongqiRisks(astro, tz, yearFrom, yearTo) {
+  const label = (ms) => new Map(ms.map((m) => [m.start, m]));
+  const base = label(buildLunarMonths(astro, tz));
+  const out = [];
+  astro.events.forEach(([kind, seq, , ut1], e) => {
+    if (kind === 'soc' || seq[1] % 2 !== 0 || seq[0] < yearFrom - 1 || seq[0] > yearTo + 1) return;
+    const margin = secondsToMidnight(ut1, tz);
+    if (Math.abs(margin) >= riskWindow(seq[0])) return;
+    const shifted = new Date(Date.parse(ut1 + 'Z') + (margin >= 0 ? -(margin + 1) : 1 - margin) * 1000).toISOString().slice(0, 19);
+    const events = astro.events.slice();
+    events[e] = [kind, seq, astro.events[e][2], shifted, ...astro.events[e].slice(4)];
+    for (const m of buildLunarMonths({ ...astro, events }, tz)) {
+      const b = base.get(m.start);
+      if (b && (b.month !== m.month || b.leap !== m.leap || b.year !== m.year)) {
+        out.push({ start: m.start, margin: Math.round(margin), term: seq[1], month: m.month, leap: m.leap, year: m.year });
+      }
+    }
+  });
+  return out;
+}

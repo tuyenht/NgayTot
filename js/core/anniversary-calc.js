@@ -262,7 +262,7 @@
     let boundaryNote = '';
     if (NT.dateConvert) {
       const conv = NT.dateConvert.solarToLunar({ day: sol.solarDay, month: sol.solarMonth, year: sol.solarYear });
-      if (conv.ok && conv.flags.includes('BOUNDARY_RISK')) boundaryNote = conv.notes.filter((n) => n.startsWith('Trăng non')).join(' ');
+      if (conv.ok && conv.flags.includes('BOUNDARY_RISK')) boundaryNote = conv.notes.filter((n) => n.startsWith('Trăng non') || n.startsWith('Trung khí')).join(' ');
     }
 
     return {
