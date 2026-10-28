@@ -3,8 +3,8 @@
 | | |
 | --- | --- |
 | Mã dự án | LICH-VIET-CORE-2026 |
-| Phiên bản | 4.14 — thêm QĐ-33 đến QĐ-36 (lõi tra bảng tháng âm lịch dựng từ bảng thiên văn; ngoại lệ thứ ba ở 13.4; 4.2 và 4.3 ghi theo hiện trạng mới). Bản 4.13: thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
-| Ngày cập nhật | 2026-10-07 |
+| Phiên bản | 4.15 — 4.2 và 4.3 ghi theo hiện trạng mới: tháng tiết khí theo múi giờ dựng lịch, không còn theo UTC+8 của thư viện (14.2 dòng 14, 54); không đổi yêu cầu. Bản 4.14: thêm QĐ-33 đến QĐ-36 (lõi tra bảng tháng âm lịch dựng từ bảng thiên văn; ngoại lệ thứ ba ở 13.4; 4.2 và 4.3 ghi theo hiện trạng mới). Bản 4.13: thêm QĐ-28 đến QĐ-32 (bản web không hiện hướng xuất hành và Lý Thuần Phong; ba ô còn treo ở 1.5; giai đoạn W1, M1 ở 15.1). Bản 4.12: thân các mục 1, 3.3, 4.1, 7, 8.3, 12 đã viết lại theo QĐ-12 đến QĐ-27: hai bản web và mobile dùng chung phần lõi; phạm vi từng bản (1.5); lưu dữ liệu, sao lưu, không quảng cáo (3.3); kho văn khấn có điều kiện (7.8); danh sách không làm (1.3). Khi mâu thuẫn, `QUYET-DINH.md` thắng |
+| Ngày cập nhật | 2026-10-28 |
 | Chủ sở hữu | Hoàng Thanh Tuyền |
 | Trạng thái | Tài liệu yêu cầu. Tình trạng thực hiện: `HIEN-TRANG.md`. Quyết định và lý do: `QUYET-DINH.md` |
 
@@ -212,13 +212,15 @@ Bỏ khỏi v3.0: endpoint `POST /api/v3/fengshui/evaluate`, `x-api-key`, giới
 
 Trước ngày 2026-10-07, tầng A và B dùng thuật toán trong `js/core/calendar-vn.js` (Hồ Ngọc Đức, công thức xấp xỉ Meeus) và `vendor/lunar.js` (6tail, tính theo UTC+8). Các lỗi đã biết của hai thuật toán này đã vá ở G0; phần còn lại ghi ở 13.3 và 14.2 (dòng 14, 27).
 
-**Từ 2026-10-07 (QĐ-33):** ngày mùng Một, tháng nhuận và ngày chứa tiết khí được tra từ hai bảng sinh từ `data/astro_events.json` (`js/core/lunar-months.js`, `js/core/solar-terms.js`); thuật toán trong `calendar-vn.js` chỉ còn dùng khi ngày nằm ngoài bảng. Nghi/kỵ, thần sát, Trực, Tú và can chi tháng theo tiết khí vẫn lấy từ `vendor/lunar.js` (UTC+8) cho đến khi có `day_facts`.
+**Từ 2026-10-07 (QĐ-33):** ngày mùng Một, tháng nhuận và ngày chứa tiết khí được tra từ hai bảng sinh từ `data/astro_events.json` (`js/core/lunar-months.js`, `js/core/solar-terms.js`); thuật toán trong `calendar-vn.js` chỉ còn dùng khi ngày nằm ngoài bảng. Đến 2026-10-28, nghi/kỵ, thần sát, Trực, Tú và can chi tháng theo tiết khí vẫn lấy thẳng từ `vendor/lunar.js` (UTC+8).
+
+**Từ 2026-10-28:** tháng tiết khí (can chi tháng, năm theo Lập xuân) tính từ bảng tiết khí theo múi giờ dựng lịch (`NT.calendar.monthPillar`); Trực, thần nhật, nghi/kỵ, thần sát vẫn dùng công thức và bảng luật của `vendor/lunar.js` nhưng với tháng tiết khí đó (`NT.calendar.dayAlmanac`; 14.2 dòng 14, 54). Tú và can chi ngày không phụ thuộc tháng, vẫn lấy thẳng từ thư viện.
 
 ### 4.3 Thành phần mã hiện có
 
 | Tệp | Vai trò |
 | --- | --- |
-| `vendor/lunar.js` | lunar-javascript v1.7.7 (MIT): nghi/kỵ, thần sát, Trực, Tú, tiết khí theo UTC+8 |
+| `vendor/lunar.js` | lunar-javascript v1.7.7 (MIT): bảng luật và công thức nghi/kỵ, thần sát, Trực, Tú; tiết khí và tháng tiết khí của chính thư viện theo UTC+8 (ứng dụng thay tháng đó bằng tháng theo múi giờ dựng lịch, 4.2) |
 | `js/core/calendar-vn.js` | Âm lịch Việt Nam (tra bảng; công thức xấp xỉ làm dự phòng), giờ Mặt Trời thực |
 | `js/core/lunar-months.js`, `js/core/solar-terms.js` | Bảng tháng âm lịch và thời điểm 24 tiết khí, sinh tự động từ `data/astro_events.json`; không sửa tay |
 | `js/core/date-convert.js` | Đổi ngày hai chiều dương ↔ âm dùng chung cho hai bản, kèm cờ và lý do khi ngày không tồn tại |
