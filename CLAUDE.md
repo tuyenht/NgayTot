@@ -8,6 +8,7 @@ Chủ dự án thường chạy nhiều phiên song song trên dự án này. C�
   `git worktree add C:\Projects\NgayTot-wt\<ten-viec> -b par-<ten-viec> audit-g0`
   Xong việc: chạy `node tests/run-tests.mjs` trong worktree, rồi gộp vào `audit-g0` từ thư mục chính và chạy lại kiểm thử sau khi gộp. Gỡ worktree khi đã gộp xong.
 - **Trước khi sửa bất kỳ tệp nào trong thư mục chính, chạy `git status`.** Có thay đổi chưa commit không phải của mình thì không sửa và không commit chúng: tìm phiên đang làm bằng ListAgents rồi nhắn (SendMessage), hoặc hỏi chủ dự án.
+- **Vùng chờ commit (index) của một thư mục làm việc là dùng chung giữa mọi phiên mở thư mục đó.** Tệp một phiên đã `git add` sẽ bị cuốn vào lệnh `git commit` của phiên khác (đã xảy ra hai lần ngày 2026-10-28: khối kiểm thử vào commit 093e4b8, tệp này vào commit 16ebcb1). Vì vậy trong thư mục chính chỉ phiên gộp được commit; các phiên khác commit trong worktree của mình (mỗi worktree có vùng chờ riêng). Khi buộc phải commit trong thư mục chính, dùng `git commit --only -- <đường dẫn>` để chỉ commit đúng các tệp đó.
 - **Chỉ commit đúng tệp của mình:** `git add <đường dẫn cụ thể>`, xem `git diff --cached --stat` trước khi commit. Không dùng `git add .`, `git add -A`, `git commit -a`. Thông điệp commit nêu đủ mọi thứ có trong commit.
 - **Báo trước khi đụng vào phần chung:** khi bắt đầu một việc song song, nhắn các phiên đang chạy trên dự án tên nhánh và các tệp mình định sửa.
 
