@@ -405,7 +405,7 @@
           ctx, key: ctx.key, isWeekend, calendarOnly: true,
           day: { raw: 0, score: null, items: [], severe: [] },
           hours: [chosen], chosen, bestHours: [chosen], severe: false, excluded: false,
-          flags: ['MEDICAL_FIXED_ONLY', ...(NT.calendar.inVerifiedRange(ctx.y) ? [] : ['OUT_OF_VERIFIED_RANGE'])],
+          flags: ['MEDICAL_FIXED_ONLY', ...(NT.calendar.inVerifiedRange(ctx.y) ? [] : ['OUT_OF_VERIFIED_RANGE']), ...NT.calendar.dayAlmanac(ctx.d, ctx.m, ctx.y).flags],
           score: null, grade: null,
         });
         continue;

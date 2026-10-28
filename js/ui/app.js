@@ -652,7 +652,9 @@
     $('#dlg-title').textContent = `${dsc.weekday}, ${fmtDate(r.ctx)}`;
     $('#dlg-sub').textContent = `Âm lịch ${dsc.lunarText} · Ngày ${dsc.ganZhi} · Tháng tiết khí ${dsc.monthGanZhi}${whoText() ? ' · ' + whoText() : ''}`;
     // Tiết đổi tháng sát nửa đêm (PRD 5.3): nêu cả hai khả năng của tháng tiết khí, Trực, thần nhật
-    const boundaryHtml = dsc.boundaryNote ? `<p class="source-note" id="dlg-term-boundary-note">Lưu ý: ${esc(dsc.boundaryNote)}</p>` : '';
+    const boundaryHtml = dsc.boundaryNote
+      ? `<p class="source-note" id="dlg-term-boundary-note">Lưu ý: ${esc(dsc.boundaryNote)}${fixed || calendarOnly() ? '' : ' Điểm của ngày tính theo cách của ứng dụng (khả năng thứ nhất).'}</p>`
+      : '';
 
     if (calendarOnly()) {
       $('#dlg-body').innerHTML = `

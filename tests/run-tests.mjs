@@ -1304,7 +1304,7 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   const tn = NT.dateConvert.termBoundaryNote;
   const a = tn(5, 1, 2011), b = tn(7, 9, 2014), c = tn(4, 2, 1947);
   eq('Ghi chú 05/01/2011: giờ rơi của tiết, khoảng cách, tháng của ứng dụng và tháng nếu lệch kèm Trực',
-    [/lúc 23:54:38 cuối ngày này \(giờ Việt Nam\), chỉ trước nửa đêm 322 giây, khoảng 5 phút/.test(a), /đã sang tháng mới: tháng Kỷ Sửu, .*trực Nguy/.test(a), /còn ở tháng cũ: tháng Mậu Tý, .*trực Thành/.test(a), /chưa thể khẳng định/.test(a)],
+    [/lúc 23:54:38 cuối ngày này \(giờ Việt Nam\), chỉ 322 giây \(khoảng 5 phút\) trước nửa đêm/.test(a), /đã sang tháng mới: tháng Kỷ Sửu, .*trực Nguy/.test(a), /còn ở tháng cũ: tháng Mậu Tý, .*trực Thành/.test(a), /chưa thể khẳng định/.test(a)],
     [true, true, true, false]);
   eq('Ghi chú 07/09/2014 (tiết rơi sau nửa đêm), 04/02/1947 (Lập xuân, giờ dựng lịch UTC+8, nêu năm theo Lập xuân), 06/08/2060 (chưa thể khẳng định); ngày thường không có ghi chú',
     [/lúc 00:01:26 rạng sáng ngày hôm sau/.test(b), /còn ở tháng cũ: tháng Nhâm Thân/.test(b), /UTC\+8/.test(c), /năm can chi tính theo Lập xuân: Bính Tuất/.test(c), /chưa thể khẳng định/.test(tn(6, 8, 2060)), tn(28, 10, 2026)],

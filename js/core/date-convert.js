@@ -54,14 +54,14 @@
     const s = al.boundarySeconds, alt = al.alternative, tz = C.calendarTz(year, month, day);
     const sec = s < 0 ? 86400 + s : s; // giờ trong ngày của tiết
     const clock = [Math.floor(sec / 3600), Math.floor((sec % 3600) / 60), sec % 60].map((n) => String(n).padStart(2, '0')).join(':');
-    const gap = `${Math.abs(s)} giây${Math.abs(s) >= 90 ? `, khoảng ${Math.round(Math.abs(s) / 60)} phút` : ''}`;
+    const gap = `${Math.abs(s)} giây${Math.abs(s) >= 90 ? ` (khoảng ${Math.round(Math.abs(s) / 60)} phút)` : ''}`;
     const sum = (a, other) => `tháng ${gan(a.monthGanIndex)} ${zhi(a.monthZhiIndex)}`
       + (a.yearGanZhi !== other.yearGanZhi ? ` (năm can chi tính theo Lập xuân: ${gan(a.yearGanIndex)} ${zhi(a.yearZhiIndex)})` : '')
       + `, thần nhật ${V.tianshen ? V.tianshen(a.tianShen) : a.tianShen} (${a.tianShenType === '黄道' ? 'hoàng đạo' : 'hắc đạo'}), trực ${V.zhixing ? V.zhixing(a.zhiXing) : a.zhiXing}`;
     return `Tiết ${termName(al.boundaryTermIndex)} rơi lúc ${clock} ${s < 0 ? 'cuối ngày này' : 'rạng sáng ngày hôm sau'} (${tz === 7 ? 'giờ Việt Nam' : `giờ dựng lịch UTC+${C.fmtTz(tz)}`}), `
-      + `chỉ ${s < 0 ? 'trước' : 'sau'} nửa đêm ${gap}. `
+      + `chỉ ${gap} ${s < 0 ? 'trước' : 'sau'} nửa đêm. `
       + `Ứng dụng tính ngày này ${s < 0 ? 'đã sang tháng mới' : 'còn ở tháng cũ'}: ${sum(al, alt)}. `
-      + `Lịch tính theo cách khác có thể ghi tiết này ${s < 0 ? 'sang ngày hôm sau' : 'vào ngày này'}; khi đó ngày này ${s < 0 ? 'còn ở tháng cũ' : 'đã sang tháng mới'}: ${sum(alt, al)}.`
+      + `Lịch in theo cách tính khác có thể ghi tiết này ${s < 0 ? 'sang ngày hôm sau' : 'vào ngày này'}; khi đó ngày này ${s < 0 ? 'còn ở tháng cũ' : 'đã sang tháng mới'}: ${sum(alt, al)}.`
       + deltaTNote(s, C.jdFromDate(day, month, year));
   }
 
