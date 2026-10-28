@@ -1199,5 +1199,24 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   eq('Tên năm âm cho bài khấn lấy theo Tết Việt Nam: 10/01/2026 còn năm Ất Tỵ', `${g.yCan} ${g.yChi}`, 'Ất Tỵ');
 }
 
+// Văn khấn: khoảng cách tới lễ và giỗ khi năm âm có tháng nhuận (lỗi do phản biện độc lập tìm ra, 14.2 dòng 55)
+{
+  const P = NT.prayers;
+  const badge = (o, id) => P.filterPrayers(o).find((p) => p.id === id)?.priorityBadge ?? null;
+  const c23 = P.lunarContextForDate(new Date(2023, 3, 15)), c25 = P.lunarContextForDate(new Date(2025, 6, 4));
+  eq('Tháng nhuận của năm âm: 2023 nhuận tháng 2, 2025 nhuận tháng 6', [c23.yearLeapMonth, c25.yearLeapMonth], [2, 6]);
+  eq('25/2 thường năm 2023 (sau đó còn tháng 2 nhuận): Giỗ Tổ 10/3 và Hàn Thực 3/3 còn hơn 15 ngày nên chưa gợi ý',
+    [badge({ currentLunarDay: 25, currentLunarMonth: 2, currentLunarYearLeapMonth: 2 }, 'vk_gio_to_hung_vuong'), badge({ currentLunarDay: 25, currentLunarMonth: 2, currentLunarYearLeapMonth: 2 }, 'vk_han_thuc')],
+    [null, null]);
+  eq('25/2 nhuận năm 2023: Giỗ Tổ 10/3 còn 15 ngày', badge({ currentLunarDay: 25, currentLunarMonth: 2, currentLunarLeap: true, currentLunarYearLeapMonth: 2 }, 'vk_gio_to_hung_vuong'), '🔥 Sắp đến dịp (còn 15 ngày)');
+  const anniv = [{ deceasedName: 'Ông A', lunarDay: 10, lunarMonth: 6, isLeap: true }];
+  const gio = (o) => badge({ ...o, upcomingAnniversaries: anniv }, 'vk_gio_thuong');
+  eq('Giỗ 10/6 nhuận năm 2025 (nhuận tháng 6): ngày 10/6 thường không báo "Hôm nay"; ngày 10/6 nhuận thì báo; năm không nhuận tháng 6 thì giỗ ở 10/6 thường',
+    [/Hôm nay/.test(gio({ currentLunarDay: 10, currentLunarMonth: 6, currentLunarYearLeapMonth: 6 }) || ''),
+      /Hôm nay/.test(gio({ currentLunarDay: 10, currentLunarMonth: 6, currentLunarLeap: true, currentLunarYearLeapMonth: 6 }) || ''),
+      /Hôm nay/.test(gio({ currentLunarDay: 10, currentLunarMonth: 6, currentLunarYearLeapMonth: 0 }) || '')],
+    [false, true, true]);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);

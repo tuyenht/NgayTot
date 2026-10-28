@@ -1382,6 +1382,12 @@ Nguồn tham khảo: báo Văn Hóa.`
     const curM = Number(opts.currentLunarMonth);
     // Hôm nay thuộc tháng nhuận (curM là số tháng thường mà tháng nhuận lặp lại, luôn dương).
     const curLeap = !!opts.currentLunarLeap;
+    // Tháng nhuận của năm âm hiện tại (0: năm không nhuận). Không truyền thì chỉ biết khi hôm nay đang ở tháng nhuận.
+    const leapM = Number(opts.currentLunarYearLeapMonth ?? (curLeap ? curM : 0)) || 0;
+    // Thứ tự của tháng trong năm âm khi đếm cả tháng nhuận (tháng nhuận N đứng sau tháng N), quy ra ngày xấp xỉ 30 ngày mỗi tháng
+    const pos = (m, isLeap, d) => (m + (leapM && (m > leapM || (m === leapM && isLeap)) ? 1 : 0)) * 30 + d;
+    const yearDays = (leapM ? 13 : 12) * 30;
+    const daysUntil = (m, isLeap, d) => { const x = pos(m, isLeap, d) - pos(curM, curLeap, curD); return x < 0 ? x + yearDays : x; };
 
     if (curD && curM) {
       // a. Tuần tiết Sóc Vọng (Mùng 1 và Rằm)
@@ -1396,13 +1402,10 @@ Nguồn tham khảo: báo Văn Hóa.`
 
       // b. Ngày lễ mùa vụ trong năm. Lễ âm lịch cố định tính ở tháng thường, không lặp ở tháng nhuận
       // (mùng Một và rằm hằng tháng ở mục a thì tháng nhuận vẫn có): đang ở tháng nhuận N thì lễ của
-      // tháng N đã qua (ở tháng thường), lễ các tháng sau vẫn tính khoảng cách bình thường.
+      // tháng N đã qua; đang ở tháng N thường mà năm có tháng N nhuận thì lễ các tháng sau xa thêm một tháng.
       const fest = FESTIVAL_DATES[p.id];
       if (fest) {
-        const targetDays = fest.m * 30 + fest.d;
-        const currentDays = curM * 30 + curD;
-        let diff = targetDays - currentDays;
-        if (diff < 0 || (curLeap && fest.m === curM)) diff += 360;
+        const diff = daysUntil(fest.m, false, fest.d);
 
         if (diff >= 0 && diff <= 15) {
           const proximityScore = Math.max(10, 110 - diff * 6);
@@ -1416,11 +1419,9 @@ Nguồn tham khảo: báo Văn Hóa.`
         let nearestAnnivDiff = 999;
         let matchedAnniv = null;
         for (const a of opts.upcomingAnniversaries) {
-          let diffA = (a.lunarMonth * 30 + a.lunarDay) - (curM * 30 + curD);
-          // Giỗ ở tháng thường của tháng N thì đã qua khi đang ở tháng nhuận N (và ngược lại: giỗ ghi ở tháng nhuận N
-          // chỉ trùng khi hôm nay cũng ở tháng nhuận N).
-          const aLeap = !!(a.isLeapMonth ?? a.isLeap);
-          if (diffA < 0 || (curLeap && a.lunarMonth === curM && !aLeap)) diffA += 360;
+          // Giỗ ghi ở tháng nhuận N rơi vào tháng nhuận N ở năm có tháng đó, còn lại rơi vào tháng N thường (như Sổ giỗ)
+          const aLeap = !!(a.isLeapMonth ?? a.isLeap) && Number(a.lunarMonth) === leapM;
+          const diffA = daysUntil(Number(a.lunarMonth), aLeap, Number(a.lunarDay));
           if (diffA < nearestAnnivDiff) {
             nearestAnnivDiff = diffA;
             matchedAnniv = a;
@@ -1455,6 +1456,7 @@ Nguồn tham khảo: báo Văn Hóa.`
     currentLunarDay = null,
     currentLunarMonth = null,
     currentLunarLeap = false,
+    currentLunarYearLeapMonth = null,
     upcomingAnniversaries = []
   } = {}) {
     const kw = keyword.trim().toLowerCase();
@@ -1489,6 +1491,7 @@ Nguồn tham khảo: báo Văn Hóa.`
         currentLunarDay,
         currentLunarMonth,
         currentLunarLeap,
+        currentLunarYearLeapMonth,
         upcomingAnniversaries
       });
       return { prayer: p, score, badgeText };
@@ -1518,12 +1521,18 @@ Nguồn tham khảo: báo Văn Hóa.`
    * month luôn dương; tháng nhuận có leap = true. Trả về null nếu ngày ngoài phạm vi hỗ trợ.
    * @returns {{day:number, month:number, leap:boolean, year:number, yearName:string, monthText:string}|null}
    */
+  // Tháng nhuận của một năm âm lịch Việt Nam (0: năm không nhuận)
+  function leapMonthOf(year) {
+    for (let m = 1; m <= 12; m++) if (NT.calendar.lunarToSolar(1, m, year, true)) return m;
+    return 0;
+  }
+
   function lunarContextForDate(date = new Date()) {
     try {
       const l = NT.calendar.solarToLunar(date.getDate(), date.getMonth() + 1, date.getFullYear());
       if (!l) return null;
       return Object.freeze({
-        day: l.day, month: l.month, leap: !!l.leap, year: l.year,
+        day: l.day, month: l.month, leap: !!l.leap, year: l.year, yearLeapMonth: leapMonthOf(l.year),
         yearName: NT.data.ganZhiVi(NT.calendar.lunarYearGan(l.year), NT.calendar.lunarYearZhi(l.year)),
         monthText: `${l.month}${l.leap ? ' nhuận' : ''}`
       });
