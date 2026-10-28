@@ -227,11 +227,33 @@
    * Tháng theo tiết khí (nguyệt kiến, PRD §6.4) của một ngày dương: tháng đổi ở ngày chứa một trong 12 tiết
    * (chỉ số lẻ), Lập xuân (chỉ số 21) mở tháng Dần và đổi năm can chi. "Ngày chứa tiết" theo múi giờ dựng lịch,
    * không theo giờ Bắc Kinh (14.2 dòng 14). Can tháng theo phép Ngũ hổ độn từ can của năm tính theo Lập xuân.
-   * @returns {{ganIndex:number, zhiIndex:number, yearGanIndex:number, yearZhiIndex:number, termIndex:number}|undefined}
+   * Cờ BOUNDARY_RISK (PRD §5.3): nếu một trong 12 tiết cách nửa đêm dưới cửa sổ rủi ro max(10 phút, 3σ_ΔT của năm) mà
+   * lệch sang ngày bên kia thì tháng của ngày này đổi, `boundarySeconds` là khoảng cách có dấu (giây) từ tiết tới nửa đêm,
+   * `boundaryTermIndex` là tiết đó và `alternative` là tháng khi ấy (cùng các trường như trên). Dương: tiết rơi ngay sau
+   * nửa đêm cuối ngày này (ngày này là ngày trước tiết, lệch chút nữa thì đã sang tháng mới); âm: tiết rơi ngay trước
+   * nửa đêm cuối ngày này (ngày này chứa tiết, lệch chút nữa thì còn ở tháng cũ). Ngày khác: `boundarySeconds` là null.
+   * @returns {{ganIndex:number, zhiIndex:number, yearGanIndex:number, yearZhiIndex:number, termIndex:number,
+   *   boundarySeconds:number|null, boundaryTermIndex:number|null, alternative:object|null}|undefined}
    *   chỉ số can 0 = Giáp, chi 0 = Tý; termIndex: tiết mở đầu tháng; undefined nếu ngày nằm ngoài bảng tiết khí.
    */
   function monthPillar(dd, mm, yy, tz = calendarTz(yy, mm, dd)) {
     const jdn = jdFromDate(dd, mm, yy);
+    const p = pillarOn(jdn, tz);
+    if (!p) return undefined;
+    // Ngày ngay trước một tiết hoặc ngày chứa tiết đều cùng năm dương với tiết (không tiết nào rơi vào 1/1), nên chỉ xét hàng của năm `yy`
+    const row = termSeconds(yy), jan1 = jdFromDate(1, 1, yy), win = Math.max(600, 3 * deltaTSigma(yy));
+    for (let i = 1; i < 24; i += 2) {
+      const local = row[i] + Math.round(tz * 3600), day = jan1 + floor(local / 86400);
+      const sec = local - floor(local / 86400) * 86400, s = sec < 43200 ? sec : sec - 86400;
+      if (Math.abs(s) >= win || (s >= 0 ? day - 1 : day) !== jdn) continue;
+      const alt = pillarOn(s >= 0 ? jdn + 1 : jdn - 1, tz);
+      return Object.freeze({ ...p, boundarySeconds: s, boundaryTermIndex: i, alternative: alt });
+    }
+    return Object.freeze({ ...p, boundarySeconds: null, boundaryTermIndex: null, alternative: null });
+  }
+  /** Phần tính tháng của monthPillar theo ngày JDN, chưa xét cờ BOUNDARY_RISK. */
+  function pillarOn(jdn, tz) {
+    const yy = jdToDate(jdn)[2];
     let best = null;
     for (const Y of [yy - 1, yy]) {
       const row = termSeconds(Y);
@@ -261,7 +283,9 @@
    * nó đổi chậm một ngày. Ngày nằm ngoài bảng tiết khí thì giữ nguyên kết quả của thư viện.
    * opts: `region` ('bac' | 'nam'), `tz` (múi giờ dựng lịch, mặc định theo calendarTz).
    * @returns {object} `lunar`: đối tượng Lunar của thư viện (dùng cho các mục không phụ thuộc tháng: can chi ngày, Tú…);
-   *   `adjusted`: tháng tiết khí khác với thư viện.
+   *   `adjusted`: tháng tiết khí khác với thư viện; `flags`: ['BOUNDARY_RISK'] khi tiết đổi tháng sát nửa đêm (xem
+   *   monthPillar), kèm `boundarySeconds`, `boundaryTermIndex` và `alternative`: các mục phụ thuộc tháng (can chi tháng,
+   *   năm, Trực, thần nhật, nghi/kỵ, thần sát) nếu tiết rơi sang ngày bên kia, để nơi gọi hiện cả hai khả năng.
    */
   const almanacCache = new Map();
   function dayAlmanac(dd, mm, yy, { region = 'bac', tz = calendarTz(yy, mm, dd, region) } = {}) {
@@ -279,20 +303,30 @@
     const dayGZ = lunar.getDayInGanZhi();
     const dayZ = lunar.getDayZhiIndex();
     // Cùng công thức với getZhiXing, getDayTianShen, getDayYi… của thư viện, với tháng tiết khí của monthPillar
-    const monthZhi = U.ZHI[p.zhiIndex + 1];
-    const monthGZ = U.GAN[p.ganIndex + 1] + monthZhi;
-    const tianShen = U.TIAN_SHEN[(dayZ + U.ZHI_TIAN_SHEN_OFFSET[monthZhi]) % 12 + 1];
-    const tianShenType = U.TIAN_SHEN_TYPE[tianShen];
+    const byMonth = (q) => {
+      const monthZhi = U.ZHI[q.zhiIndex + 1];
+      const monthGZ = U.GAN[q.ganIndex + 1] + monthZhi;
+      const tianShen = U.TIAN_SHEN[(dayZ + U.ZHI_TIAN_SHEN_OFFSET[monthZhi]) % 12 + 1];
+      const tianShenType = U.TIAN_SHEN_TYPE[tianShen];
+      return {
+        monthGanIndex: q.ganIndex, monthZhiIndex: q.zhiIndex,
+        yearGanIndex: q.yearGanIndex, yearZhiIndex: q.yearZhiIndex,
+        yearGanZhi: U.GAN[q.yearGanIndex + 1] + U.ZHI[q.yearZhiIndex + 1],
+        yi: U.getDayYi(monthGZ, dayGZ), ji: U.getDayJi(monthGZ, dayGZ),
+        jiShen: U.getDayJiShen(q.zhiIndex, dayGZ), xiongSha: U.getDayXiongSha(q.zhiIndex, dayGZ),
+        zhiXing: U.ZHI_XING[((dayZ - q.zhiIndex + 12) % 12) + 1],
+        tianShen, tianShenType, tianShenLuck: U.TIAN_SHEN_TYPE_LUCK[tianShenType],
+      };
+    };
+    const risk = mp && mp.boundarySeconds !== null;
     const out = Object.freeze({
       lunar,
       adjusted: p.ganIndex !== lib.ganIndex || p.zhiIndex !== lib.zhiIndex || p.yearGanIndex !== lib.yearGanIndex || p.yearZhiIndex !== lib.yearZhiIndex,
-      monthGanIndex: p.ganIndex, monthZhiIndex: p.zhiIndex,
-      yearGanIndex: p.yearGanIndex, yearZhiIndex: p.yearZhiIndex,
-      yearGanZhi: U.GAN[p.yearGanIndex + 1] + U.ZHI[p.yearZhiIndex + 1],
-      yi: U.getDayYi(monthGZ, dayGZ), ji: U.getDayJi(monthGZ, dayGZ),
-      jiShen: U.getDayJiShen(p.zhiIndex, dayGZ), xiongSha: U.getDayXiongSha(p.zhiIndex, dayGZ),
-      zhiXing: U.ZHI_XING[((dayZ - p.zhiIndex + 12) % 12) + 1],
-      tianShen, tianShenType, tianShenLuck: U.TIAN_SHEN_TYPE_LUCK[tianShenType],
+      ...byMonth(p),
+      flags: Object.freeze(risk ? ['BOUNDARY_RISK'] : []),
+      boundarySeconds: risk ? mp.boundarySeconds : null,
+      boundaryTermIndex: risk ? mp.boundaryTermIndex : null,
+      alternative: risk ? Object.freeze(byMonth(mp.alternative)) : null,
     });
     if (almanacCache.size > 3000) almanacCache.clear();
     almanacCache.set(key, out);

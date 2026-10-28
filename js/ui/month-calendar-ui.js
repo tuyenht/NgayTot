@@ -287,6 +287,24 @@
     const boundaryNoteHtml = conv && conv.ok && conv.flags.includes('BOUNDARY_RISK')
       ? `<p class="source-note" id="month-boundary-note">Lưu ý: ${esc(conv.notes.filter((n) => n.startsWith('Trăng non') || n.startsWith('Trung khí')).join(' '))}</p>`
       : '';
+    const termNoteHtml = (() => {
+      // Tiết đổi tháng sát nửa đêm (PRD 5.3): hiện cả hai khả năng của tháng tiết khí
+      let al;
+      try { al = NT.calendar.dayAlmanac(d, m, y); } catch { return ''; }
+      if (!al.flags.includes('BOUNDARY_RISK')) return '';
+      const D = NT.data, V = NT.vi || {};
+      const s = al.boundarySeconds, tz = NT.calendar.calendarTz(y, m, d);
+      const key = NT.calendar.TERM_KEYS[al.boundaryTermIndex];
+      const month = (a) => `tháng ${D.GAN_VI[a.monthGanIndex]} ${D.ZHI_VI[a.monthZhiIndex]}`;
+      const sum = (a, other) => `${month(a)}${a.yearGanZhi !== other.yearGanZhi ? ` (năm ${D.GAN_VI[a.yearGanIndex]} ${D.ZHI_VI[a.yearZhiIndex]})` : ''}, `
+        + `thần nhật ${V.tianshen ? V.tianshen(a.tianShen) : a.tianShen} (${a.tianShenType === '黄道' ? 'hoàng đạo' : 'hắc đạo'}), trực ${V.zhixing ? V.zhixing(a.zhiXing) : a.zhiXing}`;
+      const alt = al.alternative;
+      const text = `Tiết ${V.jieqi ? V.jieqi(key) : key} rơi ${s < 0 ? 'trước' : 'sau'} nửa đêm cuối ngày này chỉ ${Math.abs(s)} giây (${tz === 7 ? 'giờ Việt Nam' : `giờ dựng lịch UTC+${NT.calendar.fmtTz(tz)}`}), `
+        + `nên ngày này ${s < 0 ? 'đã sang tháng mới' : 'còn ở tháng cũ'}: ${sum(al, alt)}. `
+        + `Lịch tính theo cách khác có thể ghi tiết này vào ${s < 0 ? 'ngày hôm sau' : 'ngày này'}; khi đó ngày này ${s < 0 ? 'còn ở tháng cũ' : 'đã sang tháng mới'}: ${sum(alt, al)}.`
+        + (NT.dateConvert && NT.dateConvert.deltaTNote ? NT.dateConvert.deltaTNote(s, NT.calendar.jdFromDate(d, m, y)) : '');
+      return `<p class="source-note" id="month-term-boundary-note">Lưu ý: ${esc(text)}</p>`;
+    })();
     const calendarInfoHtml = `
       <ul class="why">
         <li>Tháng theo tiết khí: <b>${esc(`${gz.mCan} ${gz.mChi}`)}</b> (dùng để tính thần nhật, trực, nghi/kỵ)</li>
@@ -296,6 +314,7 @@
       </ul>
       ${hdNoteHtml}
       ${boundaryNoteHtml}
+      ${termNoteHtml}
     `;
 
     // 12 Giờ hoàng đạo

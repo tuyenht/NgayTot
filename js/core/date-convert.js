@@ -220,5 +220,6 @@
     });
   }
 
-  NT.dateConvert = Object.freeze({ RANGE, solarToLunar, lunarToSolar, lunarYearInfo });
+  // deltaTNote dùng chung với thẻ chi tiết ngày (ghi chú tiết đổi tháng sát nửa đêm)
+  NT.dateConvert = Object.freeze({ RANGE, solarToLunar, lunarToSolar, lunarYearInfo, deltaTNote });
 })(globalThis.NT ??= {});

@@ -1242,5 +1242,56 @@ for (const f of ['core/canh-clock', 'core/anniversary-calc', 'core/prayers-data'
   eq('Ngày 5/3 âm (22/04/2026) không còn báo Thanh minh', badge({ currentLunarDay: 5, currentLunarMonth: 3, daysToTerm: P.lunarContextForDate(new Date(2026, 3, 22)).daysToTerm }, 'vk_thanh_minh'), null);
 }
 
+// Cờ BOUNDARY_RISK cho tiết đổi tháng sát nửa đêm (PRD 5.3: cửa sổ max(10 phút, 3σ_ΔT)): monthPillar, dayAlmanac.
+// Phép đếm độc lập: quét từng ngày bằng solarTermOn, không dùng vòng tìm tiết của monthPillar.
+{
+  const C = NT.calendar;
+  const terms = [];
+  for (let t = Date.UTC(1976, 0, 1); t <= Date.UTC(2100, 11, 31); t += 864e5) {
+    const x = new Date(t), d = x.getUTCDate(), m = x.getUTCMonth() + 1, y = x.getUTCFullYear();
+    const st = C.solarTermOn(d, m, y, 7);
+    if (st && st.index % 2 === 1 && Math.abs(st.boundarySeconds) < Math.max(600, 3 * C.deltaTSigma(y))) terms.push({ jd: C.jdFromDate(d, m, y), st });
+  }
+  // Ngày mang cờ: ngày chứa tiết nếu tiết ngay trước nửa đêm cuối ngày, ngày trước đó nếu tiết ngay sau nửa đêm đầu ngày
+  const want = terms.map(({ jd, st }) => [st.boundarySeconds < 0 ? jd : jd - 1, st.boundarySeconds, st.index]);
+  const got = [];
+  for (let jd = C.jdFromDate(1, 1, 1976); jd <= C.jdFromDate(31, 12, 2100); jd++) {
+    const [d, m, y] = C.jdToDate(jd), p = C.monthPillar(d, m, y);
+    if (p.boundarySeconds !== null) got.push([jd, p.boundarySeconds, p.boundaryTermIndex]);
+  }
+  eq(`1976–2100 giờ Việt Nam: ${terms.length} tiết đổi tháng sát nửa đêm, mỗi tiết đúng một ngày mang cờ, đúng ngày và khoảng cách`, got, want);
+  eq('Số tiết như vậy 1976–2100 (ảnh chụp kết quả quét, đổi khi bảng tiết khí đổi)', terms.length, 19);
+  // Tháng thay thế của ngày mang cờ là tháng của ngày bên kia tiết
+  const altOk = got.every(([jd, s]) => {
+    const [d, m, y] = C.jdToDate(jd), [d2, m2, y2] = C.jdToDate(s < 0 ? jd - 1 : jd + 1);
+    const a = C.monthPillar(d, m, y).alternative, b = C.monthPillar(d2, m2, y2);
+    return a.ganIndex === b.ganIndex && a.zhiIndex === b.zhiIndex && a.yearGanIndex === b.yearGanIndex && a.termIndex === b.termIndex;
+  });
+  eq('Tháng thay thế (alternative) của mọi ngày mang cờ trùng tháng của ngày bên kia tiết', altOk, true);
+
+  // Tiểu hàn 05/01/2011 lúc 23:54:38 giờ Việt Nam: ngày 05/01 đã sang tháng Sửu (Kỷ Sửu), lệch thì còn tháng Tý (Mậu Tý)
+  const p = C.monthPillar(5, 1, 2011), a = C.dayAlmanac(5, 1, 2011);
+  const st = C.solarTermOn(5, 1, 2011);
+  eq('05/01/2011: Tiểu hàn cách nửa đêm -322 giây; tháng Kỷ Sửu, thay thế Mậu Tý; dayAlmanac mang cờ, Trực và thần nhật khác nhau ở hai khả năng',
+    [st.key, st.boundarySeconds, p.boundarySeconds, p.boundaryTermIndex, gz({ g: p.ganIndex, z: p.zhiIndex }), gz({ g: p.alternative.ganIndex, z: p.alternative.zhiIndex }),
+      a.flags, a.boundarySeconds, a.monthZhiIndex, a.alternative.monthZhiIndex, a.zhiXing !== a.alternative.zhiXing, a.tianShen !== a.alternative.tianShen],
+    ['小寒', -322, -322, 19, '己丑', '戊子', ['BOUNDARY_RISK'], -322, 1, 0, true, true]);
+  // Bạch lộ 08/09/2014 lúc 00:01:26: ngày 07/09 mang cờ (còn tháng Thân, lệch thì sang tháng Dậu); ngày 08/09 không
+  const q = C.monthPillar(7, 9, 2014), b = C.dayAlmanac(7, 9, 2014);
+  eq('07/09/2014: Bạch lộ rơi 86 giây sau nửa đêm cuối ngày; ngày 07/09 mang cờ (tháng Thân, thay thế tháng Dậu), ngày 08/09 và 06/09 không',
+    [q.boundarySeconds, q.zhiIndex, q.alternative.zhiIndex, b.flags, b.alternative.monthZhiIndex, b.alternative.zhiXing !== b.zhiXing,
+      C.monthPillar(8, 9, 2014).boundarySeconds, C.dayAlmanac(8, 9, 2014).flags, C.monthPillar(6, 9, 2014).boundarySeconds],
+    [86, 8, 9, ['BOUNDARY_RISK'], 9, true, null, [], null]);
+  // Ngày bình thường và ngày chứa tiết xa nửa đêm: không cờ
+  const n = C.dayAlmanac(28, 10, 2026), lx = C.dayAlmanac(4, 2, 2024);
+  eq('28/10/2026 và Lập xuân 04/02/2024 (15:27 giờ Việt Nam): không mang cờ', [n.flags, n.boundarySeconds, n.alternative, lx.flags, C.monthPillar(3, 2, 2024).boundarySeconds],
+    [[], null, null, [], null]);
+  // Câu "chưa thể khẳng định" khi khoảng cách không vượt 3σ_ΔT: Lập thu 06/08/2060 (-27 giây, 3σ ≈ 63 giây) có, Hàn lộ 09/10/2003 lúc 00:00:32 (ngày mang cờ 08/10/2003) không
+  const dn = NT.dateConvert.deltaTNote;
+  eq('Câu sai số ΔT: 06/08/2060 có "chưa thể khẳng định", 08/10/2003 không',
+    [/chưa thể khẳng định/.test(dn(C.dayAlmanac(6, 8, 2060).boundarySeconds, C.jdFromDate(6, 8, 2060))), /chưa thể khẳng định/.test(dn(C.dayAlmanac(8, 10, 2003).boundarySeconds, C.jdFromDate(8, 10, 2003)))],
+    [true, false]);
+}
+
 console.log(`\n${fail ? '❌' : '✅'} ${pass}/${pass + fail} kiểm thử đạt`);
 process.exit(fail ? 1 : 0);
